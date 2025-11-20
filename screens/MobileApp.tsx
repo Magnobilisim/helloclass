@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../Store';
 import { 
@@ -270,7 +269,7 @@ const MessagesScreen: React.FC = () => {
     const [activeConversation, setActiveConversation] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     
-    const conversations = Array.from(new Set(messages.map(m => m.senderId === user?.id ? m.receiverId : m.senderId)));
+    const conversations = Array.from(new Set(messages.map(m => m.senderId === user?.id ? m.receiverId : m.senderId))) as string[];
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
