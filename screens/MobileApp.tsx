@@ -270,6 +270,7 @@ const MessagesScreen: React.FC = () => {
     const [activeConversation, setActiveConversation] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     
+    // Cast to string[] explicitly to avoid TS errors
     const conversations = Array.from(new Set(messages.map((m: Message) => m.senderId === user?.id ? m.receiverId : m.senderId))) as string[];
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -348,7 +349,7 @@ const MessagesScreen: React.FC = () => {
                                  </div>
                                  <div className="flex-1 min-w-0">
                                      <div className="flex justify-between items-baseline mb-1">
-                                        <h4 className="font-bold text-slate-900 text-sm truncate">Kullanıcı {contactId.substring(0,4)}</h4>
+                                        <h4 className="font-bold text-slate-900 text-sm truncate">Kullanıcı {(contactId as string).substring(0,4)}</h4>
                                         <span className="text-slate-400 text-[10px] font-medium whitespace-nowrap bg-slate-50 px-2 py-0.5 rounded-full">{new Date(lastMsg.timestamp).toLocaleDateString()}</span>
                                      </div>
                                      <p className="text-sm text-slate-500 truncate font-medium">{lastMsg?.content}</p>
