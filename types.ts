@@ -46,6 +46,7 @@ export interface ExamTopic {
 export interface Question {
   id: string;
   text: string;
+  imageUrl?: string; // Added support for image questions
   options: string[];
   correctIndex: number;
   explanation?: string;

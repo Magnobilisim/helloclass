@@ -146,6 +146,14 @@ const INITIAL_QUESTIONS: Question[] = [
   { id: 'ft10', text: 'Sabit Soru 10: İnsan vücudundaki en büyük organ?', options: ['Kalp', 'Karaciğer', 'Deri', 'Akciğer'], correctIndex: 2, explanation: 'Deridir.', topic: 'Test Sınavı', subTopic: 'Sabit Konu' },
 ];
 
+const FALLBACK_QUESTIONS: Question[] = [
+    { id: 'fb1', text: 'Yapay zeka şu an yoğun, ancak genel bir soru: 3 + 3?', options: ['5', '6', '7', '8'], correctIndex: 1, explanation: '3+3=6', topic: 'Genel', subTopic: 'Genel' },
+    { id: 'fb2', text: 'Türkiye\'nin en büyük gölü?', options: ['Tuz Gölü', 'Van Gölü', 'Beyşehir', 'Eğirdir'], correctIndex: 1, explanation: 'Van Gölü.', topic: 'Genel', subTopic: 'Genel' },
+    { id: 'fb3', text: 'İngilizce "Kedi" ne demek?', options: ['Dog', 'Bird', 'Cat', 'Fish'], correctIndex: 2, explanation: 'Cat.', topic: 'Genel', subTopic: 'Genel' },
+    { id: 'fb4', text: 'Hangi renk ana renktir?', options: ['Mor', 'Turuncu', 'Mavi', 'Yeşil'], correctIndex: 2, explanation: 'Mavi ana renktir.', topic: 'Genel', subTopic: 'Genel' },
+    { id: 'fb5', text: '1 saat kaç dakikadır?', options: ['100', '60', '50', '24'], correctIndex: 1, explanation: '60 dakika.', topic: 'Genel', subTopic: 'Genel' },
+];
+
 interface AppContextType {
   user: User | null;
   allUsers: User[];
@@ -423,12 +431,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const needed = count - dbQuestions.length;
       try {
           const aiQuestions = await generateQuizQuestions(topic, subTopic, needed, gradeLevel, specificClass, language);
+          if (!aiQuestions || aiQuestions.length === 0) throw new Error("AI returned empty");
+
           // Add AI questions to DB for future use (Cache logic)
           setAllQuestions(prev => [...prev, ...aiQuestions.map(q => ({...q, topic, subTopic}))]);
           
           return [...dbQuestions, ...aiQuestions];
       } catch (e) {
-          return dbQuestions; // Fallback
+          console.warn("AI Generation failed, using fallback questions");
+          // 3. CRITICAL FALLBACK: If AI fails and DB is empty, return generic questions to prevent app lock
+          return FALLBACK_QUESTIONS.slice(0, count); 
       }
   };
 

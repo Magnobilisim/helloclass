@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './Store';
 import MobileApp from './screens/MobileApp';
@@ -43,13 +44,13 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans relative overflow-hidden overflow-y-auto">
       {/* Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-100 via-purple-50 to-amber-50 z-0"></div>
-      <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-      <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-100 via-purple-50 to-amber-50 z-0 fixed"></div>
+      <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob fixed"></div>
+      <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000 fixed"></div>
       
-      <div className="bg-white/60 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-10 w-full max-w-md shadow-2xl shadow-indigo-100/50 border border-white/50 transition-all duration-500 relative z-10">
+      <div className="bg-white/60 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-10 w-full max-w-md shadow-2xl shadow-indigo-100/50 border border-white/50 transition-all duration-500 relative z-10 my-auto">
         
         {isRegistering && (
             <button onClick={toggleMode} className="absolute top-6 left-6 p-2 rounded-full bg-white/50 hover:bg-white shadow-sm text-slate-500 transition-colors">

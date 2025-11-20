@@ -34,12 +34,35 @@
                 purple: '#8A2BE2',
                 lavender: '#E6E6FA',
               }
+            },
+            animation: {
+              'blob': 'blob 7s infinite',
+            },
+            keyframes: {
+              blob: {
+                '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                '100%': { transform: 'translate(0px, 0px) scale(1)' },
+              }
             }
           }
         }
       }
     </script>
     <style>
+      :root {
+        --sat: env(safe-area-inset-top);
+        --sab: env(safe-area-inset-bottom);
+        --sal: env(safe-area-inset-left);
+        --sar: env(safe-area-inset-right);
+      }
+      
+      .pt-safe { padding-top: max(12px, var(--sat)); }
+      .pb-safe { padding-bottom: max(12px, var(--sab)); }
+      .pl-safe { padding-left: max(12px, var(--sal)); }
+      .pr-safe { padding-right: max(12px, var(--sar)); }
+
       /* Mobile-like scrollbar hiding */
       .no-scrollbar::-webkit-scrollbar {
         display: none;
