@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../Store';
 import { 
@@ -6,7 +7,7 @@ import {
   Settings, BellRing, LayoutDashboard, Filter, Send, ChevronRight, Menu,
   UploadCloud, Image as ImageIcon, FileJson, Info
 } from 'lucide-react';
-import { UserRole, SubscriptionTier, GradeLevel, User, Question } from '../types';
+import { UserRole, SubscriptionTier, GradeLevel, User, Question, School, ExamTopic, SocialPost } from '../types';
 
 // --- Components ---
 
@@ -87,16 +88,16 @@ const AdminPanel: React.FC = () => {
       return <div className="h-screen flex items-center justify-center bg-slate-100 font-bold text-slate-400">Erişim Reddedildi.</div>;
   }
 
-  const reportedPosts = posts.filter(p => p.reports && p.reports.length > 0);
-  const premiumUsers = allUsers.filter(u => u.subscriptionTier === SubscriptionTier.PREMIUM).length;
+  const reportedPosts = posts.filter((p: SocialPost) => p.reports && p.reports.length > 0);
+  const premiumUsers = allUsers.filter((u: User) => u.subscriptionTier === SubscriptionTier.PREMIUM).length;
 
   // Filtering Logic
-  const filteredUsers = allUsers.filter(u => 
+  const filteredUsers = allUsers.filter((u: User) => 
       u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       u.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredQuestions = allQuestions.filter(q => 
+  const filteredQuestions = allQuestions.filter((q: Question) => 
       q.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
       q.topic?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -318,7 +319,7 @@ const AdminPanel: React.FC = () => {
                     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                         <h3 className="font-bold text-lg mb-4">Son Aktiviteler</h3>
                         <div className="space-y-4">
-                            {posts.slice(0, 4).map(post => (
+                            {posts.slice(0, 4).map((post: SocialPost) => (
                                 <div key={post.id} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-colors border border-transparent hover:border-slate-100">
                                     <img src={post.userAvatar} className="w-10 h-10 rounded-full bg-slate-200"/>
                                     <div className="flex-1 min-w-0">
@@ -343,7 +344,7 @@ const AdminPanel: React.FC = () => {
                             <p className="text-slate-500">Şu an incelenecek rapor bulunmuyor.</p>
                         </div>
                     ) : (
-                        reportedPosts.map(post => (
+                        reportedPosts.map((post: SocialPost) => (
                             <div key={post.id} className="bg-white rounded-3xl p-6 shadow-sm border border-red-100 relative overflow-hidden">
                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
                                 <div className="flex justify-between items-center mb-4">
@@ -412,7 +413,7 @@ const AdminPanel: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {filteredUsers.map(u => (
+                                    {filteredUsers.map((u: User) => (
                                         <tr key={u.id} className="hover:bg-slate-50/50">
                                             <td className="p-5">
                                                 <div className="flex items-center gap-3">
@@ -470,7 +471,7 @@ const AdminPanel: React.FC = () => {
                     </div>
 
                     <div className="grid gap-4">
-                        {filteredQuestions.map((q, idx) => (
+                        {filteredQuestions.map((q: Question, idx: number) => (
                             <div key={q.id || idx} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex flex-wrap items-center gap-2">
@@ -500,7 +501,7 @@ const AdminPanel: React.FC = () => {
                              <button type="button" onClick={handleAddNewSchool} className="bg-slate-900 text-white px-4 rounded-xl"><Plus size={20}/></button>
                          </div>
                          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                             {allSchools.map(s => (
+                             {allSchools.map((s: School) => (
                                  <div key={s.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 group">
                                      <span className="font-bold text-slate-700 text-sm">{s.name}</span>
                                      <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100">
@@ -526,7 +527,7 @@ const AdminPanel: React.FC = () => {
                              <button type="button" onClick={handleAddNewTopic} className="bg-slate-900 text-white px-4 rounded-xl"><Plus size={20}/></button>
                          </div>
                          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                             {allExamTopics.map(t => (
+                             {allExamTopics.map((t: ExamTopic) => (
                                  <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 group">
                                      <span className="font-bold text-slate-700 text-sm">{t.name}</span>
                                      <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100">

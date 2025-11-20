@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../Store';
 import { 
@@ -10,7 +11,7 @@ import {
   Sparkles, Hash, List, Globe, X, Filter, Settings, Globe2, AlertTriangle, MoreHorizontal, Plus, ThumbsDown, Trash2, Flag, Play, HelpCircle, RefreshCw, ArrowRight, LogOut, ShieldAlert, Eye, Star
 } from 'lucide-react';
 import { MobileButton, Card, Badge } from '../components/MobileComponents';
-import { SubscriptionTier, Question, SocialPost, GradeLevel } from '../types';
+import { SubscriptionTier, Question, SocialPost, GradeLevel, Message, ExamTopic, School, User, Notification } from '../types';
 import { explainAnswer, checkContentSafety } from '../services/geminiService';
 
 // --- Helper Components ---
@@ -60,10 +61,10 @@ const NotificationsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [showAddModal, setShowAddModal] = useState(false);
     
     if (showSettings) {
-        const subscribedTopics = allExamTopics.filter(t => user?.notificationPreferences.includes(`topic_${t.id}`));
-        const subscribedSchools = allSchools.filter(s => user?.notificationPreferences.includes(`school_${s.id}`));
-        const availableTopics = allExamTopics.filter(t => !user?.notificationPreferences.includes(`topic_${t.id}`));
-        const availableSchools = allSchools.filter(s => !user?.notificationPreferences.includes(`school_${s.id}`));
+        const subscribedTopics = allExamTopics.filter((t: ExamTopic) => user?.notificationPreferences.includes(`topic_${t.id}`));
+        const subscribedSchools = allSchools.filter((s: School) => user?.notificationPreferences.includes(`school_${s.id}`));
+        const availableTopics = allExamTopics.filter((t: ExamTopic) => !user?.notificationPreferences.includes(`topic_${t.id}`));
+        const availableSchools = allSchools.filter((s: School) => !user?.notificationPreferences.includes(`school_${s.id}`));
 
         return (
             <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-50 md:bg-black/50 md:backdrop-blur-sm p-0 md:p-4">
@@ -99,7 +100,7 @@ const NotificationsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             )}
 
                             <div className="space-y-2">
-                                {subscribedTopics.map(topic => (
+                                {subscribedTopics.map((topic: ExamTopic) => (
                                     <div key={topic.id} className="bg-white border border-slate-100 shadow-sm rounded-2xl p-3 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="bg-amber-50 p-2 rounded-xl text-amber-600"><BookOpen size={18} /></div>
@@ -110,7 +111,7 @@ const NotificationsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         </button>
                                     </div>
                                 ))}
-                                {subscribedSchools.map(school => (
+                                {subscribedSchools.map((school: School) => (
                                     <div key={school.id} className="bg-white border border-slate-100 shadow-sm rounded-2xl p-3 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="bg-violet-50 p-2 rounded-xl text-violet-600"><GraduationCap size={18} /></div>
@@ -132,7 +133,7 @@ const NotificationsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <div>
                                     <h4 className="font-bold text-slate-900 mb-3 px-2 font-display">Konular</h4>
                                     <div className="space-y-2">
-                                    {availableTopics.map(t => (
+                                    {availableTopics.map((t: ExamTopic) => (
                                         <button key={t.id} onClick={() => toggleNotificationPreference(`topic_${t.id}`)} className="w-full flex items-center justify-between p-4 bg-white rounded-2xl hover:bg-slate-50 border border-slate-100 shadow-sm transition-all active:scale-[0.99]">
                                             <span className="font-medium text-slate-700">{t.name}</span>
                                             <div className="bg-blue-50 text-blue-600 p-1.5 rounded-full"><Plus size={16} /></div>
@@ -144,7 +145,7 @@ const NotificationsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <div>
                                     <h4 className="font-bold text-slate-900 mb-3 px-2 font-display">Okullar</h4>
                                     <div className="space-y-2">
-                                    {availableSchools.map(s => (
+                                    {availableSchools.map((s: School) => (
                                         <button key={s.id} onClick={() => toggleNotificationPreference(`school_${s.id}`)} className="w-full flex items-center justify-between p-4 bg-white rounded-2xl hover:bg-slate-50 border border-slate-100 shadow-sm transition-all active:scale-[0.99]">
                                             <span className="font-medium text-slate-700">{s.name}</span>
                                             <div className="bg-blue-50 text-blue-600 p-1.5 rounded-full"><Plus size={16} /></div>
@@ -185,7 +186,7 @@ const NotificationsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </div>
                             <p className="font-medium">Henüz bildirim yok.</p>
                         </div>
-                    ) : notifications.map(n => (
+                    ) : notifications.map((n: Notification) => (
                         <div key={n.id} className={`mx-2 my-2 p-4 rounded-2xl border transition-all flex gap-4 ${n.read ? 'bg-white border-slate-100 shadow-sm' : 'bg-blue-50/50 border-blue-100 shadow-md'}`}>
                             <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${n.read ? 'bg-slate-200' : 'bg-blue-500 shadow-sm shadow-blue-200'}`}></div>
                             <div className="flex-1">
@@ -269,7 +270,7 @@ const MessagesScreen: React.FC = () => {
     const [activeConversation, setActiveConversation] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     
-    const conversations = Array.from(new Set(messages.map(m => m.senderId === user?.id ? m.receiverId : m.senderId))) as string[];
+    const conversations = Array.from(new Set(messages.map((m: Message) => m.senderId === user?.id ? m.receiverId : m.senderId))) as string[];
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -286,16 +287,16 @@ const MessagesScreen: React.FC = () => {
     };
 
     if (activeConversation) {
-        const chatMessages = messages.filter(m => 
+        const chatMessages = messages.filter((m: Message) => 
             (m.senderId === user?.id && m.receiverId === activeConversation) || 
             (m.receiverId === user?.id && m.senderId === activeConversation)
-        ).sort((a,b) => a.timestamp - b.timestamp);
+        ).sort((a: Message, b: Message) => a.timestamp - b.timestamp);
 
         return (
             <div className="h-full flex flex-col bg-slate-50 pb-24">
                 <Header title="Sohbet" onBack={() => setActiveConversation(null)} />
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 max-w-5xl mx-auto w-full pb-32">
-                    {chatMessages.map(m => {
+                    {chatMessages.map((m: Message) => {
                         const isMe = m.senderId === user?.id;
                         return (
                             <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -338,8 +339,8 @@ const MessagesScreen: React.FC = () => {
                             </div>
                             <p className="font-medium text-slate-400">Henüz mesajın yok.</p>
                         </div>
-                    ) : conversations.map(contactId => {
-                        const lastMsg = messages.filter(m => m.senderId === contactId || m.receiverId === contactId).sort((a,b) => b.timestamp - a.timestamp)[0];
+                    ) : conversations.map((contactId: string) => {
+                        const lastMsg = messages.filter((m: Message) => m.senderId === contactId || m.receiverId === contactId).sort((a: Message, b: Message) => b.timestamp - a.timestamp)[0];
                         return (
                             <div key={contactId} onClick={() => setActiveConversation(contactId)} className="flex items-center gap-4 p-4 hover:bg-slate-50 border-b border-slate-50 cursor-pointer transition-colors group">
                                  <div className="w-14 h-14 bg-slate-100 rounded-full overflow-hidden border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
@@ -374,8 +375,8 @@ const LeaderboardScreen: React.FC<{ onViewUser: (id: string) => void }> = ({ onV
     };
 
     const sortedUsers = [...allUsers]
-        .filter(u => schoolFilter === 'ALL' || u.schoolName === schoolFilter)
-        .sort((a, b) => getPointsForFilter(b) - getPointsForFilter(a));
+        .filter((u: User) => schoolFilter === 'ALL' || u.schoolName === schoolFilter)
+        .sort((a: User, b: User) => getPointsForFilter(b) - getPointsForFilter(a));
 
     const top3 = sortedUsers.slice(0, 3);
     const rest = sortedUsers.slice(3);
@@ -390,7 +391,7 @@ const LeaderboardScreen: React.FC<{ onViewUser: (id: string) => void }> = ({ onV
                         <button onClick={() => setFilter('ALL')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${filter === 'ALL' ? 'bg-amber-500 text-white shadow-md shadow-amber-200' : 'bg-slate-100 text-slate-600'}`}>
                             Genel Sıralama
                         </button>
-                        {allExamTopics.map(t => (
+                        {allExamTopics.map((t: ExamTopic) => (
                             <button key={t.id} onClick={() => setFilter(t.name)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${filter === t.name ? 'bg-amber-500 text-white shadow-md shadow-amber-200' : 'bg-slate-100 text-slate-600'}`}>
                                 {t.name}
                             </button>
@@ -401,7 +402,7 @@ const LeaderboardScreen: React.FC<{ onViewUser: (id: string) => void }> = ({ onV
                          <button onClick={() => setSchoolFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap border transition-colors ${schoolFilter === 'ALL' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500'}`}>
                             Tüm Okullar
                         </button>
-                        {allSchools.map(s => (
+                        {allSchools.map((s: School) => (
                              <button key={s.id} onClick={() => setSchoolFilter(s.name)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap border transition-colors ${schoolFilter === s.name ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500'}`}>
                                 {s.name}
                             </button>
@@ -449,7 +450,7 @@ const LeaderboardScreen: React.FC<{ onViewUser: (id: string) => void }> = ({ onV
                     )}
 
                     <div className="space-y-3">
-                        {rest.map((u, index) => (
+                        {rest.map((u: User, index: number) => (
                             <div 
                                 key={u.id} 
                                 onClick={() => onViewUser(u.id)}
@@ -593,7 +594,7 @@ const TimelineScreen: React.FC<{ onRequirePremium: () => void, onViewUser: (id: 
                         </div>
                     </div>
 
-                    {posts.map(post => (
+                    {posts.map((post: SocialPost) => (
                         <div key={post.id} className="p-5 border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                             <div className="flex gap-3">
                                 <img onClick={() => onViewUser(post.userId)} src={post.userAvatar} className="w-11 h-11 rounded-full bg-slate-100 cursor-pointer border border-slate-100" />
@@ -675,7 +676,7 @@ const TimelineScreen: React.FC<{ onRequirePremium: () => void, onViewUser: (id: 
                              <div>
                                 <h4 className="font-bold text-slate-900 mb-3 px-2 flex items-center gap-2 font-display"><BookOpen size={18} className="text-amber-500"/> Sınav Konuları</h4>
                                 <div className="space-y-2">
-                                    {allExamTopics.map(t => (
+                                    {allExamTopics.map((t: ExamTopic) => (
                                         <button key={t.id} onClick={() => { setSelectedContext(t.name); setShowTagSelector(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 text-left border transition-all ${selectedContext === t.name ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-white border-slate-100 text-slate-700'}`}>
                                             <div className="flex items-center gap-3">
                                                 {t.isPremium ? <Crown size={18} className="text-amber-500" fill="currentColor"/> : <Hash size={18} className="text-slate-400"/>}
@@ -689,7 +690,7 @@ const TimelineScreen: React.FC<{ onRequirePremium: () => void, onViewUser: (id: 
                              <div>
                                 <h4 className="font-bold text-slate-900 mb-3 px-2 flex items-center gap-2 font-display"><GraduationCap size={18} className="text-violet-500"/> Okullar</h4>
                                  <div className="space-y-2">
-                                    {allSchools.map(s => (
+                                    {allSchools.map((s: School) => (
                                         <button key={s.id} onClick={() => { setSelectedContext(s.name); setShowTagSelector(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 text-left border transition-all ${selectedContext === s.name ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-white border-slate-100 text-slate-700'}`}>
                                             <div className="flex items-center gap-3">
                                                 {s.isPremium ? <Crown size={18} className="text-amber-500" fill="currentColor"/> : <GraduationCap size={18} className="text-slate-400"/>}
@@ -747,7 +748,7 @@ const ProfileScreen: React.FC<{ onOpenPremium: () => void, onViewUser?: string }
     const [editName, setEditName] = useState('');
     
     // Determine which user to show. If onViewUser is present, find that user. Else show me.
-    const profileUser = onViewUser ? allUsers.find(u => u.id === onViewUser) : me;
+    const profileUser = onViewUser ? allUsers.find((u: User) => u.id === onViewUser) : me;
     const isMe = !onViewUser || onViewUser === me?.id;
 
     if (!profileUser) return null;
@@ -1166,7 +1167,7 @@ const QuizScreen: React.FC<{ topic: string, subTopic: string, initialCount: numb
                  </h3>
 
                  <div className="space-y-3">
-                     {currentQ.options.map((opt, idx) => {
+                     {currentQ.options.map((opt: string, idx: number) => {
                          // Styling Logic
                          let optionClass = "bg-white border-2 border-slate-100 text-slate-600 hover:border-indigo-200 hover:bg-slate-50";
                          let icon = <div className="w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center text-xs font-bold text-slate-400">{['A','B','C','D'][idx]}</div>;
@@ -1257,13 +1258,13 @@ const HomeScreen: React.FC<{ onStartTest: (topic: string, subTopic: string) => v
     const [isFocused, setIsFocused] = useState(false);
     
     // Filter topics
-    const filteredTopics = allExamTopics.filter(t => 
+    const filteredTopics = allExamTopics.filter((t: ExamTopic) => 
         t.name.toLowerCase().includes(searchText.toLowerCase()) ||
         t.category.toLowerCase().includes(searchText.toLowerCase())
     );
 
     // Custom start if no exact match found
-    const hasExactMatch = filteredTopics.some(t => t.name.toLowerCase() === searchText.toLowerCase());
+    const hasExactMatch = filteredTopics.some((t: ExamTopic) => t.name.toLowerCase() === searchText.toLowerCase());
 
     return (
         <div className="h-full flex flex-col bg-slate-50 pb-32">
@@ -1308,7 +1309,7 @@ const HomeScreen: React.FC<{ onStartTest: (topic: string, subTopic: string) => v
                      {isFocused && (
                         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-80 overflow-y-auto z-[60] animate-in fade-in slide-in-from-top-2">
                             {filteredTopics.length > 0 ? (
-                                filteredTopics.map(topic => (
+                                filteredTopics.map((topic: ExamTopic) => (
                                     <button 
                                         key={topic.id}
                                         onClick={() => onStartTest(topic.name, 'Genel Deneme Sınavı')}
@@ -1366,7 +1367,7 @@ const HomeScreen: React.FC<{ onStartTest: (topic: string, subTopic: string) => v
                         <button className="text-indigo-600 text-xs font-bold hover:bg-indigo-50 px-3 py-1 rounded-full transition-colors">Tümü</button>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-                        {filteredTopics.filter(t => t.isPopular).map(topic => (
+                        {filteredTopics.filter((t: ExamTopic) => t.isPopular).map((topic: ExamTopic) => (
                             <div 
                                 key={topic.id} 
                                 onClick={() => onStartTest(topic.name, 'Genel Deneme Sınavı')}
