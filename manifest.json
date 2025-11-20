@@ -1,0 +1,22 @@
+{
+  "name": "HelloClass",
+  "short_name": "HelloClass",
+  "description": "A comprehensive educational platform for students.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#F59E0B",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/initials/svg?seed=HC&backgroundColor=F59E0B",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/initials/svg?seed=HC&backgroundColor=F59E0B",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
