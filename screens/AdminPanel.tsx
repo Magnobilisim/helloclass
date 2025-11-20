@@ -199,6 +199,30 @@ const AdminPanel: React.FC = () => {
       setBroadcastMsg('');
   };
 
+  const handleAddNewSchool = () => {
+      if(newSchoolName) { 
+          adminAddSchool(newSchoolName); 
+          setNewSchoolName(''); 
+      }
+  };
+
+  const handleAddNewTopic = () => {
+      if(newTopicName) { 
+          adminAddExamTopic(newTopicName, newTopicCategory); 
+          setNewTopicName(''); 
+      }
+  };
+
+  const openBulkSchoolModal = () => {
+      setBulkMetadataType('school');
+      setIsBulkMetadataModalOpen(true);
+  };
+
+  const openBulkTopicModal = () => {
+      setBulkMetadataType('topic');
+      setIsBulkMetadataModalOpen(true);
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
       
@@ -526,11 +550,11 @@ const AdminPanel: React.FC = () => {
                                  <div className="p-2 bg-violet-100 text-violet-600 rounded-lg"><BookOpen size={20}/></div>
                                  Okullar
                              </h2>
-                             <button onClick={() => { setBulkMetadataType('school'); setIsBulkMetadataModalOpen(true); }} className="text-xs font-bold text-violet-600 hover:bg-violet-50 px-2 py-1 rounded-lg">Toplu Ekle</button>
+                             <button onClick={openBulkSchoolModal} className="text-xs font-bold text-violet-600 hover:bg-violet-50 px-2 py-1 rounded-lg">Toplu Ekle</button>
                          </div>
                          <div className="flex gap-2 mb-4">
                              <input value={newSchoolName} onChange={e => setNewSchoolName(e.target.value)} placeholder="Okul Adı..." className="flex-1 bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
-                             <button type="button" onClick={() => { if(newSchoolName) { adminAddSchool(newSchoolName); setNewSchoolName(''); }}} className="bg-slate-900 text-white px-4 rounded-xl hover:bg-slate-800"><Plus size={20}/></button>
+                             <button type="button" onClick={handleAddNewSchool} className="bg-slate-900 text-white px-4 rounded-xl hover:bg-slate-800"><Plus size={20}/></button>
                          </div>
                          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                              {allSchools.map(s => (
@@ -554,11 +578,11 @@ const AdminPanel: React.FC = () => {
                                  <div className="p-2 bg-pink-100 text-pink-600 rounded-lg"><Database size={20}/></div>
                                  Sınav Konuları
                              </h2>
-                             <button onClick={() => { setBulkMetadataType('topic'); setIsBulkMetadataModalOpen(true); }} className="text-xs font-bold text-pink-600 hover:bg-pink-50 px-2 py-1 rounded-lg">Toplu Ekle</button>
+                             <button onClick={openBulkTopicModal} className="text-xs font-bold text-pink-600 hover:bg-pink-50 px-2 py-1 rounded-lg">Toplu Ekle</button>
                          </div>
                          <div className="flex gap-2 mb-4">
                              <input value={newTopicName} onChange={e => setNewTopicName(e.target.value)} placeholder="Konu Adı..." className="flex-1 bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
-                             <button type="button" onClick={() => { if(newTopicName) { adminAddExamTopic(newTopicName, newTopicCategory); setNewTopicName(''); }}} className="bg-slate-900 text-white px-4 rounded-xl hover:bg-slate-800"><Plus size={20}/></button>
+                             <button type="button" onClick={handleAddNewTopic} className="bg-slate-900 text-white px-4 rounded-xl hover:bg-slate-800"><Plus size={20}/></button>
                          </div>
                          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                              {allExamTopics.map(t => (
