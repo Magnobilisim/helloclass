@@ -13,7 +13,7 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/initials/png?seed=HC&backgroundColor=F59E0B&size=192" />
 
-    <!-- Using Tailwind CDN for simplicity in this setup, though npm install is preferred for larger apps -->
+    <!-- Tailwind CSS (Managed via Javascript in this setup for simplicity, but usually build step handles this) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -26,7 +26,7 @@
             },
             colors: {
               primary: {
-                yellow: '#F59E0B', // Warm Amber updated
+                yellow: '#F59E0B', // Warm Amber
                 green: '#32CD32',
                 cream: '#FFFDD0',
               },
@@ -64,7 +64,6 @@
       .pl-safe { padding-left: max(12px, var(--sal)); }
       .pr-safe { padding-right: max(12px, var(--sar)); }
 
-      /* Mobile-like scrollbar hiding */
       .no-scrollbar::-webkit-scrollbar {
         display: none;
       }
@@ -72,11 +71,11 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
-      /* Prevent pull-to-refresh on mobile to feel more like an app */
       body {
         overscroll-behavior-y: none;
       }
     </style>
+    <!-- IMPORTMAP REMOVED FOR VITE BUILD -->
 <script type="importmap">
 {
   "imports": {
