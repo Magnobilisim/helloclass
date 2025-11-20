@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './Store';
 import MobileApp from './screens/MobileApp';
@@ -180,13 +179,11 @@ const MainRouter: React.FC = () => {
     return <AdminPanel />;
   }
 
-  // Render Responsive Mobile App Wrapper
-  // Replaced the fixed "phone frame" with a responsive container that centers on desktop/tablet
+  // Render Mobile App
+  // Removed all max-width and border constraints for Full Screen Native Feel on Tablets/Desktop
   return (
-    <div className="min-h-screen bg-slate-100 font-sans">
-      <div className="mx-auto w-full h-full min-h-screen bg-white shadow-2xl md:max-w-[600px] lg:max-w-[768px] md:border-x md:border-slate-200 relative">
-        <MobileApp />
-      </div>
+    <div className="w-full h-screen bg-white">
+      <MobileApp />
     </div>
   );
 };
