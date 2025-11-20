@@ -38,7 +38,7 @@ const BottomNav: React.FC<{ activeTab: string, setActiveTab: (t: string) => void
     return (
         <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
             <div className="pointer-events-auto bg-white/90 backdrop-blur-xl border-t border-slate-100 pb-safe pt-2 px-6 flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.03)] w-full max-w-xl rounded-t-3xl md:mb-4 md:border md:rounded-3xl transition-all">
-                {navItems.map(item => (
+                {navItems.map((item: any) => (
                     <button 
                         key={item.id}
                         onClick={() => setActiveTab(item.id)}
