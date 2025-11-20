@@ -143,6 +143,7 @@ const AdminPanel: React.FC = () => {
   const handleBulkUpload = (e: React.FormEvent) => {
       e.preventDefault();
       try {
+          // Try parsing as JSON
           const parsed = JSON.parse(bulkJson);
           if (!Array.isArray(parsed)) throw new Error("JSON bir liste (array) olmalıdır.");
           
@@ -170,25 +171,54 @@ const AdminPanel: React.FC = () => {
   
   const handleBulkMetadataUpload = (e: React.FormEvent) => {
       e.preventDefault();
+      
+      // Try parsing as JSON first
       try {
           const parsed = JSON.parse(bulkJson);
-          if (!Array.isArray(parsed)) throw new Error("JSON bir liste olmalıdır.");
-          
+          if (Array.isArray(parsed)) {
+            let count = 0;
+            parsed.forEach((item: any) => {
+                if (bulkMetadataType === 'school' && item.name) {
+                    adminAddSchool(item.name);
+                    count++;
+                } else if (bulkMetadataType === 'topic' && item.name) {
+                    adminAddExamTopic(item.name, item.category || 'General');
+                    count++;
+                }
+            });
+            alert(`${count} adet ${bulkMetadataType === 'school' ? 'Okul' : 'Konu'} eklendi (JSON)!`);
+            setIsBulkMetadataModalOpen(false);
+            setBulkJson('');
+            return;
+          }
+      } catch (e) {
+          // Ignore JSON error, try text parsing
+      }
+
+      // Fallback to Line-by-Line parsing (Excel/Notepad)
+      const lines = bulkJson.split(/\n/).map(line => line.trim()).filter(line => line.length > 0);
+      if (lines.length > 0) {
           let count = 0;
-          parsed.forEach((item: any) => {
-              if (bulkMetadataType === 'school' && item.name) {
-                  adminAddSchool(item.name);
+          lines.forEach((line) => {
+              if (bulkMetadataType === 'school') {
+                  adminAddSchool(line);
                   count++;
-              } else if (bulkMetadataType === 'topic' && item.name) {
-                  adminAddExamTopic(item.name, item.category || 'General');
+              } else {
+                  // Try to split for category (e.g. "Math, Primary")
+                  const parts = line.split(/,|\t/);
+                  if (parts.length > 1) {
+                      adminAddExamTopic(parts[0].trim(), parts[1].trim());
+                  } else {
+                      adminAddExamTopic(line, 'General');
+                  }
                   count++;
               }
           });
-          alert(`${count} adet ${bulkMetadataType === 'school' ? 'Okul' : 'Konu'} eklendi!`);
-          setIsBulkMetadataModalOpen(false);
-          setBulkJson('');
-      } catch (err) {
-          alert("Geçersiz JSON.");
+           alert(`${count} adet ${bulkMetadataType === 'school' ? 'Okul' : 'Konu'} eklendi (Metin)!`);
+           setIsBulkMetadataModalOpen(false);
+           setBulkJson('');
+      } else {
+          alert("Geçersiz format veya boş veri.");
       }
   };
 
@@ -223,6 +253,12 @@ const AdminPanel: React.FC = () => {
       setBulkMetadataType('topic');
       setIsBulkMetadataModalOpen(true);
   };
+
+  // extracted handlers to avoid syntax issues in map
+  const handleToggleSchoolPremium = (id: string) => adminTogglePremiumMetadata(id, 'school');
+  const handleDeleteSchool = (id: string) => adminDeleteSchool(id);
+  const handleToggleTopicPremium = (id: string) => adminTogglePremiumMetadata(id, 'topic');
+  const handleDeleteTopic = (id: string) => adminDeleteExamTopic(id);
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
@@ -501,17 +537,21 @@ const AdminPanel: React.FC = () => {
                              <button type="button" onClick={handleAddNewSchool} className="bg-slate-900 text-white px-4 rounded-xl"><Plus size={20}/></button>
                          </div>
                          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                             {allSchools.map((s: School) => (
-                                 <div key={s.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 group">
-                                     <span className="font-bold text-slate-700 text-sm">{s.name}</span>
-                                     <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100">
-                                         <button onClick={() => adminTogglePremiumMetadata(s.id, 'school')} className={`p-1.5 rounded-lg ${s.isPremium ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-400'}`}>
-                                             <Crown size={16} fill={s.isPremium ? "currentColor" : "none"}/>
-                                         </button>
-                                         <button onClick={() => adminDeleteSchool(s.id)} className="p-1.5 bg-white text-slate-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                             {allSchools.map((s: School) => {
+                                 const crownFill = s.isPremium ? "currentColor" : "none";
+                                 const crownClass = `p-1.5 rounded-lg ${s.isPremium ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-400'}`;
+                                 return (
+                                     <div key={s.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 group">
+                                         <span className="font-bold text-slate-700 text-sm">{s.name}</span>
+                                         <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100">
+                                             <button onClick={() => handleToggleSchoolPremium(s.id)} className={crownClass}>
+                                                 <Crown size={16} fill={crownFill}/>
+                                             </button>
+                                             <button onClick={() => handleDeleteSchool(s.id)} className="p-1.5 bg-white text-slate-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                                         </div>
                                      </div>
-                                 </div>
-                             ))}
+                                 )
+                             })}
                          </div>
                      </div>
 
@@ -527,17 +567,21 @@ const AdminPanel: React.FC = () => {
                              <button type="button" onClick={handleAddNewTopic} className="bg-slate-900 text-white px-4 rounded-xl"><Plus size={20}/></button>
                          </div>
                          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                             {allExamTopics.map((t: ExamTopic) => (
-                                 <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 group">
-                                     <span className="font-bold text-slate-700 text-sm">{t.name}</span>
-                                     <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100">
-                                         <button onClick={() => adminTogglePremiumMetadata(t.id, 'topic')} className={`p-1.5 rounded-lg ${t.isPremium ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-400'}`}>
-                                             <Crown size={16} fill={t.isPremium ? "currentColor" : "none"}/>
-                                         </button>
-                                         <button onClick={() => adminDeleteExamTopic(t.id)} className="p-1.5 bg-white text-slate-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                             {allExamTopics.map((t: ExamTopic) => {
+                                 const crownFill = t.isPremium ? "currentColor" : "none";
+                                 const crownClass = `p-1.5 rounded-lg ${t.isPremium ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-400'}`;
+                                 return (
+                                     <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 group">
+                                         <span className="font-bold text-slate-700 text-sm">{t.name}</span>
+                                         <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100">
+                                             <button onClick={() => handleToggleTopicPremium(t.id)} className={crownClass}>
+                                                 <Crown size={16} fill={crownFill}/>
+                                             </button>
+                                             <button onClick={() => handleDeleteTopic(t.id)} className="p-1.5 bg-white text-slate-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                                         </div>
                                      </div>
-                                 </div>
-                             ))}
+                                 )
+                             })}
                          </div>
                      </div>
                 </div>
@@ -552,6 +596,80 @@ const AdminPanel: React.FC = () => {
                   <input required value={newUserName} onChange={e => setNewUserName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl" placeholder="Ad Soyad"/>
                   <input required type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl" placeholder="E-posta"/>
                   <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl">Kaydet</button>
+              </form>
+          </Modal>
+      )}
+
+      {isQuestionModalOpen && (
+          <Modal title="Soru Ekle" onClose={() => setIsQuestionModalOpen(false)}>
+               <form onSubmit={handleAddQuestion} className="space-y-4">
+                  <input required value={newQTopic} onChange={e => setNewQTopic(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl" placeholder="Konu (Örn: Matematik)"/>
+                  <input value={newQSubTopic} onChange={e => setNewQSubTopic(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl" placeholder="Alt Konu (Opsiyonel)"/>
+                  <textarea required value={newQText} onChange={e => setNewQText(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl h-24" placeholder="Soru Metni"/>
+                  <input value={newQImage} onChange={e => setNewQImage(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl" placeholder="Görsel URL (Opsiyonel)"/>
+                  <div className="space-y-2">
+                      {newQOptions.map((opt, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                              <span className="font-bold text-slate-400 w-6">{['A','B','C','D'][idx]}</span>
+                              <input 
+                                  required 
+                                  value={opt} 
+                                  onChange={e => {
+                                      const newOpts = [...newQOptions];
+                                      newOpts[idx] = e.target.value;
+                                      setNewQOptions(newOpts);
+                                  }} 
+                                  className="flex-1 bg-slate-50 border border-slate-200 p-3 rounded-xl" 
+                                  placeholder={`Seçenek ${idx + 1}`}
+                              />
+                              <input 
+                                  type="radio" 
+                                  name="correct" 
+                                  checked={newQCorrect === idx} 
+                                  onChange={() => setNewQCorrect(idx)}
+                                  className="w-5 h-5 accent-green-500"
+                              />
+                          </div>
+                      ))}
+                  </div>
+                  <button type="submit" className="w-full bg-violet-600 text-white font-bold py-4 rounded-xl">Ekle</button>
+               </form>
+          </Modal>
+      )}
+
+      {isBulkModalOpen && (
+          <Modal title="Toplu Soru Ekle (JSON)" onClose={() => setIsBulkModalOpen(false)}>
+              <form onSubmit={handleBulkUpload} className="space-y-4">
+                   <p className="text-sm text-slate-500 bg-blue-50 p-3 rounded-xl border border-blue-100 flex gap-2">
+                       <Info size={16} className="shrink-0 mt-0.5"/> 
+                       JSON formatında soru listesi yapıştırın. Örn:
+                       <br/><code className="text-xs font-mono mt-1 block bg-white p-1 rounded">[{`{"text": "...", "options": ["A","B","C","D"], "correctIndex": 0}`}]</code>
+                   </p>
+                   <textarea 
+                        value={bulkJson} 
+                        onChange={e => setBulkJson(e.target.value)} 
+                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl h-64 font-mono text-xs" 
+                        placeholder="JSON verisini buraya yapıştırın..."
+                   />
+                   <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl">Yükle</button>
+              </form>
+          </Modal>
+      )}
+
+      {isBulkMetadataModalOpen && (
+          <Modal title={`Toplu ${bulkMetadataType === 'school' ? 'Okul' : 'Konu'} Ekle`} onClose={() => setIsBulkMetadataModalOpen(false)}>
+              <form onSubmit={handleBulkMetadataUpload} className="space-y-4">
+                   <p className="text-sm text-slate-500 bg-blue-50 p-3 rounded-xl border border-blue-100 flex gap-2">
+                       <Info size={16} className="shrink-0 mt-0.5"/> 
+                       Her satıra bir tane gelecek şekilde yapıştırın (Excel'den kopyalayabilirsiniz).
+                   </p>
+                   <textarea 
+                        value={bulkJson} 
+                        onChange={e => setBulkJson(e.target.value)} 
+                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl h-64" 
+                        placeholder={`Her satıra bir ${bulkMetadataType === 'school' ? 'okul' : 'konu'} adı...`}
+                   />
+                   <button type="submit" className="w-full bg-pink-600 text-white font-bold py-4 rounded-xl">Yükle</button>
               </form>
           </Modal>
       )}

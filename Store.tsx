@@ -567,17 +567,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
   };
 
-  const adminAddUser = (newUser: User) => setAllUsers(prev => [...prev, newUser]);
+  // Changed to prepend ([newUser, ...prev]) for immediate UI feedback
+  const adminAddUser = (newUser: User) => setAllUsers(prev => [newUser, ...prev]);
   const adminDeleteUser = (userId: string) => setAllUsers(prev => prev.filter(u => u.id !== userId));
   const adminUpdateUserTier = (userId: string, tier: SubscriptionTier) => {
     setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, subscriptionTier: tier } : u));
     if (user && user.id === userId) setUser(prev => prev ? { ...prev, subscriptionTier: tier } : null);
   };
-  const adminAddQuestion = (q: Question) => setAllQuestions(prev => [...prev, q]);
+  
+  // Changed to prepend
+  const adminAddQuestion = (q: Question) => setAllQuestions(prev => [q, ...prev]);
   const adminDeleteQuestion = (id: string) => setAllQuestions(prev => prev.filter(q => q.id !== id));
-  const adminAddSchool = (name: string) => setAllSchools(prev => [...prev, { id: Date.now().toString(), name, isPremium: false }]);
+  
+  // Changed to prepend and added Math.random() to ID to prevent bulk collision
+  const adminAddSchool = (name: string) => setAllSchools(prev => [{ id: Date.now().toString() + Math.random().toString().slice(2), name, isPremium: false }, ...prev]);
   const adminDeleteSchool = (id: string) => setAllSchools(prev => prev.filter(s => s.id !== id));
-  const adminAddExamTopic = (name: string, category: string) => setAllExamTopics(prev => [...prev, { id: Date.now().toString(), name, category, isPopular: false, isPremium: false }]);
+  
+  // Changed to prepend and added Math.random()
+  const adminAddExamTopic = (name: string, category: string) => setAllExamTopics(prev => [{ id: Date.now().toString() + Math.random().toString().slice(2), name, category, isPopular: false, isPremium: false }, ...prev]);
   const adminDeleteExamTopic = (id: string) => setAllExamTopics(prev => prev.filter(t => t.id !== id));
   const adminTogglePopularTopic = (id: string) => setAllExamTopics(prev => prev.map(t => t.id === id ? { ...t, isPopular: !t.isPopular } : t));
   const adminTogglePremiumMetadata = (id: string, type: 'school' | 'topic') => {
