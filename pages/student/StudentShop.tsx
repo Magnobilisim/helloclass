@@ -1,21 +1,19 @@
 
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { ShoppingBag, Star, Check, PlayCircle, Loader2, Package } from 'lucide-react';
+import { ShoppingBag, Star, Check, PlayCircle, Loader2, Package, CreditCard } from 'lucide-react';
 
 export const StudentShop = () => {
-  const { user, updateUser, purchaseItem, toggleEquip, showAlert, t, shopItems } = useStore();
+  const { user, purchaseItem, toggleEquip, t, shopItems, systemSettings, watchAdForPoints, purchasePointPackage } = useStore();
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [activeTab, setActiveTab] = useState<'market' | 'inventory'>('market');
+  const adReward = systemSettings.adRewardPoints || 0;
 
   const handleWatchAd = () => {
     setIsWatchingAd(true);
     setTimeout(() => {
         setIsWatchingAd(false);
-        if (user) {
-            updateUser({ ...user, points: user.points + 50 });
-            showAlert(t('ad_reward'), 'success');
-        }
+        watchAdForPoints();
     }, 3000);
   };
 
@@ -64,6 +62,7 @@ export const StudentShop = () => {
                     <div>
                         <h3 className="font-bold text-lg mb-0.5 text-yellow-400">{t('watch_ad')}</h3>
                         <p className="text-gray-400 text-xs">{t('watch_ad_desc')}</p>
+                        <p className="text-xs text-gray-300 font-bold mt-1">{t('watch_ad_value').replace('{points}', `${adReward}`)}</p>
                     </div>
                 </div>
                 <button 
@@ -71,10 +70,39 @@ export const StudentShop = () => {
                     disabled={isWatchingAd}
                     className="w-full md:w-auto bg-white text-gray-900 px-6 py-3 rounded-xl font-bold hover:scale-105 transition-transform disabled:opacity-70 disabled:scale-100 flex items-center justify-center gap-2"
                 >
-                    {isWatchingAd ? <Loader2 className="animate-spin" size={20} /> : 'Watch'} 
-                    {isWatchingAd ? t('watching_ad') : '+50 Pts'}
+                    {isWatchingAd ? <Loader2 className="animate-spin" size={20} /> : t('watch')} 
+                    {isWatchingAd ? t('watching_ad') : `+${adReward} ${t('points')}`}
                 </button>
             </div>
+
+            {systemSettings.pointPackages && systemSettings.pointPackages.length > 0 && (
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                      <div>
+                          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                              <CreditCard size={18} className="text-brand-500" /> {t('buy_points')}
+                          </h3>
+                          <p className="text-sm text-gray-500">{t('buy_points_desc')}</p>
+                      </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {systemSettings.pointPackages.map(pkg => (
+                          <div key={pkg.id} className="border border-gray-100 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
+                              <div className="text-xs font-bold text-gray-400 uppercase">{pkg.name}</div>
+                              <div className="text-2xl font-black text-gray-900">{pkg.points} {t('points')}</div>
+                              <div className="text-sm text-gray-500">₺{pkg.price.toFixed(2)}</div>
+                              {pkg.description && <p className="text-xs text-gray-400">{pkg.description}</p>}
+                              <button 
+                                onClick={() => purchasePointPackage(pkg.id)}
+                                className="mt-auto bg-brand-500 text-white py-2 rounded-xl text-sm font-bold hover:bg-brand-600 transition-colors"
+                              >
+                                {t('purchase')}
+                              </button>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {shopItems.map(item => {

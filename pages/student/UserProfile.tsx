@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { User, Exam } from '../../types';
-import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink } from 'lucide-react';
+import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink, Share2 } from 'lucide-react';
 import { StudentResults } from './StudentResults';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -18,6 +18,7 @@ export const UserProfile = () => {
   const [classLevel, setClassLevel] = useState<number>(1);
   const [notifSettings, setNotifSettings] = useState({ email: true, app: true });
   const [showListModal, setShowListModal] = useState<'followers' | 'following' | null>(null);
+  const [referralUrl, setReferralUrl] = useState('');
 
   useEffect(() => {
       if (id && id !== currentUser?.id) {
@@ -40,6 +41,12 @@ export const UserProfile = () => {
           setNotifSettings(profileUser.notificationSettings || { email: true, app: true });
       }
   }, [profileUser]);
+
+  useEffect(() => {
+      if (profileUser?.referralCode && typeof window !== 'undefined') {
+          setReferralUrl(`${window.location.origin}/#/auth?ref=${profileUser.referralCode}`);
+      }
+  }, [profileUser?.referralCode]);
 
   if (!currentUser || !profileUser) return null;
 
@@ -78,6 +85,14 @@ export const UserProfile = () => {
 
   const handleSendMessage = () => {
       navigate('/chat', { state: { startChatWith: profileUser.id } });
+  };
+
+  const handleCopy = (value: string) => {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          navigator.clipboard.writeText(value).then(() => {
+              showAlert(t('copied'), 'success');
+          }).catch(() => showAlert('Unable to copy', 'error'));
+      }
   };
 
   const purchasedExams: Exam[] = (profileUser?.purchasedExamIds || [])
@@ -344,6 +359,48 @@ export const UserProfile = () => {
                 )}
             </div>
         )}
+
+        {isOwnProfile && profileUser.referralCode && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                        <Share2 size={18} />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900">{t('referral_program')}</h3>
+                        <p className="text-sm text-gray-500">{t('referral_desc')}</p>
+                    </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-400 uppercase">{t('referral_code_label')}</label>
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1">{profileUser.referralCode}</span>
+                            <button 
+                                onClick={() => handleCopy(profileUser.referralCode!)}
+                                className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors"
+                            >
+                                {t('copy')}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-400 uppercase">{t('referral_link_label')}</label>
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1 truncate">{referralUrl}</span>
+                            <button 
+                                onClick={() => handleCopy(referralUrl)}
+                                className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors"
+                            >
+                                {t('copy')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div className="text-sm text-gray-500 font-medium flex flex-wrap gap-4">
+                    <span>{t('referral_count_label').replace('{count}', `${profileUser.referralCount || 0}`)}</span>
+                    <span>{t('referral_points_label').replace('{points}', `${profileUser.totalReferralPoints || 0}`)}</span>
+                </div>
 
         {showListModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

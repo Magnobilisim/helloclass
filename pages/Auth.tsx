@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { UserRole } from '../types';
 import { Sparkles, GraduationCap, ShieldCheck, Users, UserPlus, LogIn, FileText, X, LockKeyhole, Mail, ArrowRight, CheckCircle } from 'lucide-react';
 import { TEACHER_BRANCHES } from '../constants';
+import { useLocation } from 'react-router-dom';
 
 export const Auth = () => {
   const { login, register, users, systemSettings, t, showAlert, schools, resetPassword, sendPasswordResetEmail } = useStore(); 
@@ -15,6 +16,15 @@ export const Auth = () => {
   const [role, setRole] = useState<UserRole>(UserRole.STUDENT);
   const [agreed, setAgreed] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const location = useLocation();
+  const [referralCodeInput, setReferralCodeInput] = useState('');
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref') || '';
+    if (ref) {
+        setReferralCodeInput(ref);
+    }
+  }, [location.search]);
   
   // Forgot Password States
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -82,7 +92,7 @@ export const Auth = () => {
         englishLevel: 'A1',
         schoolId: selectedSchoolId || undefined,
         branch: role === UserRole.TEACHER ? selectedBranch : undefined
-      });
+      }, { referralCode: referralCodeInput });
     }
   };
 
@@ -294,6 +304,16 @@ export const Auth = () => {
                   <label htmlFor="terms" className="text-xs text-gray-600 font-medium">
                       {t('terms_label')} <button type="button" onClick={() => setShowTerms(true)} className="text-brand-600 hover:underline font-bold">{t('terms_link')}</button>
                   </label>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1">{t('enter_referral_code')} ({t('optional')})</label>
+                  <input 
+                    type="text"
+                    value={referralCodeInput}
+                    onChange={(e) => setReferralCodeInput(e.target.value)}
+                    className="w-full bg-transparent outline-none text-gray-800 font-medium"
+                    placeholder={t('referral_placeholder')}
+                  />
               </div>
             </>
           )}

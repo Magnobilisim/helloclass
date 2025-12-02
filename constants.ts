@@ -1,5 +1,5 @@
 
-import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification } from './types';
+import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage } from './types';
 
 // Genişletilmiş Türkiye Okul Listesi (Örneklem)
 export const INITIAL_SCHOOLS: School[] = [
@@ -72,6 +72,12 @@ export const TEACHER_BRANCHES = [
   'Edebiyat'
 ];
 
+export const DEFAULT_POINT_PACKAGES: PointPackage[] = [
+  { id: 'pkg-100', name: 'Bronz Paket', points: 100, price: 19, description: 'Hızlı başlangıç için ideal.' },
+  { id: 'pkg-300', name: 'Gümüş Paket', points: 300, price: 49, description: 'Daha fazla pratik için.' },
+  { id: 'pkg-600', name: 'Altın Paket', points: 600, price: 89, description: 'En popüler paket.' }
+];
+
 export const INITIAL_USERS: User[] = [
   {
     id: 'admin1',
@@ -82,7 +88,11 @@ export const INITIAL_USERS: User[] = [
     points: 0,
     inventory: [],
     purchasedExamIds: [],
-    activeFrame: undefined
+    activeFrame: undefined,
+    referralCode: 'HC-ADMIN1',
+    referralCount: 0,
+    totalReferralPoints: 0,
+    totalPointsPurchased: 0
   },
   {
     id: 'teacher1',
@@ -96,7 +106,11 @@ export const INITIAL_USERS: User[] = [
     activeFrame: undefined,
     schoolId: 'ist2',
     branch: 'Matematik',
-    bio: 'Mathematics Teacher | Math Enthusiast'
+    bio: 'Mathematics Teacher | Math Enthusiast',
+    referralCode: 'HC-TEACHER1',
+    referralCount: 0,
+    totalReferralPoints: 0,
+    totalPointsPurchased: 0
   },
   {
     id: 'student1',
@@ -113,7 +127,11 @@ export const INITIAL_USERS: User[] = [
     schoolId: 'ist8',
     bio: 'I love Math and Coding! 🚀',
     followers: ['student2'],
-    following: ['teacher1']
+    following: ['teacher1'],
+    referralCode: 'HC-STUDENT1',
+    referralCount: 0,
+    totalReferralPoints: 0,
+    totalPointsPurchased: 0
   },
   {
     id: 'student2',
@@ -130,7 +148,11 @@ export const INITIAL_USERS: User[] = [
     schoolId: 'ist8',
     bio: 'Building dreams one block at a time.',
     followers: [],
-    following: ['student1']
+    following: ['student1'],
+    referralCode: 'HC-STUDENT2',
+    referralCount: 0,
+    totalReferralPoints: 0,
+    totalPointsPurchased: 0
   }
 ];
 

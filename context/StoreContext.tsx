@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, Transaction, ExamSession } from '../types';
-import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS } from '../constants';
+import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, Transaction, ExamSession, PointPurchase } from '../types';
+import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
 import { checkContentSafety } from '../services/geminiService';
 
@@ -33,9 +33,17 @@ const INITIAL_SUBJECTS: SubjectDef[] = [
     { id: 'sub-phi', name: 'Felsefe', grades: [10, 11] },
 ];
 
+const ensureReferralFields = (u: User): User => ({
+    ...u,
+    referralCode: u.referralCode || `HC-${u.id}`,
+    referralCount: u.referralCount || 0,
+    totalReferralPoints: u.totalReferralPoints || 0,
+    totalPointsPurchased: u.totalPointsPurchased || 0
+});
+
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS.map(ensureReferralFields));
   const [exams, setExams] = useState<Exam[]>(INITIAL_EXAMS);
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
   const [results, setResults] = useState<ExamResult[]>([]);
@@ -47,19 +55,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [prizeExams, setPrizeExams] = useState<PrizeExam[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]); 
+  const [pointPurchases, setPointPurchases] = useState<PointPurchase[]>([]);
   const [examSessions, setExamSessions] = useState<Record<string, ExamSession>>({}); 
   
   const buildSessionKey = (studentId: string, examId: string) => `${studentId}_${examId}`;
+  const generateReferralCode = () => `HC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   
   const [alert, setAlert] = useState<{ message: string; type: AlertType } | null>(null);
   const [language, setLanguage] = useState<Language>('tr');
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>({ 
+  const defaultSettings: SystemSettings = { 
       commissionRate: 20, 
       maintenanceMode: false, 
       pointConversionRate: 0.1,
       studentTerms: TRANSLATIONS['tr'].default_student_terms,
-      teacherTerms: TRANSLATIONS['tr'].default_teacher_terms
+      teacherTerms: TRANSLATIONS['tr'].default_teacher_terms,
+      adRewardPoints: 50,
+      referralRewardPoints: 100,
+      pointPackages: DEFAULT_POINT_PACKAGES
+  };
+  const mergeSettings = (incoming?: Partial<SystemSettings>): SystemSettings => ({
+      ...defaultSettings,
+      ...incoming,
+      pointPackages: incoming?.pointPackages && incoming.pointPackages.length ? incoming.pointPackages : defaultSettings.pointPackages
   });
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>(defaultSettings);
   
   const [availableSubjects, setAvailableSubjects] = useState<SubjectDef[]>(INITIAL_SUBJECTS);
 
@@ -138,8 +157,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const loadedPrizeExams = localStorage.getItem('hc_prize_exams');
     const loadedTransactions = localStorage.getItem('hc_transactions');
     const loadedSessions = localStorage.getItem('hc_sessions');
+    const loadedPointPurchases = localStorage.getItem('hc_point_purchases');
 
-    if (loadedUsers) setUsers(JSON.parse(loadedUsers));
+    if (loadedUsers) {
+        try {
+            const parsedUsers: User[] = JSON.parse(loadedUsers).map(ensureReferralFields);
+            setUsers(parsedUsers);
+        } catch (e) {
+            console.error('Failed to parse users', e);
+        }
+    }
     if (loadedExams) setExams(JSON.parse(loadedExams));
     if (loadedPosts) setPosts(JSON.parse(loadedPosts));
     if (loadedResults) setResults(JSON.parse(loadedResults));
@@ -147,7 +174,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (loadedLogs) setLogs(JSON.parse(loadedLogs));
     if (loadedUser) setUser(JSON.parse(loadedUser));
     if (loadedLang) setLanguage(loadedLang);
-    if (loadedSettings) setSystemSettings(JSON.parse(loadedSettings));
+    if (loadedSettings) {
+        try {
+            const parsedSettings = JSON.parse(loadedSettings);
+            setSystemSettings(mergeSettings(parsedSettings));
+        } catch (e) {
+            console.error('Failed to parse system settings', e);
+            setSystemSettings(defaultSettings);
+        }
+    } else {
+        setSystemSettings(defaultSettings);
+    }
     if (loadedSchools) setSchools(JSON.parse(loadedSchools));
     if (loadedNotifs) setNotifications(JSON.parse(loadedNotifs));
     if (loadedSubjects) setAvailableSubjects(JSON.parse(loadedSubjects));
@@ -156,6 +193,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (loadedPrizeExams) setPrizeExams(JSON.parse(loadedPrizeExams));
     if (loadedTransactions) setTransactions(JSON.parse(loadedTransactions));
     if (loadedSessions) setExamSessions(JSON.parse(loadedSessions));
+    if (loadedPointPurchases) {
+        try {
+            setPointPurchases(JSON.parse(loadedPointPurchases));
+        } catch (e) {
+            console.error('Failed to parse point purchases', e);
+        }
+    }
     
     if (loadedTopics) {
         try {
@@ -186,6 +230,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('hc_prize_exams', JSON.stringify(prizeExams)); }, [prizeExams]);
   useEffect(() => { localStorage.setItem('hc_transactions', JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem('hc_sessions', JSON.stringify(examSessions)); }, [examSessions]);
+  useEffect(() => { localStorage.setItem('hc_point_purchases', JSON.stringify(pointPurchases)); }, [pointPurchases]);
   
   useEffect(() => {
     if (user) localStorage.setItem('hc_current_user', JSON.stringify(user));
@@ -254,27 +299,49 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showAlert('Logged out successfully', 'info');
   };
 
-  const register = (newUser: User) => {
+  const register = (newUser: User, options?: { referralCode?: string }) => {
     if (users.some(u => u.email === newUser.email)) {
         showAlert('Email already exists', 'error');
         return;
     }
-    const userWithBonus = { 
-        ...newUser, 
-        points: 100, 
+    const referralInput = options?.referralCode?.trim();
+    const referrer = referralInput
+        ? users.find(u => u.referralCode?.toLowerCase() === referralInput.toLowerCase())
+        : undefined;
+    const normalizedNewUser = ensureReferralFields({
+        ...newUser,
+        points: 100,
         purchasedExamIds: [],
         notificationSettings: { email: true, app: true },
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-    setUsers([...users, userWithBonus]);
-    setUser(userWithBonus);
-    addNotification(userWithBonus.id, t('welcome'), t('welcome_msg'), 'success');
+        updatedAt: new Date().toISOString(),
+        referralCode: newUser.referralCode || generateReferralCode(),
+        referredBy: referrer && referrer.id !== newUser.id ? referrer.id : undefined
+    });
+    setUsers(prev => [...prev, normalizedNewUser]);
+    setUser(normalizedNewUser);
+    addNotification(normalizedNewUser.id, t('welcome'), t('welcome_msg'), 'success');
     showAlert(t('welcome'), 'success');
+
+    if (referrer && referrer.id !== normalizedNewUser.id) {
+        const reward = systemSettings.referralRewardPoints || 0;
+        const updatedReferrer = {
+            ...referrer,
+            points: referrer.points + reward,
+            referralCount: (referrer.referralCount || 0) + 1,
+            totalReferralPoints: (referrer.totalReferralPoints || 0) + reward
+        };
+        setUsers(prev => prev.map(u => u.id === referrer.id ? updatedReferrer : u));
+        if (user && user.id === referrer.id) {
+            setUser(updatedReferrer);
+        }
+        addNotification(referrer.id, t('referral_bonus_received'), t('referral_bonus_body').replace('{points}', `${reward}`).replace('{name}', normalizedNewUser.name), 'success');
+        showAlert(t('referral_bonus_received'), 'success');
+    }
   };
 
   const updateUser = (updatedUser: User) => {
-    const userWithTimestamp = { ...updatedUser, updatedAt: new Date().toISOString() };
+    const userWithTimestamp = ensureReferralFields({ ...updatedUser, updatedAt: new Date().toISOString() });
     setUsers(users.map(u => u.id === updatedUser.id ? userWithTimestamp : u));
     if (user && user.id === updatedUser.id) setUser(userWithTimestamp);
   };
@@ -420,6 +487,51 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     showAlert(t('not_enough_points'), 'error');
     return false;
+  };
+
+  const watchAdForPoints = () => {
+    if (!user) {
+        showAlert(t('login_title'), 'error');
+        return;
+    }
+    const reward = systemSettings.adRewardPoints || 0;
+    if (reward <= 0) {
+        showAlert(t('ad_reward_disabled'), 'warning');
+        return;
+    }
+    updateUser({ ...user, points: user.points + reward });
+    addNotification(user.id, t('ad_reward_title'), t('ad_reward_body').replace('{points}', `${reward}`), 'success');
+    showAlert(t('ad_reward_title'), 'success');
+  };
+
+  const purchasePointPackage = (packageId: string): boolean => {
+    if (!user) {
+        showAlert(t('login_title'), 'error');
+        return false;
+    }
+    const pkg = systemSettings.pointPackages?.find(p => p.id === packageId);
+    if (!pkg) {
+        showAlert(t('package_not_found'), 'error');
+        return false;
+    }
+    updateUser({
+        ...user,
+        points: user.points + pkg.points,
+        totalPointsPurchased: (user.totalPointsPurchased || 0) + pkg.points
+    });
+
+    const purchase: PointPurchase = {
+        id: `pp-${Date.now()}`,
+        userId: user.id,
+        packageId: pkg.id,
+        points: pkg.points,
+        price: pkg.price,
+        timestamp: new Date().toISOString()
+    };
+    setPointPurchases(prev => [purchase, ...prev]);
+    addNotification(user.id, t('points_added_title'), t('points_added_body').replace('{points}', `${pkg.points}`), 'success');
+    showAlert(t('points_added_title'), 'success');
+    return true;
   };
 
   const toggleEquip = (itemType: string) => {
@@ -935,11 +1047,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StoreContext.Provider value={{
-      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, prizeExams, transactions, examSessions,
+      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, prizeExams, transactions, examSessions, pointPurchases,
       login, logout, register, updateUser, banUser, deleteUser, changeRole, resetPassword, sendPasswordResetEmail,
       addExam, updateExam, deleteExam, purchaseExam, purchaseItem, toggleEquip, startExamSession, saveResult, addPost, deletePost, toggleLike, toggleDislike, addComment, reportPost, dismissReport, sendMessage, markMessageRead, updateSystemSettings,
       addTopic, removeTopic, addSchool, removeSchool, markNotificationRead, addSubject, removeSubject, toggleFollow,
-      addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage,
+      addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage,
       addPrizeExam, drawPrizeWinner, payEntryFee,
       alert, showAlert, setLanguage, t
     }}>
