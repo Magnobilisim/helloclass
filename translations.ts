@@ -59,6 +59,9 @@ export const TRANSLATIONS = {
     start: 'Başla',
     min: 'dk',
     my_results: 'Sonuçlarım',
+    purchased_exams: 'Satın aldığın sınavlar',
+    empty_library: 'Henüz satın aldığın bir sınav yok.',
+    empty_library_desc: 'Sınav vitrini seviyene uygun içeriklerle dolu!',
 
     // Exam Room
     loading_exam: 'Sınav Yükleniyor...',
@@ -67,6 +70,7 @@ export const TRANSLATIONS = {
     points_earned: 'Kazanılan Puan',
     back_dashboard: 'Panele Dön',
     question: 'Soru',
+    questions: 'Soru',
     of: '/',
     joker_5050_used: '%50 Jokeri Kullanıldı!',
     no_joker: 'Bu jokere sahip değilsin!',
@@ -454,6 +458,9 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     start: 'Start',
     min: 'm',
     my_results: 'My Results',
+    purchased_exams: 'Purchased exams',
+    empty_library: 'You haven’t purchased any exams yet.',
+    empty_library_desc: 'Browse the marketplace to find your next challenge.',
 
     // Exam Room
     loading_exam: 'Loading Exam...',
@@ -462,6 +469,7 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     points_earned: 'Points Earned',
     back_dashboard: 'Back to Dashboard',
     question: 'Question',
+    questions: 'Questions',
     of: 'of',
     joker_5050_used: '50/50 Joker Used!',
     no_joker: "You don't have this joker!",

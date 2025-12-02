@@ -287,12 +287,12 @@ export const UserProfile = () => {
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center" aria-hidden="true">
                             <BookOpen size={20} />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-gray-900">{t('my_exams') || 'Sınav Kütüphanem'}</h3>
-                            <p className="text-sm text-gray-500 font-medium">{t('purchased_exams') || 'Satın aldığın sınavlara buradan ulaşabilirsin.'}</p>
+                            <h3 className="text-xl font-bold text-gray-900">{t('my_exams')}</h3>
+                            <p className="text-sm text-gray-500 font-medium">{t('purchased_exams')}</p>
                         </div>
                     </div>
                     <button
@@ -305,9 +305,9 @@ export const UserProfile = () => {
 
                 {purchasedExams.length === 0 ? (
                     <div className="border border-dashed border-gray-200 rounded-2xl p-10 text-center text-gray-500 flex flex-col items-center gap-3">
-                        <BookOpen size={32} className="text-gray-300" />
-                        <p className="font-bold">{t('empty_library') || 'Henüz satın aldığın bir sınav yok.'}</p>
-                        <p className="text-sm text-gray-400">{t('empty_library_desc') || 'Sınav vitrini her sınıf için fırsatlarla dolu!'}</p>
+                        <BookOpen size={32} className="text-gray-300" aria-hidden="true" />
+                        <p className="font-bold">{t('empty_library')}</p>
+                        <p className="text-sm text-gray-400">{t('empty_library_desc')}</p>
                         <button
                             onClick={() => navigate('/student/exams')}
                             className="mt-2 text-brand-600 font-bold hover:underline flex items-center gap-1"
@@ -330,22 +330,14 @@ export const UserProfile = () => {
                                 <div className="flex items-center gap-2 text-xs text-gray-400">
                                     <span>{t('time_min')}: {exam.timeLimit}</span>
                                     <span>•</span>
-                                    <span>{t('questions') || 'Soru'}: {exam.questions.length}</span>
+                                    <span>{t('questions')}: {exam.questions.length}</span>
                                 </div>
-                                <div className="flex gap-2 mt-2">
-                                    <button
-                                        onClick={() => navigateToExam(exam.id)}
-                                        className="flex-1 bg-brand-500 text-white py-2 rounded-xl text-sm font-bold hover:bg-brand-600 transition-colors"
-                                    >
-                                        {t('start') || 'Başla'}
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/student/results')}
-                                        className="px-3 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50"
-                                    >
-                                        {t('results') || 'Sonuçlar'}
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => navigateToExam(exam.id)}
+                                    className="mt-2 bg-brand-500 text-white py-2 rounded-xl text-sm font-bold hover:bg-brand-600 transition-colors"
+                                >
+                                    {t('start')}
+                                </button>
                             </div>
                         ))}
                     </div>
