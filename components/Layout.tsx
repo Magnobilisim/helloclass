@@ -23,6 +23,21 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const unreadCount = notifications.filter(n => n.userId === user.id && !n.isRead).length;
 
+  const roleQuickLinks: Partial<Record<UserRole, { profile?: string; notifications?: string }>> = {
+    [UserRole.STUDENT]: {
+        profile: '/student/profile',
+        notifications: '/student/notifications'
+    },
+    [UserRole.TEACHER]: {
+        profile: '/teacher'
+    },
+    [UserRole.ADMIN]: {
+        profile: '/admin'
+    }
+  };
+
+  const quickLinks = roleQuickLinks[user.role] || {};
+
   const NavItem = ({ to, icon: Icon, label }: NavItemProps) => {
     const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
     return (
@@ -194,13 +209,21 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   <Link to="/chat" className="relative p-2 bg-gray-50 rounded-full text-gray-600">
                      <MessageCircle size={20} />
                   </Link>
-                  <Link to="/student/notifications" className="relative p-2 bg-gray-50 rounded-full text-gray-600">
-                     <Bell size={20} />
-                     {unreadCount > 0 && <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span>}
-                  </Link>
-                  <Link to="/student/profile">
-                     <img src={user.avatar} className="w-8 h-8 rounded-full border border-gray-100" />
-                  </Link>
+                  {quickLinks.notifications && (
+                      <Link to={quickLinks.notifications} className="relative p-2 bg-gray-50 rounded-full text-gray-600">
+                         <Bell size={20} />
+                         {unreadCount > 0 && <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span>}
+                      </Link>
+                  )}
+                  {quickLinks.profile ? (
+                      <Link to={quickLinks.profile}>
+                         <img src={user.avatar} className="w-8 h-8 rounded-full border border-gray-100" />
+                      </Link>
+                  ) : (
+                      <div className="w-8 h-8 rounded-full border border-gray-100 overflow-hidden">
+                         <img src={user.avatar} className="w-full h-full object-cover" />
+                      </div>
+                  )}
               </div>
           </header>
 

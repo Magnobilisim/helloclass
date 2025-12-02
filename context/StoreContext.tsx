@@ -800,7 +800,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showAlert('Payout recorded', 'success');
   };
 
-  const deleteExamImage = (examId: string, questionId: string, type: 'question' | 'option', optionIndex?: number) => {
+  const deleteExamImage = (examId: string, questionId: string, type: 'question' | 'option' | 'explanation', optionIndex?: number) => {
       if (user?.role !== UserRole.ADMIN) return;
       const exam = exams.find(e => e.id === examId);
       if (!exam) return;
@@ -809,6 +809,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (q.id === questionId) {
               if (type === 'question') {
                   return { ...q, imageUrl: undefined };
+              } else if (type === 'explanation') {
+                  return { ...q, explanationImage: undefined };
               } else if (type === 'option' && typeof optionIndex === 'number' && q.optionImages) {
                   const newOptionImages = [...q.optionImages];
                   newOptionImages[optionIndex] = ''; 

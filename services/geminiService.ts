@@ -2,7 +2,25 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Question } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const env = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
+const GEMINI_API_KEY =
+  env?.VITE_GEMINI_API_KEY ||
+  (typeof process !== 'undefined' ? process.env?.VITE_GEMINI_API_KEY || process.env?.API_KEY : '') ||
+  '';
+
+const createClient = () => {
+  if (!GEMINI_API_KEY) return null;
+  return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+};
+
+const ai = createClient();
+
+const ensureClient = () => {
+  if (!ai) {
+      throw new Error('Gemini API key missing. Set VITE_GEMINI_API_KEY in your environment.');
+  }
+  return ai;
+};
 
 // Schema for structured output
 const questionSchema = {
@@ -70,12 +88,13 @@ export const generateExamQuestions = async (
   count: number = 5
 ): Promise<Question[]> => {
   try {
+    const client = ensureClient();
     const prompt = `Create a ${count} question multiple-choice exam for ${subject} at ${level} level. 
     Each question should have 4 options. 
     Provide the correct index (0-3). 
     Ensure the questions are educational and age-appropriate for K-8 students.`;
 
-    const response = await ai.models.generateContent({
+    const response = await client.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -104,6 +123,9 @@ export const generateExamQuestions = async (
     let errorMsg = "Failed to generate exam questions.";
     
     // Improved Error Messages
+    if (error.message?.includes('Gemini API key missing')) {
+        errorMsg = error.message;
+    } else
     if (error.message?.includes('API key') || error.message?.includes('401')) {
         errorMsg = "API Key Error: Please check your configuration.";
     } else if (error.message?.includes('429') || error.message?.includes('quota')) {
@@ -120,11 +142,16 @@ export const generateExamQuestions = async (
 
 export const checkContentSafety = async (content: string): Promise<{ safe: boolean; reason?: string }> => {
   try {
+    if (!ai) {
+        console.warn("Gemini API key missing. Skipping safety check.");
+        return { safe: true };
+    }
+    const client = ensureClient();
     const prompt = `Analyze the following text for a K-12 school social platform. 
     Check for obscenity, bullying, hate speech, or inappropriate content. 
     Text: "${content}"`;
 
-    const response = await ai.models.generateContent({
+    const response = await client.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -151,6 +178,7 @@ export const getAnswerExplanation = async (
   studentAnswerIndex: number | null
 ): Promise<string> => {
   try {
+    const client = ensureClient();
     const prompt = `Provide a short, kid-friendly explanation for this question. 
     Question: "${questionText}"
     Options: ${JSON.stringify(options)}
@@ -159,7 +187,7 @@ export const getAnswerExplanation = async (
     
     Explain why the correct answer is right and why the student's answer (if wrong) is incorrect.`;
 
-    const response = await ai.models.generateContent({
+    const response = await client.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,
         config: {
@@ -182,6 +210,7 @@ export const getAnswerExplanation = async (
 
 export const parseQuestionFromImage = async (base64Data: string): Promise<GeneratedQuestion | null> => {
     try {
+        const client = ensureClient();
         const mimeType = base64Data.split(';')[0].split(':')[1];
         const data = base64Data.split(',')[1];
 
@@ -190,7 +219,7 @@ export const parseQuestionFromImage = async (base64Data: string): Promise<Genera
         If the correct answer is not marked, make a best guess or set it to 0.
         Also provide a short explanation.`;
 
-        const response = await ai.models.generateContent({
+        const response = await client.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [
                 { text: prompt },

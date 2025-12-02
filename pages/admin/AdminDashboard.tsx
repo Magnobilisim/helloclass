@@ -370,7 +370,7 @@ export const AdminDashboard = () => {
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
                               <p className="text-white text-[10px] font-bold line-clamp-2 mb-2">{img.examTitle}</p>
                               <button 
-                                onClick={() => { if(window.confirm('Delete this image?')) deleteExamImage(img.examId, img.questionId, img.type === 'explanation' ? 'question' : img.type, img.index); }}
+                                onClick={() => { if(window.confirm('Delete this image?')) deleteExamImage(img.examId, img.questionId, img.type, img.index); }}
                                 className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
                               >
                                   <Trash2 size={16} />

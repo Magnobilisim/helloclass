@@ -297,7 +297,7 @@ export interface StoreContextType {
   sendBroadcast: (title: string, message: string, targetRole: UserRole | 'ALL') => void;
   adjustUserPoints: (userId: string, amount: number) => void;
   processPayout: (teacherId: string, amountTL: number) => void;
-  deleteExamImage: (examId: string, questionId: string, type: 'question' | 'option', optionIndex?: number) => void;
+  deleteExamImage: (examId: string, questionId: string, type: 'question' | 'option' | 'explanation', optionIndex?: number) => void;
   
   // Prize Exam Features
   addPrizeExam: (exam: PrizeExam) => void;
