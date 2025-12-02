@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { User, Exam } from '../../types';
 import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink } from 'lucide-react';
@@ -80,12 +80,9 @@ export const UserProfile = () => {
       navigate('/chat', { state: { startChatWith: profileUser.id } });
   };
 
-  const purchasedExams = useMemo(() => {
-      if (!profileUser?.purchasedExamIds?.length) return [];
-      return profileUser.purchasedExamIds
-        .map(examId => exams.find(e => e.id === examId))
-        .filter((exam): exam is Exam => Boolean(exam));
-  }, [profileUser, exams]);
+  const purchasedExams: Exam[] = (profileUser?.purchasedExamIds || [])
+      .map(examId => exams.find(e => e.id === examId))
+      .filter((exam): exam is Exam => Boolean(exam));
 
   const navigateToExam = (examId: string) => {
       navigate(`/student/exam/${examId}`);
