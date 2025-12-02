@@ -64,7 +64,7 @@ export const ExamRoom = () => {
         } else {
             setUserAnswers(new Array(foundExam.questions.length).fill(-1));
         }
-        setIsReviewMode(true); 
+        setIsReviewMode(false); 
     } else {
         if (id && user) startExamSession(id);
         
@@ -235,6 +235,20 @@ export const ExamRoom = () => {
       );
   }
 
+  const handleRetake = () => {
+      if (!exam || !id) return;
+      startExamSession(id);
+      setIsFinished(false);
+      setIsReviewMode(false);
+      setCurrentIndex(0);
+      setSelectedOption(null);
+      setHiddenOptions([]);
+      setScore(0);
+      const freshAnswers = new Array(exam.questions.length).fill(-1);
+      setUserAnswers(freshAnswers);
+      setTimeLeft(exam.timeLimit * 60);
+  };
+
   if (isFinished) {
     const percentage = Math.round((score / exam.questions.length) * 100);
     
@@ -309,21 +323,27 @@ export const ExamRoom = () => {
             <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">{t('points_earned')}</div>
          </div>
 
-         <div className="flex flex-col gap-3 w-full max-w-sm">
-             <button 
-               onClick={() => setIsReviewMode(true)}
-               className="bg-purple-100 text-purple-700 px-8 py-3 rounded-2xl font-bold hover:bg-purple-200 transition-colors flex items-center justify-center gap-2"
-             >
-               <MessageCircle size={20} /> {t('review_answers')}
-             </button>
-             
-             <button 
-               onClick={() => navigate('/student')}
-               className="bg-gray-900 text-white px-8 py-3 rounded-2xl font-bold hover:scale-105 transition-transform"
-             >
-               {t('back_dashboard')}
-             </button>
-         </div>
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+            <button 
+              onClick={handleRetake}
+              className="bg-emerald-100 text-emerald-700 px-8 py-3 rounded-2xl font-bold hover:bg-emerald-200 transition-colors flex items-center justify-center gap-2"
+            >
+              <StepForward size={20} /> {t('retake')}
+            </button>
+            <button 
+              onClick={() => setIsReviewMode(true)}
+              className="bg-purple-100 text-purple-700 px-8 py-3 rounded-2xl font-bold hover:bg-purple-200 transition-colors flex items-center justify-center gap-2"
+            >
+              <MessageCircle size={20} /> {t('review_answers')}
+            </button>
+            
+            <button 
+              onClick={() => navigate('/student')}
+              className="bg-gray-900 text-white px-8 py-3 rounded-2xl font-bold hover:scale-105 transition-transform"
+            >
+              {t('back_dashboard')}
+            </button>
+        </div>
       </div>
     );
   }
