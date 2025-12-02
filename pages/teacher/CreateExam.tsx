@@ -54,7 +54,7 @@ export const CreateExam = () => {
               setSubjectId(filteredSubjects[0].id);
           }
       }
-  }, [classLevel, filteredSubjects]);
+  }, [classLevel, filteredSubjects, subjectId]);
 
   const filteredTopics = (approvedTopics[subjectId] || []).filter(t => {
       const selectedSubject = availableSubjects.find(s => s.id === subjectId);
@@ -65,37 +65,39 @@ export const CreateExam = () => {
   });
 
   useEffect(() => {
-    if (id) {
-        const examToEdit = exams.find(e => e.id === id);
-        if (examToEdit && (examToEdit.creatorId === user?.id || user?.role === UserRole.ADMIN)) {
-            setTitle(examToEdit.title);
-            setTopic(examToEdit.topic || '');
-            setSubjectId(examToEdit.subjectId); 
-            setDifficulty(examToEdit.difficulty);
-            setTimeLimit(examToEdit.timeLimit);
-            setPriceInput(String(examToEdit.price ?? 0));
-            
-            setQuestions(examToEdit.questions.map(q => ({
-                ...q,
-                options: [...q.options],
-                optionImages: q.optionImages ? [...q.optionImages] : undefined
-            })));
-            
-            if(examToEdit.classLevel) setClassLevel(examToEdit.classLevel);
-            if(examToEdit.englishLevel) setEnglishLevel(examToEdit.englishLevel);
-            
-            setOriginalCreatorId(examToEdit.creatorId);
-            setOriginalCreatorName(examToEdit.creatorName);
-        } else {
-            showAlert('Unauthorized to edit this exam.', 'error');
-            navigate(user?.role === UserRole.ADMIN ? '/admin/exams' : '/teacher');
-        }
+    if (!id) return;
+    const examToEdit = exams.find(e => e.id === id);
+    if (examToEdit && (examToEdit.creatorId === user?.id || user?.role === UserRole.ADMIN)) {
+        setTitle(examToEdit.title);
+        setTopic(examToEdit.topic || '');
+        setSubjectId(examToEdit.subjectId); 
+        setDifficulty(examToEdit.difficulty);
+        setTimeLimit(examToEdit.timeLimit);
+        setPriceInput(String(examToEdit.price ?? 0));
+        
+        setQuestions(examToEdit.questions.map(q => ({
+            ...q,
+            options: [...q.options],
+            optionImages: q.optionImages ? [...q.optionImages] : undefined
+        })));
+        
+        if(examToEdit.classLevel) setClassLevel(examToEdit.classLevel);
+        if(examToEdit.englishLevel) setEnglishLevel(examToEdit.englishLevel);
+        
+        setOriginalCreatorId(examToEdit.creatorId);
+        setOriginalCreatorName(examToEdit.creatorName);
     } else {
-        if (filteredSubjects.length > 0 && !subjectId) {
-            setSubjectId(filteredSubjects[0].id);
-        }
+        showAlert('Unauthorized to edit this exam.', 'error');
+        navigate(user?.role === UserRole.ADMIN ? '/admin/exams' : '/teacher');
     }
-  }, [id, exams, user, navigate, showAlert, filteredSubjects]);
+  }, [id, exams, user, navigate, showAlert]);
+
+  useEffect(() => {
+      if (id) return;
+      if (filteredSubjects.length > 0 && !subjectId) {
+          setSubjectId(filteredSubjects[0].id);
+      }
+  }, [id, filteredSubjects, subjectId]);
 
   const addQuestion = () => {
     setQuestions([
