@@ -1,0 +1,328 @@
+
+import React, { useState, useEffect } from 'react';
+import { useStore } from '../../context/StoreContext';
+import { User } from '../../types';
+import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle } from 'lucide-react';
+import { StudentResults } from './StudentResults';
+import { useParams, useNavigate } from 'react-router-dom';
+
+export const UserProfile = () => {
+  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow } = useStore();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  
+  const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [bio, setBio] = useState('');
+  const [schoolId, setSchoolId] = useState('');
+  const [classLevel, setClassLevel] = useState<number>(1);
+  const [notifSettings, setNotifSettings] = useState({ email: true, app: true });
+  const [showListModal, setShowListModal] = useState<'followers' | 'following' | null>(null);
+
+  useEffect(() => {
+      if (id && id !== currentUser?.id) {
+          const foundUser = users.find(u => u.id === id);
+          if (foundUser) {
+              setProfileUser(foundUser);
+          } else {
+              setProfileUser(currentUser); 
+          }
+      } else {
+          setProfileUser(currentUser);
+      }
+  }, [id, currentUser, users]);
+
+  useEffect(() => {
+      if (profileUser) {
+          setBio(profileUser.bio || '');
+          setSchoolId(profileUser.schoolId || '');
+          setClassLevel(profileUser.classLevel || 1);
+          setNotifSettings(profileUser.notificationSettings || { email: true, app: true });
+      }
+  }, [profileUser]);
+
+  if (!currentUser || !profileUser) return null;
+
+  const isOwnProfile = currentUser.id === profileUser.id;
+  const isFollowing = currentUser.following?.includes(profileUser.id);
+
+  const handleSave = () => {
+      if (!isOwnProfile) return;
+      updateUser({ ...currentUser, bio, schoolId, classLevel, notificationSettings: notifSettings });
+      setIsEditing(false);
+      showAlert('Profile updated!', 'success');
+  };
+
+  const handleFollowAction = () => {
+      toggleFollow(profileUser.id);
+  };
+
+  const currentSchool = schools.find(s => s.id === profileUser.schoolId);
+
+  const getListUsers = () => {
+      if (showListModal === 'followers') {
+          return users.filter(u => profileUser.followers?.includes(u.id));
+      }
+      if (showListModal === 'following') {
+          return users.filter(u => profileUser.following?.includes(u.id));
+      }
+      return [];
+  };
+
+  const listUsers = getListUsers();
+
+  const navigateToProfile = (userId: string) => {
+      setShowListModal(null);
+      navigate(`/student/profile/${userId}`);
+  };
+
+  const handleSendMessage = () => {
+      navigate('/chat', { state: { startChatWith: profileUser.id } });
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8 pb-20 relative animate-fade-in">
+        
+        {!isOwnProfile && (
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 font-bold mb-4">
+                <ArrowLeft size={20} /> Back
+            </button>
+        )}
+
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-brand-400 to-orange-500"></div>
+            
+            <div className="relative pt-12 flex flex-col lg:flex-row items-center lg:items-end gap-6 text-center lg:text-left">
+                
+                <div className="relative shrink-0">
+                    <img src={profileUser.avatar} className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-white object-cover shrink-0" />
+                    {profileUser.activeFrame === 'AVATAR_FRAME' && <span className="absolute -top-3 -right-3 text-2xl animate-pulse">👑</span>}
+                </div>
+                
+                <div className="flex-1 mb-2 min-w-0 w-full">
+                    <h2 className="text-2xl font-bold text-gray-900 truncate">{profileUser.name}</h2>
+                    
+                    <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-2">
+                        {profileUser.role === 'STUDENT' && (
+                            <span className="bg-brand-100 text-brand-700 px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap border border-brand-200">
+                                {profileUser.classLevel}. {t('grade')}
+                            </span>
+                        )}
+                        <span className="text-gray-500 font-medium text-sm truncate max-w-full">
+                            {currentSchool?.name || t('no_school_selected')}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex gap-2 shrink-0 flex-wrap justify-center w-full lg:w-auto">
+                     {isOwnProfile ? (
+                         <>
+                            <button 
+                                onClick={() => setIsEditing(!isEditing)}
+                                className="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-200 transition-colors"
+                            >
+                                <Edit2 size={16} /> {isEditing ? t('cancel') : t('edit_profile')}
+                            </button>
+                            <button 
+                                onClick={logout}
+                                className="bg-red-50 text-red-500 px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-red-100 transition-colors"
+                            >
+                                <LogOut size={16} /> <span className="hidden sm:inline">{t('logout')}</span>
+                            </button>
+                         </>
+                     ) : (
+                         <>
+                             <button 
+                                onClick={handleSendMessage}
+                                className="bg-blue-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-blue-600 transition-colors shadow-sm"
+                             >
+                                <MessageCircle size={18} /> {t('message')}
+                             </button>
+                             <button 
+                                onClick={handleFollowAction}
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-sm ${
+                                    isFollowing 
+                                    ? 'bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500' 
+                                    : 'bg-brand-50 text-brand-600 hover:bg-brand-100'
+                                }`}
+                             >
+                                {isFollowing ? (
+                                    <> <UserCheck size={18} /> {t('following')} </>
+                                ) : (
+                                    <> <UserPlus size={18} /> {t('follow')} </>
+                                )}
+                             </button>
+                         </>
+                     )}
+                </div>
+            </div>
+
+            {isEditing && isOwnProfile && (
+                <div className="mt-8 pt-8 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in text-left">
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">{t('bio')}</label>
+                            <textarea 
+                                value={bio}
+                                onChange={(e) => setBio(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:border-brand-500"
+                                rows={3}
+                                placeholder="Tell us about yourself..."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">{t('notification_settings')}</label>
+                            <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-gray-700">{t('email_notifs')}</span>
+                                    <button 
+                                        onClick={() => setNotifSettings({...notifSettings, email: !notifSettings.email})}
+                                        className={`w-12 h-6 rounded-full relative transition-colors ${notifSettings.email ? 'bg-brand-500' : 'bg-gray-300'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${notifSettings.email ? 'left-7' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-gray-700">{t('app_notifs')}</span>
+                                    <button 
+                                        onClick={() => setNotifSettings({...notifSettings, app: !notifSettings.app})}
+                                        className={`w-12 h-6 rounded-full relative transition-colors ${notifSettings.app ? 'bg-brand-500' : 'bg-gray-300'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${notifSettings.app ? 'left-7' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="mb-4">
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">{t('grade')}</label>
+                            <select 
+                                value={classLevel}
+                                onChange={(e) => setClassLevel(Number(e.target.value))}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:border-brand-500"
+                            >
+                                {Array.from({length: 12}, (_, i) => i + 1).map(g => (
+                                    <option key={g} value={g}>{g}. {t('grade')}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">{t('school')}</label>
+                            <select 
+                                value={schoolId}
+                                onChange={(e) => setSchoolId(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:border-brand-500"
+                            >
+                                <option value="">{t('select_school')}</option>
+                                {schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                        </div>
+                        <button 
+                            onClick={handleSave}
+                            className="mt-4 w-full bg-brand-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-600 transition-colors"
+                        >
+                            {t('save')}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {!isEditing && (
+                <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col md:flex-row gap-6 text-left items-start">
+                    <div className="flex-1">
+                        <h4 className="font-bold text-gray-800 text-sm mb-2">{t('bio')}</h4 >
+                        <p className="text-gray-600 text-sm leading-relaxed">{profileUser.bio || 'No bio yet.'}</p>
+                    </div>
+                    {isOwnProfile && (
+                        <div className="flex flex-col gap-2 shrink-0">
+                            <div className={`px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border ${profileUser.notificationSettings?.email ? 'bg-green-50 text-green-600 border-green-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                                <span className={`w-2 h-2 rounded-full ${profileUser.notificationSettings?.email ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                {t('email_notifs')}: {profileUser.notificationSettings?.email ? t('on') : t('off')}
+                            </div>
+                            <div className={`px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 border ${profileUser.notificationSettings?.app ? 'bg-green-50 text-green-600 border-green-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                                <span className={`w-2 h-2 rounded-full ${profileUser.notificationSettings?.app ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                {t('app_notifs')}: {profileUser.notificationSettings?.app ? t('on') : t('off')}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+             <div className="bg-white p-6 rounded-3xl border border-gray-100 text-center">
+                 <div className="text-2xl font-black text-brand-500">{profileUser.points}</div>
+                 <div className="text-xs font-bold text-gray-400 uppercase">{t('points')}</div>
+             </div>
+             <div 
+                onClick={() => setShowListModal('followers')}
+                className="bg-white p-6 rounded-3xl border border-gray-100 text-center cursor-pointer hover:shadow-md transition-shadow group"
+             >
+                 <div className="text-2xl font-black text-blue-500 group-hover:scale-110 transition-transform">{profileUser.followers?.length || 0}</div>
+                 <div className="text-xs font-bold text-gray-400 uppercase">{t('followers')}</div>
+             </div>
+             <div 
+                onClick={() => setShowListModal('following')}
+                className="bg-white p-6 rounded-3xl border border-gray-100 text-center cursor-pointer hover:shadow-md transition-shadow group"
+             >
+                 <div className="text-2xl font-black text-purple-500 group-hover:scale-110 transition-transform">{profileUser.following?.length || 0}</div>
+                 <div className="text-xs font-bold text-gray-400 uppercase">{t('following')}</div>
+             </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+            <StudentResults studentId={profileUser.id} />
+        </div>
+
+        {showListModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl relative flex flex-col max-h-[80vh]">
+                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <h3 className="text-xl font-bold text-gray-800 capitalize">{t(showListModal)}</h3>
+                        <button 
+                            onClick={() => setShowListModal(null)}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                        {listUsers.length === 0 ? (
+                            <div className="text-center text-gray-400 py-8">No users found.</div>
+                        ) : (
+                            listUsers.map(u => (
+                                <div key={u.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                                    <div 
+                                        className="flex items-center gap-3 cursor-pointer flex-1 overflow-hidden"
+                                        onClick={() => navigateToProfile(u.id)}
+                                    >
+                                        <img src={u.avatar} className="w-12 h-12 rounded-full border border-gray-200 object-cover shrink-0" />
+                                        <div className="min-w-0">
+                                            <div className="font-bold text-gray-900 text-sm truncate">{u.name}</div>
+                                            <div className="text-xs text-gray-500 font-bold bg-gray-100 px-1.5 py-0.5 rounded w-fit">{u.role}</div>
+                                        </div>
+                                    </div>
+                                    {currentUser.id !== u.id && (
+                                        <button 
+                                            onClick={() => toggleFollow(u.id)}
+                                            className={`p-2 rounded-lg transition-colors shrink-0 ${
+                                                currentUser.following?.includes(u.id) 
+                                                ? 'bg-red-50 text-red-500 hover:bg-red-100' 
+                                                : 'bg-brand-50 text-brand-600 hover:bg-brand-100'
+                                            }`}
+                                        >
+                                            {currentUser.following?.includes(u.id) ? <UserMinus size={18} /> : <UserPlus size={18} />}
+                                        </button>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
+    </div>
+  );
+};

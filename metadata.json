@@ -1,0 +1,7 @@
+{
+  "name": "HelloClass",
+  "description": "A gamified hybrid education platform for students, teachers, and admins featuring AI exam generation.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
