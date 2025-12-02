@@ -401,6 +401,8 @@ export const UserProfile = () => {
                     <span>{t('referral_count_label').replace('{count}', `${profileUser.referralCount || 0}`)}</span>
                     <span>{t('referral_points_label').replace('{points}', `${profileUser.totalReferralPoints || 0}`)}</span>
                 </div>
+            </div>
+        )}
 
         {showListModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
