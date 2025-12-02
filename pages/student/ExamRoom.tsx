@@ -20,6 +20,7 @@ export const ExamRoom = () => {
   const [hiddenOptions, setHiddenOptions] = useState<number[]>([]); 
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [rewardsEarned, setRewardsEarned] = useState<number | null>(null);
   
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [explainingQuestionId, setExplainingQuestionId] = useState<string | null>(null);
@@ -65,10 +66,12 @@ export const ExamRoom = () => {
             setUserAnswers(new Array(foundExam.questions.length).fill(-1));
         }
         setIsReviewMode(false); 
+        setRewardsEarned(existingResult.rewardsEarned);
     } else {
         if (id && user) startExamSession(id);
         
         setUserAnswers(new Array(foundExam.questions.length).fill(-1));
+        setRewardsEarned(null);
     }
 
     setIsLoading(false);
@@ -139,6 +142,13 @@ export const ExamRoom = () => {
       spread: 70,
       origin: { y: 0.6 }
     });
+
+    const calculatedScore = finalAnswers
+        ? finalAnswers.reduce((acc, ans, idx) => acc + (ans === exam.questions[idx].correctIndex ? 1 : 0), 0)
+        : score;
+    const difficultyMultiplier = exam.difficulty === 'Easy' ? 1 : exam.difficulty === 'Medium' ? 1.5 : 2;
+    const earned = Math.round(calculatedScore * 10 * difficultyMultiplier);
+    setRewardsEarned(earned);
   };
 
   const handleExplain = async (qIndex: number) => {
@@ -247,10 +257,12 @@ export const ExamRoom = () => {
       const freshAnswers = new Array(exam.questions.length).fill(-1);
       setUserAnswers(freshAnswers);
       setTimeLeft(exam.timeLimit * 60);
+      setRewardsEarned(null);
   };
 
   if (isFinished) {
     const percentage = Math.round((score / exam.questions.length) * 100);
+    const displayRewards = rewardsEarned ?? Math.round(score * 10 * (exam.difficulty === 'Easy' ? 1 : exam.difficulty === 'Medium' ? 1.5 : 2));
     
     if (isReviewMode) {
         return (
@@ -319,7 +331,7 @@ export const ExamRoom = () => {
          <p className="text-gray-500 mb-8">{t('you_scored')} {score} / {exam.questions.length}</p>
          
          <div className="bg-white p-6 rounded-3xl shadow-lg w-full max-w-sm border border-gray-100 mb-8">
-            <div className="text-4xl font-black text-brand-500 mb-1">+{score * 10}</div>
+            <div className="text-4xl font-black text-brand-500 mb-1">+{displayRewards}</div>
             <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">{t('points_earned')}</div>
          </div>
 
