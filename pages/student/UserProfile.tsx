@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { User } from '../../types';
-import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle } from 'lucide-react';
+import { User, Exam } from '../../types';
+import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink } from 'lucide-react';
 import { StudentResults } from './StudentResults';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export const UserProfile = () => {
-  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow } = useStore();
+  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow, exams } = useStore();
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -78,6 +78,17 @@ export const UserProfile = () => {
 
   const handleSendMessage = () => {
       navigate('/chat', { state: { startChatWith: profileUser.id } });
+  };
+
+  const purchasedExams = useMemo(() => {
+      if (!profileUser?.purchasedExamIds?.length) return [];
+      return profileUser.purchasedExamIds
+        .map(examId => exams.find(e => e.id === examId))
+        .filter((exam): exam is Exam => Boolean(exam));
+  }, [profileUser, exams]);
+
+  const navigateToExam = (examId: string) => {
+      navigate(`/student/exam/${examId}`);
   };
 
   return (
@@ -274,6 +285,76 @@ export const UserProfile = () => {
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
             <StudentResults studentId={profileUser.id} />
         </div>
+
+        {isOwnProfile && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                            <BookOpen size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-900">{t('my_exams') || 'Sınav Kütüphanem'}</h3>
+                            <p className="text-sm text-gray-500 font-medium">{t('purchased_exams') || 'Satın aldığın sınavlara buradan ulaşabilirsin.'}</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => navigate('/student/exams')}
+                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition-colors"
+                    >
+                        {t('explore_exams')} <ExternalLink size={16} />
+                    </button>
+                </div>
+
+                {purchasedExams.length === 0 ? (
+                    <div className="border border-dashed border-gray-200 rounded-2xl p-10 text-center text-gray-500 flex flex-col items-center gap-3">
+                        <BookOpen size={32} className="text-gray-300" />
+                        <p className="font-bold">{t('empty_library') || 'Henüz satın aldığın bir sınav yok.'}</p>
+                        <p className="text-sm text-gray-400">{t('empty_library_desc') || 'Sınav vitrini her sınıf için fırsatlarla dolu!'}</p>
+                        <button
+                            onClick={() => navigate('/student/exams')}
+                            className="mt-2 text-brand-600 font-bold hover:underline flex items-center gap-1"
+                        >
+                            {t('go_to_market')} <ExternalLink size={14} />
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {purchasedExams.map(exam => (
+                            <div key={exam.id} className="p-5 border border-gray-100 rounded-2xl shadow-sm flex flex-col gap-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-gray-400 uppercase">{t('subject')}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${exam.difficulty === 'Hard' ? 'bg-red-50 text-red-600' : exam.difficulty === 'Medium' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}`}>
+                                        {t(exam.difficulty.toLowerCase() as any)}
+                                    </span>
+                                </div>
+                                <h4 className="text-lg font-bold text-gray-900 line-clamp-2">{exam.title}</h4>
+                                {exam.topic && <p className="text-sm text-gray-500">{exam.topic}</p>}
+                                <div className="flex items-center gap-2 text-xs text-gray-400">
+                                    <span>{t('time_min')}: {exam.timeLimit}</span>
+                                    <span>•</span>
+                                    <span>{t('questions') || 'Soru'}: {exam.questions.length}</span>
+                                </div>
+                                <div className="flex gap-2 mt-2">
+                                    <button
+                                        onClick={() => navigateToExam(exam.id)}
+                                        className="flex-1 bg-brand-500 text-white py-2 rounded-xl text-sm font-bold hover:bg-brand-600 transition-colors"
+                                    >
+                                        {t('start') || 'Başla'}
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/student/results')}
+                                        className="px-3 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50"
+                                    >
+                                        {t('results') || 'Sonuçlar'}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        )}
 
         {showListModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
