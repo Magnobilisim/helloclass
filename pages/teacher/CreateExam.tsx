@@ -19,7 +19,7 @@ export const CreateExam = () => {
   const [classLevel, setClassLevel] = useState<number>(1);
   const [englishLevel, setEnglishLevel] = useState<string>('A1');
   const [timeLimit, setTimeLimit] = useState(15);
-  const [price, setPrice] = useState(0);
+  const [priceInput, setPriceInput] = useState('0');
   const [isUploading, setIsUploading] = useState(false);
   
   const [subjectId, setSubjectId] = useState<string>('');
@@ -73,7 +73,7 @@ export const CreateExam = () => {
             setSubjectId(examToEdit.subjectId); 
             setDifficulty(examToEdit.difficulty);
             setTimeLimit(examToEdit.timeLimit);
-            setPrice(examToEdit.price);
+            setPriceInput(String(examToEdit.price ?? 0));
             
             setQuestions(examToEdit.questions.map(q => ({
                 ...q,
@@ -190,7 +190,12 @@ export const CreateExam = () => {
     e.preventDefault();
     if (!user) return;
     if (!title.trim()) { showAlert(t('title_req'), 'error'); return; }
-    if (price < 0) { showAlert(t('price_negative_error'), 'error'); return; }
+    const parsedPrice = priceInput.trim() === '' ? 0 : Number(priceInput);
+    if (Number.isNaN(parsedPrice)) {
+        showAlert(t('price_negative_error'), 'error');
+        return;
+    }
+    if (parsedPrice < 0) { showAlert(t('price_negative_error'), 'error'); return; }
     if (questions.length < 5) { showAlert(t('min_questions_error'), 'error'); return; }
     
     const selectedSubjectDef = availableSubjects.find(s => s.id === subjectId);
@@ -204,7 +209,7 @@ export const CreateExam = () => {
         subjectId, 
         difficulty,
         timeLimit,
-        price,
+        price: parsedPrice,
         sales: id ? (exams.find(e => e.id === id)?.sales || 0) : 0,
         rating: id ? (exams.find(e => e.id === id)?.rating || 0) : 0,
         isPublished: true,
@@ -282,7 +287,12 @@ export const CreateExam = () => {
                     </div>
                     <div>
                         <label className={labelClass}>{t('price')}</label>
-                        <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} className={inputClass} />
+                        <input 
+                            type="number" 
+                            value={priceInput} 
+                            onChange={e => setPriceInput(e.target.value)} 
+                            className={inputClass} 
+                        />
                     </div>
                 </div>
             </div>
