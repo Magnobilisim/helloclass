@@ -66,17 +66,18 @@ export const ExamRoom = () => {
         }
         setIsReviewMode(true); 
     } else {
-        if (id) startExamSession(id);
+        if (id && user) startExamSession(id);
         
         setUserAnswers(new Array(foundExam.questions.length).fill(-1));
     }
 
     setIsLoading(false);
-  }, [id, exams, navigate, user, results, prizeExams]);
+  }, [id, exams, navigate, user, results, prizeExams, startExamSession]);
 
   useEffect(() => {
-      if (exam && !isFinished && !isReviewMode && id) {
-          const session = examSessions[id];
+      if (exam && !isFinished && !isReviewMode && id && user) {
+          const sessionKey = `${user.id}_${id}`;
+          const session = examSessions[sessionKey] || examSessions[id];
           if (session && session.startedAt) {
               const now = Date.now();
               const startTime = new Date(session.startedAt).getTime(); 
@@ -93,7 +94,7 @@ export const ExamRoom = () => {
               setTimeLeft(exam.timeLimit * 60);
           }
       }
-  }, [exam, isFinished, isReviewMode, id, examSessions]);
+  }, [exam, isFinished, isReviewMode, id, examSessions, user]);
 
   useEffect(() => {
     if (timeLeft > 0 && !isFinished && !isReviewMode && exam) {

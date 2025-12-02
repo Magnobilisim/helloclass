@@ -49,6 +49,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [transactions, setTransactions] = useState<Transaction[]>([]); 
   const [examSessions, setExamSessions] = useState<Record<string, ExamSession>>({}); 
   
+  const buildSessionKey = (studentId: string, examId: string) => `${studentId}_${examId}`;
+  
   const [alert, setAlert] = useState<{ message: string; type: AlertType } | null>(null);
   const [language, setLanguage] = useState<Language>('tr');
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({ 
@@ -432,14 +434,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const startExamSession = (examId: string) => {
+      if (!user) return;
+      const sessionKey = buildSessionKey(user.id, examId);
       setExamSessions(prev => {
-          if (prev[examId] && prev[examId].status === 'started') return prev; 
+          const existing = prev[sessionKey];
+          if (existing && existing.status === 'started') {
+              return prev;
+          }
+          
           return {
               ...prev,
-              [examId]: { 
-                  examId, 
-                  startedAt: new Date().toISOString(), 
-                  status: 'started' 
+              [sessionKey]: {
+                  examId,
+                  studentId: user.id,
+                  startedAt: existing?.status === 'started' ? existing.startedAt : new Date().toISOString(),
+                  status: 'started'
               }
           };
       });
@@ -448,8 +457,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const saveResult = (examId: string, answers: number[]) => {
     if (!user) return;
 
-    const session = examSessions[examId];
+    const sessionKey = buildSessionKey(user.id, examId);
+    const session = examSessions[sessionKey] || examSessions[examId];
     if (!session) {
+        showAlert('Invalid session. Please start the exam correctly.', 'error');
+        return;
+    }
+
+    if (session.studentId && session.studentId !== user.id) {
         showAlert('Invalid session. Please start the exam correctly.', 'error');
         return;
     }
@@ -512,7 +527,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     setExamSessions(prev => ({
         ...prev,
-        [examId]: { ...prev[examId], status: 'completed' }
+        [sessionKey]: {
+            examId,
+            studentId: user.id,
+            startedAt: session.startedAt,
+            status: 'completed'
+        }
     }));
   };
 

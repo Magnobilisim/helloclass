@@ -112,6 +112,7 @@ export interface Transaction {
 
 export interface ExamSession {
   examId: string;
+  studentId: string;
   startedAt: string; // ISO String for DB (Strict)
   status: 'started' | 'completed';
 }
