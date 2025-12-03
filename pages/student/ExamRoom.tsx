@@ -494,6 +494,38 @@ export const ExamRoom = () => {
               {t('back_dashboard')}
             </button>
         </div>
+        {showRetakeModal && exam && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+                    <h3 className="text-xl font-bold text-gray-800">{t('retake_exam')}</h3>
+                    <p className="text-sm text-gray-500">{t('time_min')}</p>
+                    <input
+                        type="number"
+                        min={1}
+                        value={retakeMinutes}
+                        onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setRetakeMinutes(Math.max(1, isNaN(val) ? 1 : val));
+                        }}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center text-3xl font-black text-gray-800"
+                    />
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            onClick={() => setShowRetakeModal(false)}
+                            className="flex-1 border border-gray-200 rounded-2xl py-3 font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                            {t('cancel')}
+                        </button>
+                        <button
+                            onClick={confirmRetake}
+                            className="flex-1 bg-brand-500 text-white rounded-2xl py-3 font-semibold hover:bg-brand-600 transition-colors"
+                        >
+                            {t('retake')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
       </div>
     );
   }
