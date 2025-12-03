@@ -34,20 +34,22 @@ const ensureClient = () => {
 };
 
 const extractOutputText = (response: any): string => {
-  if (response?.output_text?.length) {
+  if (typeof response === "string") return response;
+
+  if (response?.output_text && Array.isArray(response.output_text)) {
     return response.output_text.join("\n").trim();
   }
 
-  if (Array.isArray(response?.output)) {
+  if (response?.output && Array.isArray(response.output)) {
     const chunks: string[] = [];
     for (const block of response.output) {
       if (Array.isArray(block.content)) {
         for (const item of block.content) {
-          if (item.type === "output_text" && item.text) {
+          if (item.type === "output_text" && typeof item.text === "string") {
             chunks.push(item.text);
-          }
-          if (item.type === "text" && item.text?.value) {
-            chunks.push(item.text.value);
+          } else if (item.type === "text") {
+            if (typeof item.text === "string") chunks.push(item.text);
+            else if (item.text?.value) chunks.push(item.text.value);
           }
         }
       }
@@ -55,7 +57,14 @@ const extractOutputText = (response: any): string => {
     if (chunks.length) return chunks.join("\n").trim();
   }
 
-  if (typeof response === "string") return response;
+  if (response?.output && typeof response.output === "string") {
+    return response.output;
+  }
+
+  if (response?.text && typeof response.text === "string") {
+    return response.text;
+  }
+
   return "";
 };
 
