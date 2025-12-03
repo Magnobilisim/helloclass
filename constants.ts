@@ -1,5 +1,5 @@
 
-import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage } from './types';
+import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata } from './types';
 
 // Genişletilmiş Türkiye Okul Listesi (Örneklem)
 export const INITIAL_SCHOOLS: School[] = [
@@ -230,6 +230,116 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'item2', name: '50/50 Joker', type: 'JOKER_5050', price: 100, icon: '🎭', description: 'Remove 2 wrong answers.' },
   { id: 'item3', name: 'Skip Joker', type: 'JOKER_SKIP', price: 200, icon: '⏭️', description: 'Skip a hard question.' },
 ];
+
+export const CURRICULUM_TOPICS: Record<string, TopicMetadata[]> = {
+  'sub-math': [
+    { name: 'Sayılar ve İşlemler', grade: 1 },
+    { name: 'Temel Geometri Şekilleri', grade: 1 },
+    { name: 'Kesirler ve Parçalar', grade: 2 },
+    { name: 'Zaman ve Ölçme', grade: 2 },
+    { name: 'Doğal Sayılar', grade: 3 },
+    { name: 'Çarpma ve Bölme', grade: 3 },
+    { name: 'Kesirler', grade: 4 },
+    { name: 'Uzunluk ve Alan Ölçme', grade: 4 },
+    { name: 'Ondalık Gösterimler', grade: 5 },
+    { name: 'Çokgenler ve Çember', grade: 5 },
+    { name: 'Oran-Orantı', grade: 6 },
+    { name: 'Cebirsel İfadeler', grade: 6 },
+    { name: 'Eşitsizlikler', grade: 7 },
+    { name: 'Olasılık ve Veri', grade: 7 },
+    { name: 'Kareköklü Sayılar', grade: 8 },
+    { name: 'Trigonometriye Giriş', grade: 9 },
+    { name: 'Fonksiyonlar', grade: 10 },
+    { name: 'Türev', grade: 11 },
+    { name: 'İntegral', grade: 12 },
+  ],
+  'sub-sci': [
+    { name: 'Canlılar Dünyası', grade: 3 },
+    { name: 'Madde ve Değişim', grade: 4 },
+    { name: 'Vücudumuz Bilmecesini Çözelim', grade: 5 },
+    { name: 'Işık ve Ses', grade: 5 },
+    { name: 'Dünya, Güneş ve Ay', grade: 6 },
+    { name: 'Kuvvet ve Hareket', grade: 6 },
+    { name: 'Hücre ve Bölünmeler', grade: 7 },
+    { name: 'Saf Madde ve Karışımlar', grade: 7 },
+    { name: 'DNA ve Genetik Kod', grade: 8 },
+    { name: 'Basit Makineler', grade: 8 },
+  ],
+  'sub-tur': [
+    { name: 'Okuma Anlama', grade: 1 },
+    { name: 'Ses Bilgisi', grade: 2 },
+    { name: 'Yazım Kuralları', grade: 3 },
+    { name: 'Paragraf Bilgisi', grade: 4 },
+    { name: 'Sözcükte Anlam', grade: 5 },
+    { name: 'Fiiller', grade: 6 },
+    { name: 'Cümlenin Ögeleri', grade: 7 },
+    { name: 'Paragrafta Anlam', grade: 8 },
+    { name: 'Edebî Sanatlar', grade: 9 },
+    { name: 'Dil ve Anlatım', grade: 10 },
+    { name: 'Şiir İncelemesi', grade: 11 },
+    { name: 'Cumhuriyet Dönemi Roman', grade: 12 },
+  ],
+  'sub-soc': [
+    { name: 'Birey ve Toplum', grade: 4 },
+    { name: 'Kültür ve Miras', grade: 5 },
+    { name: 'Üretim, Tüketim ve Yönetim', grade: 6 },
+    { name: 'Küresel Bağlantılar', grade: 7 },
+    { name: 'Demokratik Vatandaşlık', grade: 8 },
+  ],
+  'sub-eng': [
+    { name: 'Greetings and Introductions', level: 'A1' },
+    { name: 'My Family and Friends', level: 'A1' },
+    { name: 'Daily Routines', level: 'A2' },
+    { name: 'Travel and Transportation', level: 'A2' },
+    { name: 'School Life', level: 'B1' },
+    { name: 'Healthy Living', level: 'B1' },
+    { name: 'Environment and Technology', level: 'B2' },
+    { name: 'Future Plans', level: 'B2' },
+    { name: 'Academic Writing', level: 'C1' },
+    { name: 'Debate and Persuasion', level: 'C1' },
+  ],
+  'sub-phy': [
+    { name: 'Vektörler ve Kuvvet', grade: 9 },
+    { name: 'Hareket ve Newton Yasaları', grade: 10 },
+    { name: 'Enerji ve Tork', grade: 11 },
+    { name: 'Dalga Mekaniği', grade: 12 },
+  ],
+  'sub-che': [
+    { name: 'Atomun Yapısı', grade: 9 },
+    { name: 'Kimyasal Bağlar', grade: 10 },
+    { name: 'Asit Baz Tepkimeleri', grade: 11 },
+    { name: 'Organik Kimya', grade: 12 },
+  ],
+  'sub-bio': [
+    { name: 'Canlıların Sınıflandırılması', grade: 9 },
+    { name: 'Hücre Bölünmeleri', grade: 10 },
+    { name: 'Kalıtım ve Genetik', grade: 11 },
+    { name: 'Ekosistemler', grade: 12 },
+  ],
+  'sub-geo': [
+    { name: 'Türkiye’nin Fiziki Coğrafyası', grade: 9 },
+    { name: 'Nüfus ve Yerleşme', grade: 10 },
+    { name: 'Doğal Afetler', grade: 11 },
+    { name: 'Çevre ve Toplum', grade: 12 },
+  ],
+  'sub-his': [
+    { name: 'İlk Türk Devletleri', grade: 9 },
+    { name: 'Osmanlı Devleti Kuruluş', grade: 10 },
+    { name: 'Atatürk İlkeleri', grade: 11 },
+    { name: 'Çağdaş Türk ve Dünya Tarihi', grade: 12 },
+  ],
+  'sub-rel': [
+    { name: 'Temel İnançlar', grade: 4 },
+    { name: 'İslamın Şartları', grade: 5 },
+    { name: 'Peygamberler Tarihi', grade: 6 },
+    { name: 'Ahlak Konuları', grade: 7 },
+    { name: 'Din ve Kültür', grade: 8 },
+  ],
+  'sub-it': [
+    { name: 'Algoritma Mantığı', grade: 5 },
+    { name: 'Temel Kodlama', grade: 6 },
+  ],
+};
 
 export const INITIAL_POSTS: Post[] = [
   {

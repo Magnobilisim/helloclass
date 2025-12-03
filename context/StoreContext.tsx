@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, Transaction, ExamSession, PointPurchase } from '../types';
-import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES } from '../constants';
+import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
 import { checkContentSafety } from '../services/aiService';
 
@@ -82,61 +82,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   
   const [availableSubjects, setAvailableSubjects] = useState<SubjectDef[]>(INITIAL_SUBJECTS);
 
-  const [approvedTopics, setApprovedTopics] = useState<Record<string, TopicMetadata[]>>({
-    'sub-math': [
-      { name: 'Doğal Sayılar', grade: 5 }, { name: 'Doğal Sayılar', grade: 6 },
-      { name: 'Kesirler', grade: 5 }, { name: 'Ondalık Gösterim', grade: 5 },
-      { name: 'Tam Sayılar', grade: 6 }, { name: 'Cebirsel İfadeler', grade: 6 },
-      { name: 'Rasyonel Sayılar', grade: 7 }, { name: 'Eşitlik ve Denklem', grade: 7 },
-      { name: 'Çarpanlar ve Katlar', grade: 8 }, { name: 'Üslü İfadeler', grade: 8 },
-      { name: 'Kareköklü İfadeler', grade: 8 }, { name: 'Veri Analizi', grade: 8 },
-      { name: 'Olasılık', grade: 8 }, { name: 'Üçgenler', grade: 8 }
-    ],
-    'sub-sci': [
-      { name: 'Güneş, Dünya ve Ay', grade: 5 }, { name: 'Kuvvetin Ölçülmesi', grade: 5 },
-      { name: 'Güneş Sistemi', grade: 6 }, { name: 'Vücudumuzdaki Sistemler', grade: 6 },
-      { name: 'Kuvvet ve Hareket', grade: 6 }, { name: 'Güneş Sistemi ve Ötesi', grade: 7 },
-      { name: 'Hücre ve Bölünmeler', grade: 7 }, { name: 'Kuvvet ve Enerji', grade: 7 },
-      { name: 'Mevsimler ve İklim', grade: 8 }, { name: 'DNA ve Genetik Kod', grade: 8 },
-      { name: 'Basınç', grade: 8 }, { name: 'Madde ve Endüstri', grade: 8 }
-    ],
-    'sub-tur': [
-      { name: 'Sözcükte Anlam', grade: 5 }, { name: 'Cümlede Anlam', grade: 5 },
-      { name: 'Paragraf', grade: 5 }, { name: 'Yazım Kuralları', grade: 5 },
-      { name: 'Sözcükte Anlam', grade: 6 }, { name: 'Zamirler', grade: 6 },
-      { name: 'Fiiller', grade: 7 }, { name: 'Zarflar', grade: 7 },
-      { name: 'Fiilimsiler', grade: 8 }, { name: 'Cümlenin Ögeleri', grade: 8 },
-      { name: 'Fiilde Çatı', grade: 8 }, { name: 'Cümle Türleri', grade: 8 }
-    ],
-    'sub-soc': [
-      { name: 'Birey ve Toplum', grade: 5 }, { name: 'Kültür ve Miras', grade: 5 },
-      { name: 'İnsanlar, Yerler ve Çevreler', grade: 5 }, { name: 'Birey ve Toplum', grade: 6 },
-      { name: 'Kültür ve Miras', grade: 6 }, { name: 'İpek Yolu', grade: 6 },
-      { name: 'İletişim ve İnsan İlişkileri', grade: 7 }, { name: 'Türk Tarihinde Yolculuk', grade: 7 }
-    ],
-    'sub-his': [
-      { name: 'Bir Kahraman Doğuyor', grade: 8 }, { name: 'Milli Uyanış', grade: 8 },
-      { name: 'Ya İstiklal Ya Ölüm', grade: 8 }, { name: 'Atatürkçülük ve Çağdaşlaşan Türkiye', grade: 8 }
-    ],
-    'sub-eng': [
-      { name: 'Greetings', level: 'A1' }, { name: 'My Family', level: 'A1' },
-      { name: 'My Town', level: 'A1' }, { name: 'Games and Hobbies', level: 'A1' },
-      { name: 'Yummy Breakfast', level: 'A2' }, { name: 'At the Fair', level: 'A2' },
-      { name: 'Vacation', level: 'A2' }, { name: 'Appearance and Personality', level: 'A2' },
-      { name: 'Friendship', level: 'B1' }, { name: 'Teen Life', level: 'B1' },
-      { name: 'In The Kitchen', level: 'B1' }, { name: 'On The Phone', level: 'B1' }
-    ],
-    'sub-rel': [
-      { name: 'Allah İnancı', grade: 5 }, { name: 'Ramazan ve Oruç', grade: 5 },
-      { name: 'Peygamber ve İlahi Kitap İnancı', grade: 6 }, { name: 'Namaz', grade: 6 },
-      { name: 'Melek ve Ahiret İnancı', grade: 7 }, { name: 'Hac ve Kurban', grade: 7 },
-      { name: 'Kader İnancı', grade: 8 }, { name: 'Zekat ve Sadaka', grade: 8 }
-    ],
-    'sub-it': [
-      { name: 'Bilişim Teknolojileri', grade: 5 }, { name: 'Etik ve Güvenlik', grade: 5 },
-      { name: 'İşletim Sistemleri', grade: 6 }, { name: 'Problem Çözme ve Algoritma', grade: 6 }
-    ]
-  });
+  const [approvedTopics, setApprovedTopics] = useState<Record<string, TopicMetadata[]>>(CURRICULUM_TOPICS);
 
   useEffect(() => {
     const loadedUsers = localStorage.getItem('hc_users');
