@@ -380,6 +380,38 @@ export const ExamRoom = () => {
       setShowRetakeModal(false);
   };
 
+  const pointsModal = showPointsModal ? (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-800">{t('insufficient_points_title')}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                {pointModalContext === 'EXPLAIN' ? t('ai_explain') : t('exam_details')}
+            </span>
+            <p className="text-gray-600">{pointModalMessage}</p>
+            <div className="space-y-3">
+                <button
+                    onClick={() => { watchAdForPoints(); setShowPointsModal(false); }}
+                    className="w-full bg-brand-100 text-brand-700 font-semibold rounded-xl py-3 hover:bg-brand-200 transition-colors"
+                >
+                    {t('watch_ad_cta')}
+                </button>
+                <button
+                    onClick={() => { setShowPointsModal(false); navigate('/student/shop'); }}
+                    className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
+                >
+                    {t('go_to_shop_cta')}
+                </button>
+                <button
+                    onClick={() => setShowPointsModal(false)}
+                    className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 hover:bg-gray-50 transition-colors"
+                >
+                    {t('close')}
+                </button>
+            </div>
+        </div>
+    </div>
+  ) : null;
+
   if (isFinished) {
     const correctCount = exam.questions.reduce((acc, q, idx) => acc + (userAnswers[idx] === q.correctIndex ? 1 : 0), 0);
     const wrongCount = exam.questions.reduce((acc, q, idx) => acc + (userAnswers[idx] !== -1 && userAnswers[idx] !== q.correctIndex ? 1 : 0), 0);
@@ -525,6 +557,7 @@ export const ExamRoom = () => {
                 </div>
             </div>
         )}
+        {pointsModal}
       </div>
     );
   }
@@ -639,37 +672,7 @@ export const ExamRoom = () => {
       <div className="mt-6 text-center text-gray-400 font-medium text-sm">
          {t('question')} {currentIndex + 1} {t('of')} {exam.questions.length} • {t('answered')}: {userAnswers.filter(ans => ans !== -1).length}
       </div>
-      {showPointsModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-                <h3 className="text-xl font-bold text-gray-800">{t('insufficient_points_title')}</h3>
-                <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                    {pointModalContext === 'EXPLAIN' ? t('ai_explain') : t('exam_details')}
-                </span>
-                <p className="text-gray-600">{pointModalMessage}</p>
-                <div className="space-y-3">
-                    <button
-                        onClick={() => { watchAdForPoints(); setShowPointsModal(false); }}
-                        className="w-full bg-brand-100 text-brand-700 font-semibold rounded-xl py-3 hover:bg-brand-200 transition-colors"
-                    >
-                        {t('watch_ad_cta')}
-                    </button>
-                    <button
-                        onClick={() => { setShowPointsModal(false); navigate('/student/shop'); }}
-                        className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
-                    >
-                        {t('go_to_shop_cta')}
-                    </button>
-                    <button
-                        onClick={() => setShowPointsModal(false)}
-                        className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 hover:bg-gray-50 transition-colors"
-                    >
-                        {t('close')}
-                    </button>
-                </div>
-            </div>
-        </div>
-      )}
+      {pointsModal}
       {showRetakeModal && exam && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4">
