@@ -200,13 +200,10 @@ export const generateExamQuestions = async ({
 
     const response = await client.responses.create({
       model: TEXT_MODEL,
-      reasoning: { effort: "medium" },
-      text: {
-        format: {
-          type: "json_schema",
-          name: questionPlanSchema.name,
-          schema: questionPlanSchema.schema,
-        },
+      response_format: {
+        type: "json_schema",
+        name: questionPlanSchema.name,
+        schema: questionPlanSchema.schema,
       },
       input: [
         {
@@ -294,12 +291,10 @@ export const checkContentSafety = async (
     const client = ensureClient();
     const response = await client.responses.create({
       model: TEXT_MODEL,
-      text: {
-        format: {
-          type: "json_schema",
-          name: safetySchema.name,
-          schema: safetySchema.schema,
-        },
+      response_format: {
+        type: "json_schema",
+        name: safetySchema.name,
+        schema: safetySchema.schema,
       },
       input: [
         {
@@ -337,12 +332,10 @@ export const getAnswerExplanation = async (
     const client = ensureClient();
     const response = await client.responses.create({
       model: TEXT_MODEL,
-      text: {
-        format: {
-          type: "json_schema",
-          name: explanationSchema.name,
-          schema: explanationSchema.schema,
-        },
+      response_format: {
+        type: "json_schema",
+        name: explanationSchema.name,
+        schema: explanationSchema.schema,
       },
       input: [
         {
@@ -392,12 +385,10 @@ export const parseQuestionFromImage = async (
     const client = ensureClient();
     const response = await client.responses.create({
       model: TEXT_MODEL,
-      text: {
-        format: {
-          type: "json_schema",
-          name: singleQuestionSchema.name,
-          schema: singleQuestionSchema.schema,
-        },
+      response_format: {
+        type: "json_schema",
+        name: singleQuestionSchema.name,
+        schema: singleQuestionSchema.schema,
       },
       input: [
         {
