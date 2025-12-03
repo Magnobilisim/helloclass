@@ -68,7 +68,13 @@ export const TeacherDashboard = () => {
       <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200 h-96 relative overflow-hidden">
          <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2"><Users size={18} className="text-brand-600" /> {t('top_sellers')}</h3>
          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" /><XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} fontWeight={600} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} fontWeight={600} /><Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} formatter={(value: number) => [`${value} Sales`, 'Sales']} labelStyle={{ color: '#111827', fontWeight: 'bold' }} /><Bar dataKey="sales" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={50} animationDuration={1000} /></BarChart>
+            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} fontWeight={600} tickMargin={12} />
+                <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} fontWeight={600} />
+                <Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} formatter={(value: number) => [`${value} Sales`, 'Sales']} labelStyle={{ color: '#111827', fontWeight: 'bold' }} />
+                <Bar dataKey="sales" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={50} animationDuration={1000} />
+            </BarChart>
          </ResponsiveContainer>
       </div>
 
