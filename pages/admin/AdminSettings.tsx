@@ -19,6 +19,7 @@ export const AdminSettings = () => {
   const [packagePrice, setPackagePrice] = useState(0);
   const [packageDesc, setPackageDesc] = useState('');
   const [aiWizardCost, setAiWizardCost] = useState(systemSettings.aiWizardCost || 0);
+  const [aiExplainCost, setAiExplainCost] = useState(systemSettings.aiExplainCost || 0);
 
   useEffect(() => {
     if (systemSettings) {
@@ -31,6 +32,7 @@ export const AdminSettings = () => {
         setReferralReward(systemSettings.referralRewardPoints || 0);
         setPackages(systemSettings.pointPackages || []);
         setAiWizardCost(systemSettings.aiWizardCost ?? 0);
+        setAiExplainCost(systemSettings.aiExplainCost ?? 0);
     }
   }, [systemSettings]);
 
@@ -64,7 +66,8 @@ export const AdminSettings = () => {
           adRewardPoints: adReward,
           referralRewardPoints: referralReward,
           pointPackages: packages,
-          aiWizardCost
+          aiWizardCost,
+          aiExplainCost
       });
   };
   
@@ -140,6 +143,17 @@ export const AdminSettings = () => {
                       className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900"
                    />
                    <p className="text-xs text-gray-400 mt-1">{t('ai_wizard_cost_hint')}</p>
+                </div>
+                <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-2">{t('ai_explain_cost')}</label>
+                   <input
+                      type="number"
+                      min={0}
+                      value={aiExplainCost}
+                      onChange={e => setAiExplainCost(Math.max(0, Number(e.target.value)))}
+                      className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900"
+                   />
+                   <p className="text-xs text-gray-400 mt-1">{t('ai_explain_cost_hint')}</p>
                 </div>
 
                 <div>
