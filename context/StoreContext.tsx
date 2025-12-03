@@ -439,7 +439,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const purchaseItem = (item: ShopItem): boolean => {
     if (!user) return false;
-    if (user.inventory.includes(item.type) && item.type === 'AVATAR_FRAME') {
+    if (item.type === 'AVATAR_FRAME' && user.inventory.includes(item.type)) {
         showAlert(t('owned'), 'info');
         return true; 
     }
