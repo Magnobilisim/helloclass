@@ -2,12 +2,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
-import { generateExamQuestions } from '../../services/geminiService';
+import { generateExamQuestions } from '../../services/aiService';
 import { Subject, Exam } from '../../types';
 import { Bot, Loader2, Sparkles, GraduationCap, Book, Filter } from 'lucide-react';
 
 export const AIWizard = () => {
-  const { user, addExam, approvedTopics, availableSubjects, t, showAlert } = useStore();
+  const { user, addExam, approvedTopics, availableSubjects, t, showAlert, language } = useStore();
   const navigate = useNavigate();
   
   const [gradeLevel, setGradeLevel] = useState<number>(user?.classLevel || 5);
@@ -40,7 +40,13 @@ export const AIWizard = () => {
       const subjName = availableSubjects.find(s => s.id === subjectId)?.name || 'General';
       const levelString = `${subjectId === 'sub-eng' ? englishLevel : `Grade ${gradeLevel}`}${topic ? ` focusing on ${topic}` : ''}`;
       
-      const questions = await generateExamQuestions(subjName as string, levelString, 5);
+      const questions = await generateExamQuestions({
+        subjectName: subjName as string,
+        gradeOrLevel: levelString,
+        topic: topic || undefined,
+        questionCount: 5,
+        language,
+      });
       
       const newExam: Exam = {
         id: `ai-exam-${Date.now()}`,

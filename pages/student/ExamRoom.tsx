@@ -5,12 +5,12 @@ import { useStore } from '../../context/StoreContext';
 import { Exam } from '../../types';
 import { Timer, Zap, StepForward, CheckCircle, XCircle, Bot, MessageCircle, Loader2, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { getAnswerExplanation } from '../../services/geminiService';
+import { getAnswerExplanation } from '../../services/aiService';
 
 export const ExamRoom = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { exams, user, saveResult, showAlert, t, results, startExamSession, examSessions, prizeExams } = useStore();
+  const { exams, user, saveResult, showAlert, t, results, startExamSession, examSessions, prizeExams, language } = useStore();
   const [exam, setExam] = useState<Exam | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -160,7 +160,8 @@ export const ExamRoom = () => {
           question.text,
           question.options,
           question.correctIndex,
-          userAnswers[qIndex] === -1 ? null : userAnswers[qIndex]
+          userAnswers[qIndex] === -1 ? null : userAnswers[qIndex],
+          language
       );
       
       setExplanationMap(prev => ({ ...prev, [question.id]: explanation }));
