@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, Sparkles, GraduationCap, Book, Repeat } from 'lucide-react';
 
 export const StudentExams = () => {
-  const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, showAlert, results } = useStore();
+  const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, results, watchAdForPoints } = useStore();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -16,6 +16,8 @@ export const StudentExams = () => {
   const [filterEnglishLevel, setFilterEnglishLevel] = useState<string>('All');
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [customTime, setCustomTime] = useState(15);
+  const [showPointModal, setShowPointModal] = useState(false);
+  const [pointModalMessage, setPointModalMessage] = useState('');
 
   useEffect(() => {
       if (user?.classLevel) { setSelectedGrade(user.classLevel); }
@@ -64,6 +66,11 @@ export const StudentExams = () => {
   const handleStartOrBuy = (examId: string, price: number) => {
     const isPurchased = user?.purchasedExamIds?.includes(examId);
     if (!isPurchased && price > 0) {
+        if ((user?.points || 0) < price) {
+            setPointModalMessage(t('insufficient_points_message').replace('{points}', `${price}`));
+            setShowPointModal(true);
+            return;
+        }
         const success = purchaseExam(examId);
         if (success) openStartModal(examId);
     } else {
@@ -164,7 +171,12 @@ export const StudentExams = () => {
                         {isSolved ? <><Repeat size={16} /> {t('retake')}</> : <><Play size={16} /> {t('start')}</>}
                      </button>
                  ) : (
-                     <button onClick={() => handleStartOrBuy(exam.id, exam.price)} disabled={!canAfford} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${canAfford ? 'bg-brand-500 text-white shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}><ShoppingCart size={16} /> {exam.price} {t('points')}</button>
+                     <button
+                        onClick={() => handleStartOrBuy(exam.id, exam.price)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${canAfford ? 'bg-brand-500 text-white shadow-lg hover:bg-brand-600' : 'bg-gray-200 text-gray-400'}`}
+                     >
+                        <ShoppingCart size={16} /> {exam.price} {t('points')}
+                     </button>
                  )}
               </div>
            </div>
@@ -177,6 +189,34 @@ export const StudentExams = () => {
                   <h3 className="text-xl font-bold text-gray-800 mb-2">{t('start')} Exam</h3>
                   <div className="mb-6"><label className="block text-xs font-bold text-gray-400 uppercase mb-2">{t('time_min')}</label><input type="number" value={customTime} onChange={(e) => setCustomTime(Math.max(1, parseInt(e.target.value)))} className="w-full bg-gray-50 rounded-xl p-4 text-center text-2xl text-gray-900 font-bold outline-none" /></div>
                   <button onClick={confirmStart} className="w-full py-4 rounded-xl bg-brand-500 text-white font-bold text-lg shadow-lg">{t('start')} 🚀</button>
+              </div>
+          </div>
+      )}
+      {showPointModal && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                  <h3 className="text-xl font-bold text-gray-800">{t('insufficient_points_title')}</h3>
+                  <p className="text-gray-600">{pointModalMessage}</p>
+                  <div className="space-y-3">
+                      <button
+                          onClick={() => { watchAdForPoints(); setShowPointModal(false); }}
+                          className="w-full bg-brand-100 text-brand-700 font-semibold rounded-xl py-3 hover:bg-brand-200 transition-colors"
+                      >
+                          {t('watch_ad_cta')}
+                      </button>
+                      <button
+                          onClick={() => { setShowPointModal(false); navigate('/student/shop'); }}
+                          className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
+                      >
+                          {t('go_to_shop_cta')}
+                      </button>
+                      <button
+                          onClick={() => setShowPointModal(false)}
+                          className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 hover:bg-gray-50 transition-colors"
+                      >
+                          {t('close')}
+                      </button>
+                  </div>
               </div>
           </div>
       )}

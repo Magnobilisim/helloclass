@@ -72,13 +72,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adRewardPoints: 50,
       referralRewardPoints: 100,
       pointPackages: DEFAULT_POINT_PACKAGES,
-      aiWizardCost: 200
+      aiWizardCost: 200,
+      aiExplainCost: 25
   };
   const mergeSettings = (incoming?: Partial<SystemSettings>): SystemSettings => ({
       ...defaultSettings,
       ...incoming,
       pointPackages: incoming?.pointPackages && incoming.pointPackages.length ? incoming.pointPackages : defaultSettings.pointPackages,
-      aiWizardCost: typeof incoming?.aiWizardCost === 'number' ? incoming.aiWizardCost : defaultSettings.aiWizardCost
+      aiWizardCost: typeof incoming?.aiWizardCost === 'number' ? incoming.aiWizardCost : defaultSettings.aiWizardCost,
+      aiExplainCost: typeof incoming?.aiExplainCost === 'number' ? incoming.aiExplainCost : defaultSettings.aiExplainCost
   });
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(defaultSettings);
   

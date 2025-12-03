@@ -200,6 +200,7 @@ export interface SystemSettings {
   referralRewardPoints: number;
   pointPackages: PointPackage[];
   aiWizardCost: number;
+  aiExplainCost: number;
 }
 
 export interface PointPackage {
