@@ -152,7 +152,7 @@ export const AdminSettings = () => {
                 </div>
                 <div>
                    <h3 className="font-bold text-lg text-gray-800">{t('contract_mgmt')}</h3>
-                   <p className="text-sm text-gray-500">Edit terms of service for roles.</p>
+                   <p className="text-sm text-gray-500">{t('contract_hint')}</p>
                 </div>
              </div>
 

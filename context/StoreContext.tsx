@@ -777,7 +777,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateSystemSettings = (settings: SystemSettings) => {
       if (user?.role !== UserRole.ADMIN) return;
-      setSystemSettings(settings);
+      setSystemSettings(mergeSettings(settings));
       addLog('Updated Settings', 'System Config', 'warning');
       showAlert(t('settings_saved'), 'success');
   };
