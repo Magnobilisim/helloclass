@@ -90,12 +90,14 @@ const questionPlanSchema = {
   name: "ExamQuestionPlan",
   schema: {
     type: "object",
+    additionalProperties: false,
     properties: {
       questions: {
         type: "array",
         minItems: 1,
         items: {
           type: "object",
+          additionalProperties: false,
           properties: {
             text: { type: "string" },
             options: {
@@ -127,6 +129,7 @@ const safetySchema = {
   name: "SafetyCheck",
   schema: {
     type: "object",
+    additionalProperties: false,
     properties: {
       safe: { type: "boolean" },
       reason: { type: "string" },
@@ -139,6 +142,7 @@ const explanationSchema = {
   name: "AnswerExplanation",
   schema: {
     type: "object",
+    additionalProperties: false,
     properties: {
       explanation: { type: "string" },
     },
@@ -150,6 +154,7 @@ const singleQuestionSchema = {
   name: "ImageQuestionExtraction",
   schema: {
     type: "object",
+    additionalProperties: false,
     properties: {
       text: { type: "string" },
       options: {
