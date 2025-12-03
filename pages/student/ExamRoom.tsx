@@ -22,6 +22,7 @@ export const ExamRoom = () => {
   const [rewardsEarned, setRewardsEarned] = useState<number | null>(null);
   
   const [isReviewMode, setIsReviewMode] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [explainingQuestionId, setExplainingQuestionId] = useState<string | null>(null);
   const [explanationMap, setExplanationMap] = useState<Record<string, string>>({});
   const [showPointsModal, setShowPointsModal] = useState(false);
@@ -97,7 +98,7 @@ export const ExamRoom = () => {
 
     const existingResult = results.find(r => r.examId === foundExam.id && r.studentId === user.id);
     
-    if (existingResult) {
+    if (existingResult && !isRetrying) {
         setScore(existingResult.score);
         setIsFinished(true);
         if (existingResult.answers) {
@@ -112,10 +113,11 @@ export const ExamRoom = () => {
         setUserAnswers(new Array(foundExam.questions.length).fill(-1));
         setRewardsEarned(null);
         setTimeLeft(chosenMinutes * 60);
+        setIsFinished(false);
     }
 
     setIsLoading(false);
-  }, [id, exams, navigate, user, results, prizeExams, startExamSession, t]);
+  }, [id, exams, navigate, user, results, prizeExams, startExamSession, t, isRetrying]);
 
   useEffect(() => {
       if (exam && !isFinished && !isReviewMode && id && user) {
@@ -177,6 +179,7 @@ export const ExamRoom = () => {
     if (!exam || !user || isFinished) return;
     const answersToUse = finalAnswers ? [...finalAnswers] : [...userAnswers];
     setIsFinished(true);
+    setIsRetrying(false);
     setUserAnswers(answersToUse);
     clearTimeLimit(exam.id);
     
@@ -372,6 +375,7 @@ export const ExamRoom = () => {
   const confirmRetake = () => {
       if (!exam || !id) return;
       const minutes = Math.max(1, retakeMinutes);
+      setIsRetrying(true);
       persistTimeLimit(exam.id, minutes);
       setActiveTimeLimitMinutes(minutes);
       startExamSession(id);
