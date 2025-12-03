@@ -27,6 +27,11 @@ export const UserProfile = () => {
       return counts;
   }, [profileUser?.inventory]);
 
+  const ownedInventoryItems = useMemo(
+    () => shopItems.filter(item => (inventoryCounts[item.type] || 0) > 0),
+    [shopItems, inventoryCounts]
+  );
+
   useEffect(() => {
       if (id && id !== currentUser?.id) {
           const foundUser = users.find(u => u.id === id);
@@ -105,10 +110,6 @@ export const UserProfile = () => {
   const purchasedExams: Exam[] = (profileUser?.purchasedExamIds || [])
       .map(examId => exams.find(e => e.id === examId))
       .filter((exam): exam is Exam => Boolean(exam));
-  const ownedInventoryItems = useMemo(
-    () => shopItems.filter(item => (inventoryCounts[item.type] || 0) > 0),
-    [shopItems, inventoryCounts]
-  );
 
   const navigateToExam = (examId: string) => {
       navigate(`/student/exam/${examId}`);
