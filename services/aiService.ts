@@ -195,9 +195,9 @@ export const generateExamQuestions = async ({
     const response = await client.responses.create({
       model: TEXT_MODEL,
       reasoning: { effort: "medium" },
-      response_format: {
-        type: "json_schema",
-        json_schema: questionPlanSchema,
+      text: {
+        format: "json_schema",
+        schema: questionPlanSchema,
       },
       input: [
         {
@@ -285,9 +285,9 @@ export const checkContentSafety = async (
     const client = ensureClient();
     const response = await client.responses.create({
       model: TEXT_MODEL,
-      response_format: {
-        type: "json_schema",
-        json_schema: safetySchema,
+      text: {
+        format: "json_schema",
+        schema: safetySchema,
       },
       input: [
         {
@@ -325,9 +325,9 @@ export const getAnswerExplanation = async (
     const client = ensureClient();
     const response = await client.responses.create({
       model: TEXT_MODEL,
-      response_format: {
-        type: "json_schema",
-        json_schema: explanationSchema,
+      text: {
+        format: "json_schema",
+        schema: explanationSchema,
       },
       input: [
         {
@@ -377,9 +377,9 @@ export const parseQuestionFromImage = async (
     const client = ensureClient();
     const response = await client.responses.create({
       model: TEXT_MODEL,
-      response_format: {
-        type: "json_schema",
-        json_schema: singleQuestionSchema,
+      text: {
+        format: "json_schema",
+        schema: singleQuestionSchema,
       },
       input: [
         {
