@@ -379,6 +379,8 @@ export const ExamRoom = () => {
     );
   }
 
+  const activePrizeExam = prizeExams.find(pe => pe.examId === exam.id && pe.isActive);
+  const jokersEnabled = !activePrizeExam; 
   const currentQ = exam.questions[currentIndex];
   const progress = ((currentIndex) / exam.questions.length) * 100;
 
@@ -394,14 +396,16 @@ export const ExamRoom = () => {
         <div className="flex gap-2">
             <button 
                 onClick={useJoker5050}
-                className={`p-2 rounded-xl border-2 transition-all ${user?.inventory.includes('JOKER_5050') ? 'border-purple-200 bg-purple-50 text-purple-600 hover:scale-105' : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-50'}`}
+                disabled={!jokersEnabled || !user?.inventory.includes('JOKER_5050')}
+                className={`p-2 rounded-xl border-2 transition-all ${jokersEnabled && user?.inventory.includes('JOKER_5050') ? 'border-purple-200 bg-purple-50 text-purple-600 hover:scale-105' : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'}`}
                 title="50/50"
             >
                 <div className="font-bold text-xs flex items-center gap-1"><Zap size={14} /> 50%</div>
             </button>
             <button 
                 onClick={useJokerSkip}
-                className={`p-2 rounded-xl border-2 transition-all ${user?.inventory.includes('JOKER_SKIP') ? 'border-blue-200 bg-blue-50 text-blue-600 hover:scale-105' : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-50'}`}
+                disabled={!jokersEnabled || !user?.inventory.includes('JOKER_SKIP')}
+                className={`p-2 rounded-xl border-2 transition-all ${jokersEnabled && user?.inventory.includes('JOKER_SKIP') ? 'border-blue-200 bg-blue-50 text-blue-600 hover:scale-105' : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'}`}
                 title="Skip"
             >
                 <div className="font-bold text-xs flex items-center gap-1"><StepForward size={14} /> {t('skip')}</div>
