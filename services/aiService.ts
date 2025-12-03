@@ -204,7 +204,7 @@ export const generateExamQuestions = async ({
           role: "system",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: `You are an experienced K12 teacher. Create multiple-choice questions in ${language === "tr" ? "Turkish" : "English"} with 4 options, age-appropriate language, and curriculum alignment.`,
             },
           ],
@@ -213,7 +213,7 @@ export const generateExamQuestions = async ({
           role: "user",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: `Prepare ${questionCount} questions for ${subjectName}. Target group: ${gradeOrLevel}. ${
                 topic ? `Topic focus: ${topic}.` : ""
               }
@@ -294,14 +294,14 @@ export const checkContentSafety = async (
           role: "system",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: "You moderate content for a K-12 social network. Flag bullying, hate speech, or unsafe behavior.",
             },
           ],
         },
         {
           role: "user",
-          content: [{ type: "text", text: `Text: """${content}"""` }],
+          content: [{ type: "input_text", text: `Text: """${content}"""` }],
         },
       ],
     });
@@ -334,7 +334,7 @@ export const getAnswerExplanation = async (
           role: "system",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: `Provide concise, encouraging explanations in ${
                 language === "tr" ? "Turkish" : "English"
               }.`,
@@ -345,7 +345,7 @@ export const getAnswerExplanation = async (
           role: "user",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: `Question: ${questionText}
 Options: ${options.join(" | ")}
 Correct answer: ${options[correctIndex]}
@@ -386,7 +386,7 @@ export const parseQuestionFromImage = async (
           role: "system",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: "You are an OCR assistant that extracts multiple-choice questions from images.",
             },
           ],
