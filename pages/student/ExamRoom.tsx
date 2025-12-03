@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
 import { Exam } from '../../types';
@@ -32,6 +32,7 @@ export const ExamRoom = () => {
   const [activeTimeLimitMinutes, setActiveTimeLimitMinutes] = useState<number | null>(null);
   const [showRetakeModal, setShowRetakeModal] = useState(false);
   const [retakeMinutes, setRetakeMinutes] = useState(10);
+  const retakeInputRef = useRef<HTMLInputElement>(null);
 
   const getStoredTimeLimit = (examId: string, defaultMinutes: number) => {
     if (typeof window === 'undefined') return defaultMinutes;
@@ -152,6 +153,13 @@ export const ExamRoom = () => {
           finishExam();
       }
   }, [timeLeft, exam, isFinished, isReviewMode]);
+
+  useEffect(() => {
+      if (showRetakeModal) {
+          const id = requestAnimationFrame(() => retakeInputRef.current?.focus());
+          return () => cancelAnimationFrame(id);
+      }
+  }, [showRetakeModal]);
 
   const handleOptionSelect = (index: number) => {
     if (isFinished || !exam) return;
@@ -534,6 +542,7 @@ export const ExamRoom = () => {
                         type="number"
                         min={1}
                         value={retakeMinutes}
+                        ref={retakeInputRef}
                         onChange={(e) => {
                             const val = Number(e.target.value);
                             setRetakeMinutes(Math.max(1, isNaN(val) ? 1 : val));
@@ -551,7 +560,7 @@ export const ExamRoom = () => {
                             onClick={confirmRetake}
                             className="flex-1 bg-brand-500 text-white rounded-2xl py-3 font-semibold hover:bg-brand-600 transition-colors"
                         >
-                            {t('retake')}
+                            {t('start')}
                         </button>
                     </div>
                 </div>
