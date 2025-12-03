@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
-import { Play, TrendingUp, Clock, Bot, Trophy, ArrowRight, CheckCircle, Repeat } from 'lucide-react';
+import { Play, TrendingUp, Clock, Bot, Trophy, ArrowRight, CheckCircle, Repeat, ShoppingCart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export const StudentDashboard = () => {
