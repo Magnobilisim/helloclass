@@ -670,11 +670,40 @@ export const AdminDashboard = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative border border-gray-200">
                   <button onClick={() => setShowBroadcastModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><X size={20} /></button>
-                  <h3 className="font-bold text-xl text-gray-900 mb-6">Send Broadcast</h3>
+                    <h3 className="font-bold text-xl text-gray-900 mb-6">{t('broadcast')}</h3>
                   <div className="space-y-4">
-                      <input value={broadcastTitle} onChange={e => setBroadcastTitle(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500" placeholder="Title" />
-                      <textarea value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} rows={3} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500" placeholder="Message" />
-                      <button onClick={handleSendBroadcast} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Send Now</button>
+                        <input
+                            value={broadcastTitle}
+                            onChange={e => setBroadcastTitle(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500"
+                            placeholder={t('broadcast_title_placeholder')}
+                        />
+                        <textarea
+                            value={broadcastMsg}
+                            onChange={e => setBroadcastMsg(e.target.value)}
+                            rows={3}
+                            className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500"
+                            placeholder={t('broadcast_message_placeholder')}
+                        />
+                        <div>
+                            <label className="text-sm font-semibold text-gray-600 mb-2 block">{t('select_target_role')}</label>
+                            <select
+                                value={broadcastRole}
+                                onChange={e => setBroadcastRole(e.target.value as UserRole | 'ALL')}
+                                className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500"
+                            >
+                                <option value="ALL">{t('target_all')}</option>
+                                <option value="STUDENT">{t('target_students')}</option>
+                                <option value="TEACHER">{t('target_teachers')}</option>
+                            </select>
+                        </div>
+                        <button
+                            onClick={handleSendBroadcast}
+                            disabled={!broadcastTitle.trim() || !broadcastMsg.trim()}
+                            className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors disabled:opacity-50"
+                        >
+                            {t('send_now')}
+                        </button>
                   </div>
               </div>
           </div>
