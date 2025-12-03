@@ -15,7 +15,7 @@ export const StudentExams = () => {
   const [selectedTopic, setSelectedTopic] = useState<string>('All');
   const [filterEnglishLevel, setFilterEnglishLevel] = useState<string>('All');
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
-  const [customTime, setCustomTime] = useState(15);
+  const [customTime, setCustomTime] = useState<number | null>(null);
   const [showPointModal, setShowPointModal] = useState(false);
   const [pointModalMessage, setPointModalMessage] = useState('');
 
@@ -84,13 +84,23 @@ export const StudentExams = () => {
 
   const openStartModal = (examId: string) => {
     const exam = exams.find(e => e.id === examId);
-    if (exam) { setCustomTime(exam.timeLimit); setSelectedExamId(examId); }
+    if (!exam) return;
+    const canEditTime = exam.timeLimit <= 0;
+    if (!canEditTime) {
+        sessionStorage.removeItem(`exam_time_${examId}`);
+        navigate(`/student/exam/${examId}`);
+        return;
+    }
+    setCustomTime(exam.timeLimit || 15);
+    setSelectedExamId(examId);
   };
 
   const confirmStart = () => {
-      if (selectedExamId) {
+      if (selectedExamId && customTime) {
           sessionStorage.setItem(`exam_time_${selectedExamId}`, customTime.toString());
           navigate(`/student/exam/${selectedExamId}`);
+          setSelectedExamId(null);
+          setCustomTime(null);
       }
   };
 
