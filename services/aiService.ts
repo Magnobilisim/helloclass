@@ -198,7 +198,8 @@ export const generateExamQuestions = async ({
       text: {
         format: {
           type: "json_schema",
-          json_schema: questionPlanSchema,
+          name: questionPlanSchema.name,
+          json_schema: questionPlanSchema.schema,
         },
       },
       input: [
@@ -290,7 +291,8 @@ export const checkContentSafety = async (
       text: {
         format: {
           type: "json_schema",
-          json_schema: safetySchema,
+          name: safetySchema.name,
+          json_schema: safetySchema.schema,
         },
       },
       input: [
@@ -332,7 +334,8 @@ export const getAnswerExplanation = async (
       text: {
         format: {
           type: "json_schema",
-          json_schema: explanationSchema,
+          name: explanationSchema.name,
+          json_schema: explanationSchema.schema,
         },
       },
       input: [
@@ -386,7 +389,8 @@ export const parseQuestionFromImage = async (
       text: {
         format: {
           type: "json_schema",
-          json_schema: singleQuestionSchema,
+          name: singleQuestionSchema.name,
+          json_schema: singleQuestionSchema.schema,
         },
       },
       input: [
