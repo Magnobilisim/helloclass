@@ -117,6 +117,7 @@ const questionPlanSchema = {
             "correctIndex",
             "needsImage",
             "explanation",
+            "imagePrompt",
           ],
         },
       },
