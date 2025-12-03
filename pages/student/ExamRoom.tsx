@@ -316,27 +316,6 @@ export const ExamRoom = () => {
     }
   };
 
-  if (isLoading) {
-      return (
-          <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
-              <Loader2 size={48} className="animate-spin mb-4 text-brand-500" />
-              <p className="font-bold">{t('loading_exam')}</p>
-          </div>
-      );
-  }
-
-  if (!exam) {
-      return (
-          <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
-              <AlertCircle size={48} className="mb-4 text-red-400" />
-              <p className="font-bold">Exam not found or access denied.</p>
-              <button onClick={() => navigate('/student')} className="mt-4 text-brand-600 font-bold hover:underline">
-                  Go Home
-              </button>
-          </div>
-      );
-  }
-
   if (accessBlocked && exam) {
       return (
           <div className="flex flex-col items-center justify-center h-[60vh] text-center px-6 text-gray-600">
@@ -363,6 +342,27 @@ export const ExamRoom = () => {
                       {t('go_to_market')}
                   </button>
               </div>
+          </div>
+      );
+  }
+
+  if (isLoading) {
+      return (
+          <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
+              <Loader2 size={48} className="animate-spin mb-4 text-brand-500" />
+              <p className="font-bold">{t('loading_exam')}</p>
+          </div>
+      );
+  }
+
+  if (!exam) {
+      return (
+          <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
+              <AlertCircle size={48} className="mb-4 text-red-400" />
+              <p className="font-bold">Exam not found or access denied.</p>
+              <button onClick={() => navigate('/student')} className="mt-4 text-brand-600 font-bold hover:underline">
+                  Go Home
+              </button>
           </div>
       );
   }
