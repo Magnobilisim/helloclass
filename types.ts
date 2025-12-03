@@ -55,6 +55,11 @@ export interface User {
   createdAt?: string; // Audit
   updatedAt?: string; // Audit
   isDeleted?: boolean; // Soft Delete
+  referralCode?: string;
+  referredBy?: string;
+  referralCount?: number;
+  totalReferralPoints?: number;
+  totalPointsPurchased?: number;
 }
 
 export interface Question {
@@ -112,6 +117,7 @@ export interface Transaction {
 
 export interface ExamSession {
   examId: string;
+  studentId: string;
   startedAt: string; // ISO String for DB (Strict)
   status: 'started' | 'completed';
 }
@@ -190,6 +196,27 @@ export interface SystemSettings {
   pointConversionRate: number;
   studentTerms: string;
   teacherTerms: string;
+  adRewardPoints: number;
+  referralRewardPoints: number;
+  pointPackages: PointPackage[];
+  aiWizardCost: number;
+}
+
+export interface PointPackage {
+  id: string;
+  name: string;
+  points: number;
+  price: number;
+  description?: string;
+}
+
+export interface PointPurchase {
+  id: string;
+  userId: string;
+  packageId: string;
+  points: number;
+  price: number;
+  timestamp: string;
 }
 
 export interface Payout {
@@ -251,11 +278,12 @@ export interface StoreContextType {
   prizeExams: PrizeExam[];
   transactions: Transaction[]; 
   examSessions: Record<string, ExamSession>; 
+  pointPurchases: PointPurchase[];
   
   // Auth
   login: (email: string, role: UserRole) => boolean;
   logout: () => void;
-  register: (user: User) => void;
+  register: (user: User, options?: { referralCode?: string }) => void;
   updateUser: (updatedUser: User) => void;
   deleteUser: (userId: string) => void;
   changeRole: (userId: string, newRole: UserRole) => void;
@@ -297,7 +325,9 @@ export interface StoreContextType {
   sendBroadcast: (title: string, message: string, targetRole: UserRole | 'ALL') => void;
   adjustUserPoints: (userId: string, amount: number) => void;
   processPayout: (teacherId: string, amountTL: number) => void;
-  deleteExamImage: (examId: string, questionId: string, type: 'question' | 'option', optionIndex?: number) => void;
+  deleteExamImage: (examId: string, questionId: string, type: 'question' | 'option' | 'explanation', optionIndex?: number) => void;
+  watchAdForPoints: () => void;
+  purchasePointPackage: (packageId: string) => boolean;
   
   // Prize Exam Features
   addPrizeExam: (exam: PrizeExam) => void;

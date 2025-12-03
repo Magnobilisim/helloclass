@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, FileText } from 'lucide-react';
+import { Settings, Save, FileText, Gift, Plus, Trash2 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 
 export const AdminSettings = () => {
@@ -11,6 +11,14 @@ export const AdminSettings = () => {
   const [pointConversion, setPointConversion] = useState(0.1);
   const [studentTerms, setStudentTerms] = useState('');
   const [teacherTerms, setTeacherTerms] = useState('');
+  const [adReward, setAdReward] = useState(50);
+  const [referralReward, setReferralReward] = useState(100);
+  const [packages, setPackages] = useState(systemSettings.pointPackages || []);
+  const [packageName, setPackageName] = useState('');
+  const [packagePoints, setPackagePoints] = useState(100);
+  const [packagePrice, setPackagePrice] = useState(0);
+  const [packageDesc, setPackageDesc] = useState('');
+  const [aiWizardCost, setAiWizardCost] = useState(systemSettings.aiWizardCost || 0);
 
   useEffect(() => {
     if (systemSettings) {
@@ -19,8 +27,32 @@ export const AdminSettings = () => {
         setPointConversion(systemSettings.pointConversionRate || 0.1);
         setStudentTerms(systemSettings.studentTerms || '');
         setTeacherTerms(systemSettings.teacherTerms || '');
+        setAdReward(systemSettings.adRewardPoints || 0);
+        setReferralReward(systemSettings.referralRewardPoints || 0);
+        setPackages(systemSettings.pointPackages || []);
+        setAiWizardCost(systemSettings.aiWizardCost ?? 0);
     }
   }, [systemSettings]);
+
+  const handleAddPackage = () => {
+      if (!packageName.trim() || packagePoints <= 0 || packagePrice <= 0) return;
+      const newPackage = {
+          id: `pkg-${Date.now()}`,
+          name: packageName.trim(),
+          points: packagePoints,
+          price: packagePrice,
+          description: packageDesc.trim()
+      };
+      setPackages(prev => [...prev, newPackage]);
+      setPackageName('');
+      setPackagePoints(100);
+      setPackagePrice(0);
+      setPackageDesc('');
+  };
+
+  const removePackage = (id: string) => {
+      setPackages(prev => prev.filter(pkg => pkg.id !== id));
+  };
 
   const handleSave = () => {
       updateSystemSettings({
@@ -28,7 +60,11 @@ export const AdminSettings = () => {
           maintenanceMode: maintenance,
           pointConversionRate: pointConversion,
           studentTerms,
-          teacherTerms
+          teacherTerms,
+          adRewardPoints: adReward,
+          referralRewardPoints: referralReward,
+          pointPackages: packages,
+          aiWizardCost
       });
   };
   
@@ -72,6 +108,40 @@ export const AdminSettings = () => {
                    <p className="text-xs text-gray-400 mt-1">{t('point_conv_desc')} (Current: 100 Points = {(100 * pointConversion).toFixed(2)} TL)</p>
                 </div>
 
+                <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                       <label className="block text-sm font-bold text-gray-700 mb-2">{t('ad_reward_points')}</label>
+                       <input 
+                         type="number" 
+                         value={adReward}
+                         onChange={(e) => setAdReward(Number(e.target.value))}
+                         className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900" 
+                       />
+                       <p className="text-xs text-gray-400 mt-1">{t('ad_reward_hint')}</p>
+                    </div>
+                    <div>
+                       <label className="block text-sm font-bold text-gray-700 mb-2">{t('referral_reward_points')}</label>
+                       <input 
+                         type="number" 
+                         value={referralReward}
+                         onChange={(e) => setReferralReward(Number(e.target.value))}
+                         className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900" 
+                       />
+                       <p className="text-xs text-gray-400 mt-1">{t('referral_reward_hint')}</p>
+                    </div>
+                </div>
+                <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-2">{t('ai_wizard_cost')}</label>
+                   <input
+                      type="number"
+                      min={0}
+                      value={aiWizardCost}
+                      onChange={e => setAiWizardCost(Math.max(0, Number(e.target.value)))}
+                      className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900"
+                   />
+                   <p className="text-xs text-gray-400 mt-1">{t('ai_wizard_cost_hint')}</p>
+                </div>
+
                 <div>
                    <label className="block text-sm font-bold text-gray-700 mb-2">{t('maintenance_mode')}</label>
                    <div 
@@ -96,7 +166,7 @@ export const AdminSettings = () => {
                 </div>
                 <div>
                    <h3 className="font-bold text-lg text-gray-800">{t('contract_mgmt')}</h3>
-                   <p className="text-sm text-gray-500">Edit terms of service for roles.</p>
+                   <p className="text-sm text-gray-500">{t('contract_hint')}</p>
                 </div>
              </div>
 
@@ -119,6 +189,70 @@ export const AdminSettings = () => {
                 </div>
              </div>
           </div>
+      </div>
+
+      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+          <div className="flex items-center gap-3">
+              <div className="p-3 bg-brand-50 text-brand-600 rounded-2xl">
+                  <Gift size={20} />
+              </div>
+              <div>
+                  <h3 className="font-bold text-lg text-gray-800">{t('point_packages')}</h3>
+                  <p className="text-sm text-gray-500">{t('point_packages_desc')}</p>
+              </div>
+          </div>
+          <div className="space-y-3">
+              {packages.length === 0 ? (
+                  <p className="text-sm text-gray-500">{t('no_packages')}</p>
+              ) : (
+                  packages.map(pkg => (
+                      <div key={pkg.id} className="flex flex-wrap items-center gap-3 p-3 border border-gray-100 rounded-2xl">
+                          <div className="flex-1">
+                              <p className="font-semibold text-gray-900">{pkg.name}</p>
+                              <p className="text-sm text-gray-500">{pkg.points} {t('points')} • ₺{pkg.price.toFixed(2)}</p>
+                              {pkg.description && <p className="text-xs text-gray-400">{pkg.description}</p>}
+                          </div>
+                          <button onClick={() => removePackage(pkg.id)} className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                              <Trash2 size={18} />
+                          </button>
+                      </div>
+                  ))
+              )}
+          </div>
+          <div className="grid md:grid-cols-4 gap-4">
+              <input 
+                value={packageName}
+                onChange={(e) => setPackageName(e.target.value)}
+                placeholder={t('package_name')}
+                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
+              />
+              <input 
+                type="number"
+                value={packagePoints}
+                onChange={(e) => setPackagePoints(Number(e.target.value))}
+                placeholder={t('package_points')}
+                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
+              />
+              <input 
+                type="number"
+                value={packagePrice}
+                onChange={(e) => setPackagePrice(Number(e.target.value))}
+                placeholder={t('package_price')}
+                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
+              />
+              <input 
+                value={packageDesc}
+                onChange={(e) => setPackageDesc(e.target.value)}
+                placeholder={t('package_description')}
+                className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm"
+              />
+          </div>
+          <button 
+            onClick={handleAddPackage}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm w-full md:w-auto"
+          >
+            <Plus size={16} /> {t('add_package')}
+          </button>
       </div>
 
       <button 

@@ -3,27 +3,29 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
 import { Exam } from '../../types';
-import { Timer, Zap, StepForward, CheckCircle, XCircle, Bot, MessageCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Timer, Zap, StepForward, Bot, MessageCircle, Loader2, AlertCircle, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { getAnswerExplanation } from '../../services/geminiService';
+import { getAnswerExplanation } from '../../services/aiService';
 
 export const ExamRoom = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { exams, user, saveResult, showAlert, t, results, startExamSession, examSessions, prizeExams } = useStore();
+  const { exams, user, saveResult, showAlert, t, results, startExamSession, examSessions, prizeExams, language, systemSettings, updateUser, watchAdForPoints } = useStore();
   const [exam, setExam] = useState<Exam | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [hiddenOptions, setHiddenOptions] = useState<number[]>([]); 
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [rewardsEarned, setRewardsEarned] = useState<number | null>(null);
   
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [explainingQuestionId, setExplainingQuestionId] = useState<string | null>(null);
   const [explanationMap, setExplanationMap] = useState<Record<string, string>>({});
+  const [showPointsModal, setShowPointsModal] = useState(false);
+  const [pointModalMessage, setPointModalMessage] = useState('');
 
   useEffect(() => {
     const foundExam = exams.find(e => e.id === id);
@@ -64,19 +66,22 @@ export const ExamRoom = () => {
         } else {
             setUserAnswers(new Array(foundExam.questions.length).fill(-1));
         }
-        setIsReviewMode(true); 
+        setIsReviewMode(false); 
+        setRewardsEarned(existingResult.rewardsEarned);
     } else {
-        if (id) startExamSession(id);
+        if (id && user) startExamSession(id);
         
         setUserAnswers(new Array(foundExam.questions.length).fill(-1));
+        setRewardsEarned(null);
     }
 
     setIsLoading(false);
-  }, [id, exams, navigate, user, results, prizeExams]);
+  }, [id, exams, navigate, user, results, prizeExams, startExamSession]);
 
   useEffect(() => {
-      if (exam && !isFinished && !isReviewMode && id) {
-          const session = examSessions[id];
+      if (exam && !isFinished && !isReviewMode && id && user) {
+          const sessionKey = `${user.id}_${id}`;
+          const session = examSessions[sessionKey] || examSessions[id];
           if (session && session.startedAt) {
               const now = Date.now();
               const startTime = new Date(session.startedAt).getTime(); 
@@ -85,7 +90,6 @@ export const ExamRoom = () => {
               
               if (remaining <= 0) {
                   setTimeLeft(0);
-                  finishExam();
               } else {
                   setTimeLeft(remaining);
               }
@@ -93,7 +97,7 @@ export const ExamRoom = () => {
               setTimeLeft(exam.timeLimit * 60);
           }
       }
-  }, [exam, isFinished, isReviewMode, id, examSessions]);
+  }, [exam, isFinished, isReviewMode, id, examSessions, user]);
 
   useEffect(() => {
     if (timeLeft > 0 && !isFinished && !isReviewMode && exam) {
@@ -104,56 +108,85 @@ export const ExamRoom = () => {
     } 
   }, [timeLeft, isFinished, exam, isReviewMode]);
 
+  useEffect(() => {
+      if (timeLeft === 0 && exam && !isFinished && !isReviewMode) {
+          finishExam();
+      }
+  }, [timeLeft, exam, isFinished, isReviewMode]);
+
   const handleOptionSelect = (index: number) => {
-    if (selectedOption !== null || isFinished || !exam) return;
-    setSelectedOption(index);
-    
+    if (isFinished || !exam) return;
+    if (hiddenOptions.includes(index)) return;
     const newAnswers = [...userAnswers];
     newAnswers[currentIndex] = index;
     setUserAnswers(newAnswers);
-    
-    setTimeout(() => {
-        if (!exam) return;
-        const isCorrect = index === exam.questions[currentIndex].correctIndex;
-        if (isCorrect) setScore(prev => prev + 1);
-
-        if (currentIndex < exam.questions.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-            setSelectedOption(null);
-            setHiddenOptions([]);
-        } else {
-            finishExam(newAnswers);
-        }
-    }, 1000);
   };
 
   const finishExam = (finalAnswers?: number[]) => {
-    if (!exam || !user) return;
+    if (!exam || !user || isFinished) return;
+    const answersToUse = finalAnswers ? [...finalAnswers] : [...userAnswers];
     setIsFinished(true);
+    setUserAnswers(answersToUse);
     
-    saveResult(exam.id, finalAnswers || userAnswers);
+    saveResult(exam.id, answersToUse);
+    
+    const calculatedScore = exam.questions.reduce((acc, q, idx) => acc + (answersToUse[idx] === q.correctIndex ? 1 : 0), 0);
+    setScore(calculatedScore);
     
     confetti({
       particleCount: 150,
       spread: 70,
       origin: { y: 0.6 }
     });
+
+    const difficultyMultiplier = exam.difficulty === 'Easy' ? 1 : exam.difficulty === 'Medium' ? 1.5 : 2;
+    const earned = Math.round(calculatedScore * 10 * difficultyMultiplier);
+    setRewardsEarned(earned);
+  };
+
+  const explainCost = systemSettings.aiExplainCost || 0;
+
+  const openPointsModal = (message: string) => {
+      setPointModalMessage(message);
+      setShowPointsModal(true);
   };
 
   const handleExplain = async (qIndex: number) => {
-      if (!exam) return;
+      if (!exam || !user) return;
       const question = exam.questions[qIndex];
       setExplainingQuestionId(question.id);
-      
-      const explanation = await getAnswerExplanation(
-          question.text,
-          question.options,
-          question.correctIndex,
-          userAnswers[qIndex] === -1 ? null : userAnswers[qIndex]
-      );
-      
-      setExplanationMap(prev => ({ ...prev, [question.id]: explanation }));
-      setExplainingQuestionId(null);
+      let deductedUserSnapshot: null | typeof user = null;
+      try {
+          if (explainCost > 0) {
+              if (user.points < explainCost) {
+                  openPointsModal(t('insufficient_points_message').replace('{points}', `${explainCost}`));
+                  setExplainingQuestionId(null);
+                  return;
+              }
+              const updatedUser = { ...user, points: user.points - explainCost };
+              updateUser(updatedUser);
+              deductedUserSnapshot = updatedUser;
+              showAlert(t('ai_explain_cost_success').replace('{points}', `${explainCost}`), 'success');
+          }
+          
+          const explanation = await getAnswerExplanation(
+              question.text,
+              question.options,
+              question.correctIndex,
+              userAnswers[qIndex] === -1 ? null : userAnswers[qIndex],
+              language
+          );
+          
+          setExplanationMap(prev => ({ ...prev, [question.id]: explanation }));
+      } catch (error: any) {
+          console.error(error);
+          if (deductedUserSnapshot) {
+              updateUser({ ...deductedUserSnapshot, points: deductedUserSnapshot.points + explainCost });
+          }
+          showAlert(error.message || 'Unable to generate explanation.', 'error');
+      } finally {
+          setExplainingQuestionId(null);
+      }
   };
 
   const useJoker5050 = () => {
@@ -206,7 +239,6 @@ export const ExamRoom = () => {
 
     if (currentIndex < exam.questions.length - 1) {
         setCurrentIndex(prev => prev + 1);
-        setSelectedOption(null);
         setHiddenOptions([]);
     } else {
         finishExam(newAnswers);
@@ -234,8 +266,38 @@ export const ExamRoom = () => {
       );
   }
 
+  const handlePrevious = () => {
+      if (currentIndex === 0) return;
+      setCurrentIndex(prev => Math.max(0, prev - 1));
+      setHiddenOptions([]);
+  };
+
+  const handleNext = () => {
+      if (!exam || currentIndex >= exam.questions.length - 1) return;
+      setCurrentIndex(prev => prev + 1);
+      setHiddenOptions([]);
+  };
+
+  const handleRetake = () => {
+      if (!exam || !id) return;
+      startExamSession(id);
+      setIsFinished(false);
+      setIsReviewMode(false);
+      setCurrentIndex(0);
+      setHiddenOptions([]);
+      setScore(0);
+      const freshAnswers = new Array(exam.questions.length).fill(-1);
+      setUserAnswers(freshAnswers);
+      setTimeLeft(exam.timeLimit * 60);
+      setRewardsEarned(null);
+  };
+
   if (isFinished) {
-    const percentage = Math.round((score / exam.questions.length) * 100);
+    const correctCount = exam.questions.reduce((acc, q, idx) => acc + (userAnswers[idx] === q.correctIndex ? 1 : 0), 0);
+    const wrongCount = exam.questions.reduce((acc, q, idx) => acc + (userAnswers[idx] !== -1 && userAnswers[idx] !== q.correctIndex ? 1 : 0), 0);
+    const blankCount = exam.questions.length - correctCount - wrongCount;
+    const percentage = Math.round((correctCount / exam.questions.length) * 100);
+    const displayRewards = rewardsEarned ?? Math.round(correctCount * 10 * (exam.difficulty === 'Easy' ? 1 : exam.difficulty === 'Medium' ? 1.5 : 2));
     
     if (isReviewMode) {
         return (
@@ -301,32 +363,54 @@ export const ExamRoom = () => {
              {percentage > 70 ? '🎉' : '👍'}
          </div>
          <h2 className="text-3xl font-bold text-gray-800 mb-2">{t('exam_completed')}</h2>
-         <p className="text-gray-500 mb-8">{t('you_scored')} {score} / {exam.questions.length}</p>
+         <p className="text-gray-500 mb-8">{t('you_scored')} {correctCount} / {exam.questions.length}</p>
          
          <div className="bg-white p-6 rounded-3xl shadow-lg w-full max-w-sm border border-gray-100 mb-8">
-            <div className="text-4xl font-black text-brand-500 mb-1">+{score * 10}</div>
+            <div className="text-4xl font-black text-brand-500 mb-1">+{displayRewards}</div>
             <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">{t('points_earned')}</div>
          </div>
-
-         <div className="flex flex-col gap-3 w-full max-w-sm">
-             <button 
-               onClick={() => setIsReviewMode(true)}
-               className="bg-purple-100 text-purple-700 px-8 py-3 rounded-2xl font-bold hover:bg-purple-200 transition-colors flex items-center justify-center gap-2"
-             >
-               <MessageCircle size={20} /> {t('review_answers')}
-             </button>
-             
-             <button 
-               onClick={() => navigate('/student')}
-               className="bg-gray-900 text-white px-8 py-3 rounded-2xl font-bold hover:scale-105 transition-transform"
-             >
-               {t('back_dashboard')}
-             </button>
+         <div className="grid grid-cols-3 gap-3 w-full max-w-sm mb-8">
+            <div className="bg-green-50 border border-green-100 rounded-2xl p-3">
+                <p className="text-xs font-semibold text-green-600 uppercase">{t('correct_count')}</p>
+                <p className="text-2xl font-bold text-green-700">{correctCount}</p>
+            </div>
+            <div className="bg-red-50 border border-red-100 rounded-2xl p-3">
+                <p className="text-xs font-semibold text-red-600 uppercase">{t('wrong_count')}</p>
+                <p className="text-2xl font-bold text-red-700">{wrongCount}</p>
+            </div>
+            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase">{t('blank_count')}</p>
+                <p className="text-2xl font-bold text-gray-700">{blankCount}</p>
+            </div>
          </div>
+
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+            <button 
+              onClick={handleRetake}
+              className="bg-emerald-100 text-emerald-700 px-8 py-3 rounded-2xl font-bold hover:bg-emerald-200 transition-colors flex items-center justify-center gap-2"
+            >
+              <StepForward size={20} /> {t('retake')}
+            </button>
+            <button 
+              onClick={() => setIsReviewMode(true)}
+              className="bg-purple-100 text-purple-700 px-8 py-3 rounded-2xl font-bold hover:bg-purple-200 transition-colors flex items-center justify-center gap-2"
+            >
+              <MessageCircle size={20} /> {t('review_answers')}
+            </button>
+            
+            <button 
+              onClick={() => navigate('/student')}
+              className="bg-gray-900 text-white px-8 py-3 rounded-2xl font-bold hover:scale-105 transition-transform"
+            >
+              {t('back_dashboard')}
+            </button>
+        </div>
       </div>
     );
   }
 
+  const activePrizeExam = prizeExams.find(pe => pe.examId === exam.id && pe.isActive);
+  const jokersEnabled = !activePrizeExam; 
   const currentQ = exam.questions[currentIndex];
   const progress = ((currentIndex) / exam.questions.length) * 100;
 
@@ -342,14 +426,16 @@ export const ExamRoom = () => {
         <div className="flex gap-2">
             <button 
                 onClick={useJoker5050}
-                className={`p-2 rounded-xl border-2 transition-all ${user?.inventory.includes('JOKER_5050') ? 'border-purple-200 bg-purple-50 text-purple-600 hover:scale-105' : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-50'}`}
+                disabled={!jokersEnabled || !user?.inventory.includes('JOKER_5050')}
+                className={`p-2 rounded-xl border-2 transition-all ${jokersEnabled && user?.inventory.includes('JOKER_5050') ? 'border-purple-200 bg-purple-50 text-purple-600 hover:scale-105' : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'}`}
                 title="50/50"
             >
                 <div className="font-bold text-xs flex items-center gap-1"><Zap size={14} /> 50%</div>
             </button>
             <button 
                 onClick={useJokerSkip}
-                className={`p-2 rounded-xl border-2 transition-all ${user?.inventory.includes('JOKER_SKIP') ? 'border-blue-200 bg-blue-50 text-blue-600 hover:scale-105' : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-50'}`}
+                disabled={!jokersEnabled || !user?.inventory.includes('JOKER_SKIP')}
+                className={`p-2 rounded-xl border-2 transition-all ${jokersEnabled && user?.inventory.includes('JOKER_SKIP') ? 'border-blue-200 bg-blue-50 text-blue-600 hover:scale-105' : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'}`}
                 title="Skip"
             >
                 <div className="font-bold text-xs flex items-center gap-1"><StepForward size={14} /> {t('skip')}</div>
@@ -375,45 +461,92 @@ export const ExamRoom = () => {
                     <img src={currentQ.imageUrl} className="w-full h-48 object-cover rounded-xl mb-6 shadow-sm" alt="Question" />
                  )}
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentQ.options.map((opt, idx) => {
-                        if (hiddenOptions.includes(idx)) return null; 
-                        const optImage = currentQ.optionImages?.[idx];
-                        
-                        let btnClass = "border-2 border-gray-100 hover:border-brand-300 hover:bg-brand-50 text-gray-800";
-                        
-                        if (selectedOption !== null) {
-                            if (idx === currentQ.correctIndex) btnClass = "bg-green-100 border-green-500 text-green-900";
-                            else if (idx === selectedOption) btnClass = "bg-red-100 border-red-500 text-red-900";
-                        }
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {currentQ.options.map((opt, idx) => {
+                       if (hiddenOptions.includes(idx)) return null; 
+                       const optImage = currentQ.optionImages?.[idx];
+                       const isSelected = userAnswers[currentIndex] === idx;
+                       
+                       let btnClass = "border-2 border-gray-100 hover:border-brand-300 hover:bg-brand-50 text-gray-800";
+                       if (isSelected) {
+                           btnClass = "border-brand-500 bg-brand-50 text-brand-700 shadow-brand-100";
+                       }
 
-                        return (
-                            <button
-                                key={idx}
-                                onClick={() => handleOptionSelect(idx)}
-                                disabled={selectedOption !== null}
-                                className={`w-full text-left p-4 rounded-xl font-medium transition-all text-lg flex flex-col md:flex-row md:items-center justify-between gap-3 ${btnClass}`}
-                            >
-                                <div className="flex items-center gap-3 w-full">
-                                    {optImage && <img src={optImage} className="w-16 h-16 rounded-lg object-cover border border-gray-200" />}
-                                    <span className="flex-1 break-words whitespace-normal text-gray-800">{opt}</span>
-                                </div>
-                                <div className="shrink-0">
-                                     {selectedOption !== null && idx === currentQ.correctIndex && <CheckCircle size={20} className="text-green-600" />}
-                                     {selectedOption !== null && idx === selectedOption && idx !== currentQ.correctIndex && <XCircle size={20} className="text-red-600" />}
-                                </div>
-                            </button>
-                        );
-                    })}
-                 </div>
+                       return (
+                           <button
+                               key={idx}
+                               onClick={() => handleOptionSelect(idx)}
+                               disabled={isFinished}
+                               className={`w-full text-left p-4 rounded-xl font-medium transition-all text-lg flex flex-col md:flex-row md:items-center justify-between gap-3 ${btnClass}`}
+                           >
+                               <div className="flex items-center gap-3 w-full">
+                                   {optImage && <img src={optImage} className="w-16 h-16 rounded-lg object-cover border border-gray-200" />}
+                                   <span className="flex-1 break-words whitespace-normal text-gray-800">{opt}</span>
+                               </div>
+                           </button>
+                       );
+                   })}
+                </div>
+
+                <div className="mt-8 flex flex-col md:flex-row gap-3">
+                    <button
+                        onClick={handlePrevious}
+                        disabled={currentIndex === 0 || isFinished}
+                        className="flex-1 flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        <ChevronLeft size={18} /> {t('previous_question')}
+                    </button>
+                    <button
+                        onClick={handleNext}
+                        disabled={currentIndex === exam.questions.length - 1 || isFinished}
+                        className="flex-1 flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        {t('next_question')} <ChevronRight size={18} />
+                    </button>
+                    <button
+                        onClick={() => finishExam()}
+                        disabled={isFinished}
+                        className="flex-1 flex items-center justify-center gap-2 bg-brand-500 text-white rounded-xl py-3 font-semibold hover:bg-brand-600 disabled:opacity-50"
+                    >
+                        <Flag size={18} /> {t('finish_exam')}
+                    </button>
+                </div>
 
              </div>
          </div>
       </div>
 
       <div className="mt-6 text-center text-gray-400 font-medium text-sm">
-         {t('question')} {currentIndex + 1} {t('of')} {exam.questions.length}
+         {t('question')} {currentIndex + 1} {t('of')} {exam.questions.length} • {t('answered')}: {userAnswers.filter(ans => ans !== -1).length}
       </div>
+      {showPointsModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                <h3 className="text-xl font-bold text-gray-800">{t('insufficient_points_title')}</h3>
+                <p className="text-gray-600">{pointModalMessage}</p>
+                <div className="space-y-3">
+                    <button
+                        onClick={() => { watchAdForPoints(); setShowPointsModal(false); }}
+                        className="w-full bg-brand-100 text-brand-700 font-semibold rounded-xl py-3 hover:bg-brand-200 transition-colors"
+                    >
+                        {t('watch_ad_cta')}
+                    </button>
+                    <button
+                        onClick={() => { setShowPointsModal(false); navigate('/student/shop'); }}
+                        className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
+                    >
+                        {t('go_to_shop_cta')}
+                    </button>
+                    <button
+                        onClick={() => setShowPointsModal(false)}
+                        className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 hover:bg-gray-50 transition-colors"
+                    >
+                        {t('close')}
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, Sparkles, GraduationCap, Book } from 'lucide-react';
+import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, Sparkles, GraduationCap, Book, Repeat } from 'lucide-react';
 
 export const StudentExams = () => {
-  const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, showAlert } = useStore();
+  const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, showAlert, results } = useStore();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -55,6 +55,11 @@ export const StudentExams = () => {
       }
       return selectedGrade === 'All' || t.grade === selectedGrade;
   }) : [];
+
+  const solvedExamIds = useMemo(() => {
+      if (!user) return new Set<string>();
+      return new Set(results.filter(r => r.studentId === user.id).map(r => r.examId));
+  }, [results, user]);
 
   const handleStartOrBuy = (examId: string, price: number) => {
     const isPurchased = user?.purchasedExamIds?.includes(examId);
@@ -130,6 +135,7 @@ export const StudentExams = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredExams.map(exam => {
            const isPurchased = user?.purchasedExamIds?.includes(exam.id);
+           const isSolved = solvedExamIds.has(exam.id);
            const isFree = exam.price === 0;
            const canAfford = (user?.points || 0) >= exam.price;
            const subjName = availableSubjects.find(s => s.id === exam.subjectId)?.name || 'Unknown';
@@ -144,6 +150,9 @@ export const StudentExams = () => {
                 <div className="flex flex-col items-end gap-1">
                     <span className="text-xs text-gray-500 font-bold bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">{subjName}</span>
                     {(exam.classLevel || exam.englishLevel) && <span className="text-[10px] text-white font-bold bg-brand-400 px-2 py-0.5 rounded-lg">{exam.englishLevel || `${exam.classLevel}. ${t('grade')}`}</span>}
+                    {isSolved && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                        <CheckCircle size={10} /> {t('solved')}
+                    </span>}
                 </div>
               </div>
               <h4 className="font-bold text-lg text-gray-800 mb-1 line-clamp-2">{exam.title}</h4>
@@ -151,7 +160,9 @@ export const StudentExams = () => {
               <div className="mt-auto flex items-center justify-between">
                  <div className="flex items-center gap-1 text-xs text-gray-500 font-medium"><Clock size={14} /> {exam.timeLimit}{t('min')}</div>
                  {isPurchased || isFree ? (
-                     <button onClick={() => handleStartOrBuy(exam.id, exam.price)} className="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100"><Play size={16} /> {t('start')}</button>
+                     <button onClick={() => handleStartOrBuy(exam.id, exam.price)} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${isSolved ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}>
+                        {isSolved ? <><Repeat size={16} /> {t('retake')}</> : <><Play size={16} /> {t('start')}</>}
+                     </button>
                  ) : (
                      <button onClick={() => handleStartOrBuy(exam.id, exam.price)} disabled={!canAfford} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${canAfford ? 'bg-brand-500 text-white shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}><ShoppingCart size={16} /> {exam.price} {t('points')}</button>
                  )}

@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { User } from '../../types';
-import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle } from 'lucide-react';
+import { User, Exam } from '../../types';
+import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink, Share2 } from 'lucide-react';
 import { StudentResults } from './StudentResults';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export const UserProfile = () => {
-  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow } = useStore();
+  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow, exams } = useStore();
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -18,6 +18,7 @@ export const UserProfile = () => {
   const [classLevel, setClassLevel] = useState<number>(1);
   const [notifSettings, setNotifSettings] = useState({ email: true, app: true });
   const [showListModal, setShowListModal] = useState<'followers' | 'following' | null>(null);
+  const [referralUrl, setReferralUrl] = useState('');
 
   useEffect(() => {
       if (id && id !== currentUser?.id) {
@@ -40,6 +41,12 @@ export const UserProfile = () => {
           setNotifSettings(profileUser.notificationSettings || { email: true, app: true });
       }
   }, [profileUser]);
+
+  useEffect(() => {
+      if (profileUser?.referralCode && typeof window !== 'undefined') {
+          setReferralUrl(`${window.location.origin}/#/auth?ref=${profileUser.referralCode}`);
+      }
+  }, [profileUser?.referralCode]);
 
   if (!currentUser || !profileUser) return null;
 
@@ -78,6 +85,22 @@ export const UserProfile = () => {
 
   const handleSendMessage = () => {
       navigate('/chat', { state: { startChatWith: profileUser.id } });
+  };
+
+  const handleCopy = (value: string) => {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          navigator.clipboard.writeText(value).then(() => {
+              showAlert(t('copied'), 'success');
+          }).catch(() => showAlert('Unable to copy', 'error'));
+      }
+  };
+
+  const purchasedExams: Exam[] = (profileUser?.purchasedExamIds || [])
+      .map(examId => exams.find(e => e.id === examId))
+      .filter((exam): exam is Exam => Boolean(exam));
+
+  const navigateToExam = (examId: string) => {
+      navigate(`/student/exam/${examId}`);
   };
 
   return (
@@ -274,6 +297,112 @@ export const UserProfile = () => {
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
             <StudentResults studentId={profileUser.id} />
         </div>
+
+        {isOwnProfile && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center" aria-hidden="true">
+                            <BookOpen size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-900">{t('my_exams')}</h3>
+                            <p className="text-sm text-gray-500 font-medium">{t('purchased_exams')}</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => navigate('/student/exams')}
+                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition-colors"
+                    >
+                        {t('explore_exams')} <ExternalLink size={16} />
+                    </button>
+                </div>
+
+                {purchasedExams.length === 0 ? (
+                    <div className="border border-dashed border-gray-200 rounded-2xl p-10 text-center text-gray-500 flex flex-col items-center gap-3">
+                        <BookOpen size={32} className="text-gray-300" aria-hidden="true" />
+                        <p className="font-bold">{t('empty_library')}</p>
+                        <p className="text-sm text-gray-400">{t('empty_library_desc')}</p>
+                        <button
+                            onClick={() => navigate('/student/exams')}
+                            className="mt-2 text-brand-600 font-bold hover:underline flex items-center gap-1"
+                        >
+                            {t('go_to_market')} <ExternalLink size={14} />
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {purchasedExams.map(exam => (
+                            <div key={exam.id} className="p-5 border border-gray-100 rounded-2xl shadow-sm flex flex-col gap-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-gray-400 uppercase">{t('subject')}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${exam.difficulty === 'Hard' ? 'bg-red-50 text-red-600' : exam.difficulty === 'Medium' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}`}>
+                                        {t(exam.difficulty.toLowerCase() as any)}
+                                    </span>
+                                </div>
+                                <h4 className="text-lg font-bold text-gray-900 line-clamp-2">{exam.title}</h4>
+                                {exam.topic && <p className="text-sm text-gray-500">{exam.topic}</p>}
+                                <div className="flex items-center gap-2 text-xs text-gray-400">
+                                    <span>{t('time_min')}: {exam.timeLimit}</span>
+                                    <span>•</span>
+                                    <span>{t('questions')}: {exam.questions.length}</span>
+                                </div>
+                                <button
+                                    onClick={() => navigateToExam(exam.id)}
+                                    className="mt-2 bg-brand-500 text-white py-2 rounded-xl text-sm font-bold hover:bg-brand-600 transition-colors"
+                                >
+                                    {t('start')}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        )}
+
+        {isOwnProfile && profileUser.referralCode && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                        <Share2 size={18} />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900">{t('referral_program')}</h3>
+                        <p className="text-sm text-gray-500">{t('referral_desc')}</p>
+                    </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-400 uppercase">{t('referral_code_label')}</label>
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1">{profileUser.referralCode}</span>
+                            <button 
+                                onClick={() => handleCopy(profileUser.referralCode!)}
+                                className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors"
+                            >
+                                {t('copy')}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-400 uppercase">{t('referral_link_label')}</label>
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1 truncate">{referralUrl}</span>
+                            <button 
+                                onClick={() => handleCopy(referralUrl)}
+                                className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors"
+                            >
+                                {t('copy')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div className="text-sm text-gray-500 font-medium flex flex-wrap gap-4">
+                    <span>{t('referral_count_label').replace('{count}', `${profileUser.referralCount || 0}`)}</span>
+                    <span>{t('referral_points_label').replace('{points}', `${profileUser.totalReferralPoints || 0}`)}</span>
+                </div>
+            </div>
+        )}
 
         {showListModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

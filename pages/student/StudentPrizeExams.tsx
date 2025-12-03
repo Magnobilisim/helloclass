@@ -140,7 +140,7 @@ export const StudentPrizeExams = () => {
 
                     <div className="p-8 flex-1 flex flex-col justify-center relative">
                         <div className="mb-8">
-                            <h2 className="text-lg font-bold text-gray-800 mb-2">Description</h2>
+                            <h2 className="text-lg font-bold text-gray-800 mb-2">{t('contest_description')}</h2>
                             <p className="text-gray-600 leading-relaxed text-sm">{activeContest.prizeDescription}</p>
                             {activeContest.entryFee > 0 && (
                                 <div className="mt-4 flex items-center gap-2 font-bold text-yellow-600 bg-yellow-50 px-3 py-1.5 rounded-lg w-fit border border-yellow-100">
@@ -221,9 +221,9 @@ export const StudentPrizeExams = () => {
                             </div>
                         </div>
                         <div className="flex-1 min-w-0 relative z-10">
-                            <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 tracking-wider">{pc.month} • Grade {pc.grade}</div>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 tracking-wider">{pc.month} • {t('grade')} {pc.grade}</div>
                             <div className="font-black text-gray-900 text-lg truncate">{pc.winnerName}</div>
-                            <div className="text-xs text-brand-600 font-bold truncate">Won: {pc.prizeTitle}</div>
+                            <div className="text-xs text-brand-600 font-bold truncate">{t('won_prize_prefix')} {pc.prizeTitle}</div>
                         </div>
                     </div>
                 ))}

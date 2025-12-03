@@ -370,7 +370,7 @@ export const AdminDashboard = () => {
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
                               <p className="text-white text-[10px] font-bold line-clamp-2 mb-2">{img.examTitle}</p>
                               <button 
-                                onClick={() => { if(window.confirm('Delete this image?')) deleteExamImage(img.examId, img.questionId, img.type === 'explanation' ? 'question' : img.type, img.index); }}
+                                onClick={() => { if(window.confirm('Delete this image?')) deleteExamImage(img.examId, img.questionId, img.type, img.index); }}
                                 className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
                               >
                                   <Trash2 size={16} />
@@ -397,7 +397,7 @@ export const AdminDashboard = () => {
                       <div className="mb-8">
                           <h3 className="font-black text-2xl text-gray-900 flex items-center gap-3">
                               <span className="p-3 bg-pink-50 rounded-2xl text-pink-500"><Sparkles size={24} /></span>
-                              Competition Studio
+                              {t('admin_prize_studio')}
                           </h3>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -411,7 +411,7 @@ export const AdminDashboard = () => {
                               <div className="space-y-2">
                                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('select_exam')}</label>
                                   <select value={prizeExamId} onChange={e => setPrizeExamId(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 font-bold text-gray-800 outline-none focus:ring-2 focus:ring-pink-200">
-                                      <option value="">Choose Exam...</option>
+                                  <option value="">{t('choose_exam')}</option>
                                       {exams.filter(e => e.classLevel === prizeGrade && e.isPublished).map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
                                   </select>
                               </div>
@@ -426,14 +426,14 @@ export const AdminDashboard = () => {
                           <div className={`border-2 border-dashed border-gray-300 rounded-2xl h-32 flex flex-col items-center justify-center cursor-pointer hover:bg-pink-50 hover:border-pink-300 transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePrizeImageUpload} />
                               {isUploading ? <Loader2 className="animate-spin text-brand-600 mb-2" /> : <Upload className="text-gray-400 mb-2" size={24} />}
-                              <p className="text-xs font-bold text-gray-500">{isUploading ? 'Uploading...' : 'Click to upload prize image'}</p>
+                              <p className="text-xs font-bold text-gray-500">{isUploading ? t('uploading') : t('upload_prize_image')}</p>
                           </div>
                       </div>
-                      <button onClick={handleCreatePrizeExam} disabled={!prizeExamId || !prizeTitle || !prizeImage || isUploading} className="w-full bg-gray-900 text-white py-4 rounded-xl font-black text-lg shadow-xl flex items-center justify-center gap-3 hover:bg-gray-800 hover:scale-[1.01] transition-all disabled:opacity-50 disabled:cursor-not-allowed"><Trophy className="text-yellow-400" size={24} /> Publish Contest</button>
+                      <button onClick={handleCreatePrizeExam} disabled={!prizeExamId || !prizeTitle || !prizeImage || isUploading} className="w-full bg-gray-900 text-white py-4 rounded-xl font-black text-lg shadow-xl flex items-center justify-center gap-3 hover:bg-gray-800 hover:scale-[1.01] transition-all disabled:opacity-50 disabled:cursor-not-allowed"><Trophy className="text-yellow-400" size={24} /> {t('publish_contest')}</button>
                   </div>
                   <div className="flex-1">
                       <div className="lg:sticky lg:top-8">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2"><Eye size={16} /> Live Preview</h4>
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2"><Eye size={16} /> {t('live_preview')}</h4>
                           <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl border-[6px] border-gray-900 relative max-w-sm mx-auto">
                               <div className="bg-gray-50 p-4">
                                   <div className="bg-white rounded-2xl overflow-hidden shadow-lg border-2 border-pink-100">
@@ -441,9 +441,9 @@ export const AdminDashboard = () => {
                                           {prizeImage ? <img src={prizeImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={32} className="text-gray-400" /></div>}
                                       </div>
                                       <div className="p-4">
-                                          <h2 className="text-lg font-black text-gray-900 mb-1">{prizeTitle || 'Prize Title'}</h2>
-                                          <p className="text-xs text-gray-500 mb-2">{prizeDesc || 'Description...'}</p>
-                                          {entryFee > 0 && <div className="text-xs font-bold text-yellow-600">{entryFee} Pts Fee</div>}
+                                          <h2 className="text-lg font-black text-gray-900 mb-1">{prizeTitle || t('prize_title_preview')}</h2>
+                                          <p className="text-xs text-gray-500 mb-2">{prizeDesc || t('prize_desc_preview')}</p>
+                                          {entryFee > 0 && <div className="text-xs font-bold text-yellow-600">{entryFee} {t('points')} {t('entry_fee_suffix')}</div>}
                                       </div>
                                   </div>
                               </div>
@@ -452,7 +452,7 @@ export const AdminDashboard = () => {
                   </div>
               </div>
               <div className="mt-12">
-                  <h3 className="font-bold text-xl text-gray-800 mb-6">Active & Past Contests</h3>
+                  <h3 className="font-bold text-xl text-gray-800 mb-6">{t('active_and_past_contests')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {prizeExams.map(pe => (
                           <div key={pe.id} className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm flex flex-col">
@@ -460,13 +460,13 @@ export const AdminDashboard = () => {
                                   <img src={pe.prizeImage} className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
                                   <div>
                                       <div className="font-bold text-gray-800 line-clamp-1">{pe.prizeTitle}</div>
-                                      <div className={`text-[10px] font-black px-2 py-0.5 rounded uppercase w-fit ${pe.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>{pe.isActive ? 'ACTIVE' : 'ENDED'}</div>
+                                      <div className={`text-[10px] font-black px-2 py-0.5 rounded uppercase w-fit ${pe.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>{pe.isActive ? t('status_active') : t('status_ended')}</div>
                                   </div>
                               </div>
                               {pe.winnerName && <div className="mt-auto mb-4 bg-yellow-50 text-yellow-700 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-2"><Trophy size={16} /> {pe.winnerName}</div>}
                               <div className="flex gap-2 mt-auto">
                                   <button onClick={() => setViewParticipantsId(pe.examId)} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 border border-gray-200">{t('view_participants')}</button>
-                                  {pe.isActive && <button onClick={() => { if(window.confirm('End contest?')) drawPrizeWinner(pe.id); }} className="flex-1 bg-gray-900 text-white py-2 rounded-xl text-xs font-bold hover:bg-gray-800">{t('draw_winner')}</button>}
+                                  {pe.isActive && <button onClick={() => { if(window.confirm(t('confirm_draw_winner'))) drawPrizeWinner(pe.id); }} className="flex-1 bg-gray-900 text-white py-2 rounded-xl text-xs font-bold hover:bg-gray-800">{t('draw_winner')}</button>}
                               </div>
                           </div>
                       ))}
@@ -670,11 +670,40 @@ export const AdminDashboard = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative border border-gray-200">
                   <button onClick={() => setShowBroadcastModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><X size={20} /></button>
-                  <h3 className="font-bold text-xl text-gray-900 mb-6">Send Broadcast</h3>
+                    <h3 className="font-bold text-xl text-gray-900 mb-6">{t('broadcast')}</h3>
                   <div className="space-y-4">
-                      <input value={broadcastTitle} onChange={e => setBroadcastTitle(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500" placeholder="Title" />
-                      <textarea value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} rows={3} className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500" placeholder="Message" />
-                      <button onClick={handleSendBroadcast} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Send Now</button>
+                        <input
+                            value={broadcastTitle}
+                            onChange={e => setBroadcastTitle(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500"
+                            placeholder={t('broadcast_title_placeholder')}
+                        />
+                        <textarea
+                            value={broadcastMsg}
+                            onChange={e => setBroadcastMsg(e.target.value)}
+                            rows={3}
+                            className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500"
+                            placeholder={t('broadcast_message_placeholder')}
+                        />
+                        <div>
+                            <label className="text-sm font-semibold text-gray-600 mb-2 block">{t('select_target_role')}</label>
+                            <select
+                                value={broadcastRole}
+                                onChange={e => setBroadcastRole(e.target.value as UserRole | 'ALL')}
+                                className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 focus:outline-none focus:border-indigo-500"
+                            >
+                                <option value="ALL">{t('target_all')}</option>
+                                <option value="STUDENT">{t('target_students')}</option>
+                                <option value="TEACHER">{t('target_teachers')}</option>
+                            </select>
+                        </div>
+                        <button
+                            onClick={handleSendBroadcast}
+                            disabled={!broadcastTitle.trim() || !broadcastMsg.trim()}
+                            className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors disabled:opacity-50"
+                        >
+                            {t('send_now')}
+                        </button>
                   </div>
               </div>
           </div>

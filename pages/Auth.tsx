@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { UserRole } from '../types';
-import { Sparkles, GraduationCap, ShieldCheck, Users, UserPlus, LogIn, FileText, X, LockKeyhole, Mail, ArrowRight, CheckCircle } from 'lucide-react';
+import { Sparkles, GraduationCap, ShieldCheck, Users, UserPlus, LogIn, FileText, X, LockKeyhole, Mail, ArrowRight, CheckCircle, Apple, Chrome } from 'lucide-react';
 import { TEACHER_BRANCHES } from '../constants';
+import { useLocation } from 'react-router-dom';
 
 export const Auth = () => {
   const { login, register, users, systemSettings, t, showAlert, schools, resetPassword, sendPasswordResetEmail } = useStore(); 
@@ -15,6 +16,15 @@ export const Auth = () => {
   const [role, setRole] = useState<UserRole>(UserRole.STUDENT);
   const [agreed, setAgreed] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const location = useLocation();
+  const [referralCodeInput, setReferralCodeInput] = useState('');
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref') || '';
+    if (ref) {
+        setReferralCodeInput(ref);
+    }
+  }, [location.search]);
   
   // Forgot Password States
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -82,8 +92,12 @@ export const Auth = () => {
         englishLevel: 'A1',
         schoolId: selectedSchoolId || undefined,
         branch: role === UserRole.TEACHER ? selectedBranch : undefined
-      });
+      }, { referralCode: referralCodeInput });
     }
+  };
+
+  const handleExternalLogin = (provider: 'google' | 'apple') => {
+    showAlert(t('external_login_coming'), 'info');
   };
 
   const handleSendResetLink = async () => {
@@ -137,7 +151,7 @@ export const Auth = () => {
           <p className="text-gray-500 mt-2">{t('login_subtitle')}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+        <form onSubmit={handleSubmit} className="space-y-4 mb-6">
           <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
             <button 
               type="button"
@@ -295,6 +309,16 @@ export const Auth = () => {
                       {t('terms_label')} <button type="button" onClick={() => setShowTerms(true)} className="text-brand-600 hover:underline font-bold">{t('terms_link')}</button>
                   </label>
               </div>
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1">{t('enter_referral_code')} ({t('optional')})</label>
+                  <input 
+                    type="text"
+                    value={referralCodeInput}
+                    onChange={(e) => setReferralCodeInput(e.target.value)}
+                    className="w-full bg-transparent outline-none text-gray-800 font-medium"
+                    placeholder={t('referral_placeholder')}
+                  />
+              </div>
             </>
           )}
 
@@ -303,6 +327,27 @@ export const Auth = () => {
             {isLoginMode ? t('login_title') : t('create_account')}
           </button>
         </form>
+
+        {isLoginMode && (
+          <div className="space-y-3 mb-6">
+            <button
+              type="button"
+              onClick={() => handleExternalLogin('google')}
+              className="w-full flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Chrome size={18} className="text-red-500" />
+              {t('continue_with_google')}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExternalLogin('apple')}
+              className="w-full flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Apple size={18} className="text-black" />
+              {t('continue_with_apple')}
+            </button>
+          </div>
+        )}
 
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">
