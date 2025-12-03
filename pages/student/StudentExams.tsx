@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, Sparkles, GraduationCap, Book, Repeat } from 'lucide-react';
+import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, Sparkles, GraduationCap, Book, Repeat, Eye } from 'lucide-react';
 
 export const StudentExams = () => {
   const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, results, watchAdForPoints } = useStore();
@@ -76,6 +76,10 @@ export const StudentExams = () => {
     } else {
         openStartModal(examId);
     }
+  };
+  const handleViewDetails = (examId: string) => {
+    sessionStorage.removeItem(`exam_time_${examId}`);
+    navigate(`/student/exam/${examId}`);
   };
 
   const openStartModal = (examId: string) => {
@@ -167,8 +171,11 @@ export const StudentExams = () => {
               <div className="mt-auto flex items-center justify-between">
                  <div className="flex items-center gap-1 text-xs text-gray-500 font-medium"><Clock size={14} /> {exam.timeLimit}{t('min')}</div>
                  {isPurchased || isFree ? (
-                     <button onClick={() => handleStartOrBuy(exam.id, exam.price)} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${isSolved ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}>
-                        {isSolved ? <><Repeat size={16} /> {t('retake')}</> : <><Play size={16} /> {t('start')}</>}
+                     <button
+                        onClick={() => isSolved ? handleViewDetails(exam.id) : handleStartOrBuy(exam.id, exam.price)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${isSolved ? 'bg-gray-900 text-white hover:bg-gray-800' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                     >
+                        {isSolved ? <><Eye size={16} /> {t('view_details')}</> : <><Play size={16} /> {t('start')}</>}
                      </button>
                  ) : (
                      <button
