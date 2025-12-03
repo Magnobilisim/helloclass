@@ -7,13 +7,14 @@ import { Subject, Exam } from '../../types';
 import { Bot, Loader2, Sparkles, GraduationCap, Book, Filter } from 'lucide-react';
 
 export const AIWizard = () => {
-  const { user, addExam, approvedTopics, availableSubjects, t, showAlert, language } = useStore();
+  const { user, addExam, approvedTopics, availableSubjects, t, showAlert, language, systemSettings, updateUser } = useStore();
   const navigate = useNavigate();
   
   const [gradeLevel, setGradeLevel] = useState<number>(user?.classLevel || 5);
   const [englishLevel, setEnglishLevel] = useState<string>(user?.englishLevel || 'A1');
   const [subjectId, setSubjectId] = useState<string>(availableSubjects[0]?.id || 'sub-math');
   const [topic, setTopic] = useState('');
+  const [timeLimit, setTimeLimit] = useState<number>(10);
   const [isLoading, setIsLoading] = useState(false);
 
   const filteredSubjects = useMemo(() => availableSubjects.filter(s => {
@@ -33,7 +34,8 @@ export const AIWizard = () => {
       if (subjectId === 'sub-eng') {
           return topics.filter(t => t.level === englishLevel);
       }
-      return topics.filter(t => t.grade === gradeLevel);
+      const gradeMatches = topics.filter(t => !t.grade || t.grade === gradeLevel);
+      return gradeMatches.length ? gradeMatches : topics;
   }, [approvedTopics, subjectId, englishLevel, gradeLevel]);
 
   useEffect(() => {
@@ -46,6 +48,9 @@ export const AIWizard = () => {
       }
   }, [topicOptions, topic]);
 
+  const wizardCost = systemSettings.aiWizardCost || 0;
+  const insufficientPoints = user ? user.points < wizardCost : true;
+
   const handleGenerate = async () => {
     if (!user) return;
     setIsLoading(true);
@@ -53,6 +58,16 @@ export const AIWizard = () => {
       const subjName = availableSubjects.find(s => s.id === subjectId)?.name || 'General';
       if (!topic) {
         showAlert(t('select_topic_first'), 'error');
+        setIsLoading(false);
+        return;
+      }
+      if (timeLimit <= 0) {
+        showAlert(t('ai_time_limit_hint'), 'error');
+        setIsLoading(false);
+        return;
+      }
+      if (wizardCost > 0 && insufficientPoints) {
+        showAlert(t('not_enough_points'), 'error');
         setIsLoading(false);
         return;
       }
@@ -77,15 +92,19 @@ export const AIWizard = () => {
         classLevel: subjectId !== 'sub-eng' ? gradeLevel : undefined,
         englishLevel: subjectId === 'sub-eng' ? englishLevel : undefined,
         price: 0,
-        timeLimit: 10,
+        timeLimit: timeLimit,
         sales: 0,
         isPublished: true,
         isAI: true,
         questions: questions
       };
 
+      if (wizardCost > 0) {
+        updateUser({ ...user, points: user.points - wizardCost });
+        showAlert(t('ai_wizard_payment_success').replace('{points}', `${wizardCost}`), 'success');
+      }
+
       addExam(newExam);
-      showAlert('AI Exam created and published to Marketplace!', 'success');
       navigate(`/student/exam/${newExam.id}`);
     } catch (error: any) {
       console.error(error);
@@ -166,8 +185,27 @@ export const AIWizard = () => {
                 </div>
             )}
         </div>
+        <div className="animate-fade-in" style={{animationDelay: '0.35s'}}>
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold">4</div>
+                <label className="text-lg font-bold text-gray-800">{t('ai_time_limit_label')}</label>
+            </div>
+            <input
+              type="number"
+              min={1}
+              value={timeLimit}
+              onChange={e => setTimeLimit(Math.max(1, Number(e.target.value)))}
+              className="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-2xl p-4 font-bold outline-none focus:border-green-500 focus:bg-white transition-all"
+            />
+            <p className="text-sm text-gray-500 mt-2">{t('ai_time_limit_hint')}</p>
+        </div>
+        {wizardCost > 0 && (
+            <div className={`mt-4 p-4 rounded-2xl border ${insufficientPoints ? 'border-red-200 bg-red-50 text-red-700' : 'border-indigo-200 bg-indigo-50 text-indigo-700'}`}>
+                {t('ai_wizard_cost_notice').replace('{points}', `${wizardCost}`)}
+            </div>
+        )}
 
-        <button onClick={handleGenerate} disabled={isLoading || !topic} className="w-full bg-gray-900 text-white py-5 rounded-2xl font-bold text-lg shadow-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-3 mt-8">
+        <button onClick={handleGenerate} disabled={isLoading || !topic || insufficientPoints} className="w-full bg-gray-900 text-white py-5 rounded-2xl font-bold text-lg shadow-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-3 mt-8">
             {isLoading ? <><Loader2 className="animate-spin" /> {t('generating')}</> : <>{t('generate_exam')} <Sparkles size={20} className="text-yellow-400" /></>}
         </button>
       </div>

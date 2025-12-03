@@ -18,6 +18,7 @@ export const AdminSettings = () => {
   const [packagePoints, setPackagePoints] = useState(100);
   const [packagePrice, setPackagePrice] = useState(0);
   const [packageDesc, setPackageDesc] = useState('');
+  const [aiWizardCost, setAiWizardCost] = useState(systemSettings.aiWizardCost || 0);
 
   useEffect(() => {
     if (systemSettings) {
@@ -29,6 +30,7 @@ export const AdminSettings = () => {
         setAdReward(systemSettings.adRewardPoints || 0);
         setReferralReward(systemSettings.referralRewardPoints || 0);
         setPackages(systemSettings.pointPackages || []);
+        setAiWizardCost(systemSettings.aiWizardCost ?? 0);
     }
   }, [systemSettings]);
 
@@ -61,7 +63,8 @@ export const AdminSettings = () => {
           teacherTerms,
           adRewardPoints: adReward,
           referralRewardPoints: referralReward,
-          pointPackages: packages
+          pointPackages: packages,
+          aiWizardCost
       });
   };
   
@@ -126,6 +129,17 @@ export const AdminSettings = () => {
                        />
                        <p className="text-xs text-gray-400 mt-1">{t('referral_reward_hint')}</p>
                     </div>
+                </div>
+                <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-2">{t('ai_wizard_cost')}</label>
+                   <input
+                      type="number"
+                      min={0}
+                      value={aiWizardCost}
+                      onChange={e => setAiWizardCost(Math.max(0, Number(e.target.value)))}
+                      className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900"
+                   />
+                   <p className="text-xs text-gray-400 mt-1">{t('ai_wizard_cost_hint')}</p>
                 </div>
 
                 <div>

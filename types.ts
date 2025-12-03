@@ -199,6 +199,7 @@ export interface SystemSettings {
   adRewardPoints: number;
   referralRewardPoints: number;
   pointPackages: PointPackage[];
+  aiWizardCost: number;
 }
 
 export interface PointPackage {
