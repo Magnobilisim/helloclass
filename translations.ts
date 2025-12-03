@@ -150,6 +150,9 @@ export const TRANSLATIONS = {
     copied: 'Kopyalandı!',
     enter_referral_code: 'Referans kodu',
     referral_placeholder: 'Örn. HC-ABCD12',
+    continue_with_google: 'Google ile devam et',
+    continue_with_apple: 'Apple ile devam et',
+    external_login_coming: 'Bu giriş seçeneği yakında aktif olacak.',
 
     // AI Wizard
     ai_wizard_title: 'Yapay Zeka Sınav Sihirbazı',
@@ -618,6 +621,9 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     copied: 'Copied!',
     enter_referral_code: 'Referral code',
     referral_placeholder: 'e.g. HC-ABCD12',
+    continue_with_google: 'Continue with Google',
+    continue_with_apple: 'Continue with Apple',
+    external_login_coming: 'This login option will be available soon.',
 
     // AI Wizard
     ai_wizard_title: 'AI Exam Wizard',

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { UserRole } from '../types';
-import { Sparkles, GraduationCap, ShieldCheck, Users, UserPlus, LogIn, FileText, X, LockKeyhole, Mail, ArrowRight, CheckCircle } from 'lucide-react';
+import { Sparkles, GraduationCap, ShieldCheck, Users, UserPlus, LogIn, FileText, X, LockKeyhole, Mail, ArrowRight, CheckCircle, Apple, Chrome } from 'lucide-react';
 import { TEACHER_BRANCHES } from '../constants';
 import { useLocation } from 'react-router-dom';
 
@@ -96,6 +96,10 @@ export const Auth = () => {
     }
   };
 
+  const handleExternalLogin = (provider: 'google' | 'apple') => {
+    showAlert(t('external_login_coming'), 'info');
+  };
+
   const handleSendResetLink = async () => {
       if (!forgotEmail) {
           showAlert(t('fill_all'), 'error');
@@ -147,7 +151,7 @@ export const Auth = () => {
           <p className="text-gray-500 mt-2">{t('login_subtitle')}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+        <form onSubmit={handleSubmit} className="space-y-4 mb-6">
           <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
             <button 
               type="button"
@@ -323,6 +327,27 @@ export const Auth = () => {
             {isLoginMode ? t('login_title') : t('create_account')}
           </button>
         </form>
+
+        {isLoginMode && (
+          <div className="space-y-3 mb-6">
+            <button
+              type="button"
+              onClick={() => handleExternalLogin('google')}
+              className="w-full flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Chrome size={18} className="text-red-500" />
+              {t('continue_with_google')}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExternalLogin('apple')}
+              className="w-full flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Apple size={18} className="text-black" />
+              {t('continue_with_apple')}
+            </button>
+          </div>
+        )}
 
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">
