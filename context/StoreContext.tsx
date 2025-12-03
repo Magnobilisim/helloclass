@@ -84,7 +84,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   
   const [availableSubjects, setAvailableSubjects] = useState<SubjectDef[]>(INITIAL_SUBJECTS);
 
-  const [approvedTopics, setApprovedTopics] = useState<Record<string, TopicMetadata[]>>(CURRICULUM_TOPICS);
+  const mergeTopicsMap = (incoming?: Record<string, TopicMetadata[]>) => {
+      const merged: Record<string, TopicMetadata[]> = { ...CURRICULUM_TOPICS };
+      if (incoming) {
+          Object.entries(incoming).forEach(([subjectId, topics]) => {
+              const base = merged[subjectId] ? [...merged[subjectId]] : [];
+              topics.forEach(topic => {
+                  const exists = base.some(
+                      t => t.name.toLowerCase() === topic.name.toLowerCase() &&
+                           t.grade === topic.grade &&
+                           t.level === topic.level
+                  );
+                  if (!exists) base.push(topic);
+              });
+              merged[subjectId] = base;
+          });
+      }
+      return merged;
+  };
+
+  const [approvedTopics, setApprovedTopics] = useState<Record<string, TopicMetadata[]>>(mergeTopicsMap());
 
   useEffect(() => {
     const loadedUsers = localStorage.getItem('hc_users');
@@ -153,7 +172,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
             const parsed = JSON.parse(loadedTopics);
             if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-               setApprovedTopics(parsed);
+               setApprovedTopics(mergeTopicsMap(parsed));
             }
         } catch (e) {
             console.error("Failed to parse topics", e);
