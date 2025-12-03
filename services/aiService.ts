@@ -10,7 +10,7 @@ const OPENAI_API_KEY =
     : "") ||
   "";
 
-const TEXT_MODEL = env?.VITE_OPENAI_TEXT_MODEL || "o1-mini";
+const TEXT_MODEL = env?.VITE_OPENAI_TEXT_MODEL || "gpt-4.1-mini";
 const IMAGE_MODEL = env?.VITE_OPENAI_IMAGE_MODEL || "gpt-image-1";
 
 const createClient = () => {
