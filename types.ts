@@ -201,6 +201,7 @@ export interface SystemSettings {
   pointPackages: PointPackage[];
   aiWizardCost: number;
   aiExplainCost: number;
+  joker5050Cost: number;
 }
 
 export interface PointPackage {

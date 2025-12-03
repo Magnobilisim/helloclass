@@ -124,7 +124,7 @@ export const ExamRoom = () => {
           const effectiveMinutes = activeTimeLimitMinutes ?? exam.timeLimit;
           const sessionKey = `${user.id}_${id}`;
           const session = examSessions[sessionKey] || examSessions[id];
-          if (session && session.startedAt) {
+          if (session && session.status === 'started' && session.startedAt) {
               const now = Date.now();
               const startTime = new Date(session.startedAt).getTime(); 
               const elapsedSeconds = Math.floor((now - startTime) / 1000);
@@ -240,11 +240,21 @@ export const ExamRoom = () => {
   };
 
   const useJoker5050 = () => {
-    if (!user?.inventory.includes('JOKER_5050') || !exam) {
+    if (!user || !exam) {
+        showAlert(t('no_joker'), 'error');
+        return;
+    }
+    if (!user.inventory.includes('JOKER_5050')) {
         showAlert(t('no_joker'), 'error');
         return;
     }
     if (hiddenOptions.length > 0) return;
+
+    const jokerCost = systemSettings.joker5050Cost || 0;
+    if (jokerCost > 0 && user.points < jokerCost) {
+        triggerPointsModal(t('insufficient_points_message').replace('{points}', `${jokerCost}`), 'GENERIC');
+        return;
+    }
 
     const currentQ = exam.questions[currentIndex];
     const wrongOptions = currentQ.options
@@ -268,15 +278,21 @@ export const ExamRoom = () => {
 
     setHiddenOptions(toHide);
     
-    const newInv = [...user.inventory];
+    const newInv = [...(user.inventory || [])];
     const idx = newInv.indexOf('JOKER_5050');
     if (idx > -1) newInv.splice(idx, 1);
-    // updateUser({ ...user, inventory: newInv }); // StoreContext should handle logic, keeping UI clean
+    
+    const updatedPoints = jokerCost > 0 ? user.points - jokerCost : user.points;
+    updateUser({ ...user, inventory: newInv, points: updatedPoints });
     showAlert(t('joker_5050_used'), 'info');
   };
 
   const useJokerSkip = () => {
-    if (!user?.inventory.includes('JOKER_SKIP') || !exam) {
+    if (!user || !exam) {
+        showAlert(t('no_joker'), 'error');
+        return;
+    }
+    if (!user.inventory.includes('JOKER_SKIP')) {
         showAlert(t('no_joker'), 'error');
         return;
     }
@@ -286,6 +302,11 @@ export const ExamRoom = () => {
     const newAnswers = [...userAnswers];
     newAnswers[currentIndex] = -1; 
     setUserAnswers(newAnswers);
+
+    const newInv = [...(user.inventory || [])];
+    const idx = newInv.indexOf('JOKER_SKIP');
+    if (idx > -1) newInv.splice(idx, 1);
+    updateUser({ ...user, inventory: newInv });
 
     if (currentIndex < exam.questions.length - 1) {
         setCurrentIndex(prev => prev + 1);
