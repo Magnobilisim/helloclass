@@ -249,10 +249,32 @@ Return JSON that matches the schema.`,
 
     const payload = JSON.parse(jsonString) as { questions: PlannedQuestion[] };
 
+    const imageKeywords = [
+      "şekil",
+      "sekil",
+      "grafik",
+      "diyagram",
+      "tablo",
+      "şema",
+      "figure",
+      "diagram",
+      "chart",
+      "shape",
+      "picture",
+      "image",
+    ];
+
+    const needsVisualCue = (text: string) => {
+      const lower = text.toLowerCase();
+      return imageKeywords.some((kw) => lower.includes(kw));
+    };
+
     const questions: Question[] = [];
     for (const [index, plan] of payload.questions.entries()) {
+      const shouldForceImage =
+        !plan.needsImage && needsVisualCue(plan.text || "");
       let imageUrl: string | undefined;
-      if (plan.needsImage && plan.imagePrompt) {
+      if ((plan.needsImage || shouldForceImage) && plan.imagePrompt) {
         imageUrl = await generateQuestionImage(plan.imagePrompt);
       }
 
