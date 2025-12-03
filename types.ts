@@ -60,6 +60,8 @@ export interface User {
   referralCount?: number;
   totalReferralPoints?: number;
   totalPointsPurchased?: number;
+  lifetimeExamPoints?: number;
+  lifetimeAdPoints?: number;
 }
 
 export interface Question {
