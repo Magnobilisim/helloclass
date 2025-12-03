@@ -68,6 +68,8 @@ export const StudentDashboard = () => {
           {availableExams.slice(0, 3).map(exam => {
             const subjName = availableSubjects.find(s => s.id === exam.subjectId)?.name || 'Unknown';
             const isSolved = solvedExamIds.has(exam.id);
+            const isPurchased = user?.purchasedExamIds?.includes(exam.id);
+            const canAfford = (user?.points || 0) >= exam.price;
             return (
             <div key={exam.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-transform">
               <div className="flex justify-between items-start mb-4 relative z-10">
@@ -87,9 +89,19 @@ export const StudentDashboard = () => {
               <p className="text-xs text-gray-500 mb-4">{t('by')} {exam.creatorName}</p>
               <div className="mt-auto flex items-center justify-between">
                  <div className="flex items-center gap-1 text-xs text-gray-500 font-medium"><Clock size={14} /> {exam.timeLimit}{t('min')}</div>
-                 <button onClick={() => startExam(exam.id)} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${isSolved ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}>
-                    {isSolved ? <><Repeat size={16} /> {t('retake')}</> : <><Play size={16} /> {t('start')}</>}
-                 </button>
+                 {isPurchased || exam.price === 0 ? (
+                    <button onClick={() => startExam(exam.id)} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${isSolved ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}>
+                        {isSolved ? <><Repeat size={16} /> {t('retake')}</> : <><Play size={16} /> {t('start')}</>}
+                    </button>
+                 ) : (
+                    <button
+                        onClick={() => navigate(`/student/exam/${exam.id}`)}
+                        disabled={!canAfford}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${canAfford ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                    >
+                        <ShoppingCart size={16} /> {exam.price} {t('points')}
+                    </button>
+                 )}
               </div>
             </div>
           )})}
