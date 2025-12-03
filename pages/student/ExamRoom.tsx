@@ -10,7 +10,7 @@ import { getAnswerExplanation } from '../../services/aiService';
 export const ExamRoom = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { exams, user, saveResult, showAlert, t, results, startExamSession, examSessions, prizeExams, language } = useStore();
+  const { exams, user, saveResult, showAlert, t, results, startExamSession, examSessions, prizeExams, language, systemSettings, updateUser, watchAdForPoints } = useStore();
   const [exam, setExam] = useState<Exam | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -24,6 +24,8 @@ export const ExamRoom = () => {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [explainingQuestionId, setExplainingQuestionId] = useState<string | null>(null);
   const [explanationMap, setExplanationMap] = useState<Record<string, string>>({});
+  const [showPointsModal, setShowPointsModal] = useState(false);
+  const [pointModalMessage, setPointModalMessage] = useState('');
 
   useEffect(() => {
     const foundExam = exams.find(e => e.id === id);
@@ -142,21 +144,49 @@ export const ExamRoom = () => {
     setRewardsEarned(earned);
   };
 
+  const explainCost = systemSettings.aiExplainCost || 0;
+
+  const openPointsModal = (message: string) => {
+      setPointModalMessage(message);
+      setShowPointsModal(true);
+  };
+
   const handleExplain = async (qIndex: number) => {
-      if (!exam) return;
+      if (!exam || !user) return;
       const question = exam.questions[qIndex];
       setExplainingQuestionId(question.id);
-      
-      const explanation = await getAnswerExplanation(
-          question.text,
-          question.options,
-          question.correctIndex,
-          userAnswers[qIndex] === -1 ? null : userAnswers[qIndex],
-          language
-      );
-      
-      setExplanationMap(prev => ({ ...prev, [question.id]: explanation }));
-      setExplainingQuestionId(null);
+      let deductedUserSnapshot: null | typeof user = null;
+      try {
+          if (explainCost > 0) {
+              if (user.points < explainCost) {
+                  openPointsModal(t('insufficient_points_message').replace('{points}', `${explainCost}`));
+                  setExplainingQuestionId(null);
+                  return;
+              }
+              const updatedUser = { ...user, points: user.points - explainCost };
+              updateUser(updatedUser);
+              deductedUserSnapshot = updatedUser;
+              showAlert(t('ai_explain_cost_success').replace('{points}', `${explainCost}`), 'success');
+          }
+          
+          const explanation = await getAnswerExplanation(
+              question.text,
+              question.options,
+              question.correctIndex,
+              userAnswers[qIndex] === -1 ? null : userAnswers[qIndex],
+              language
+          );
+          
+          setExplanationMap(prev => ({ ...prev, [question.id]: explanation }));
+      } catch (error: any) {
+          console.error(error);
+          if (deductedUserSnapshot) {
+              updateUser({ ...deductedUserSnapshot, points: deductedUserSnapshot.points + explainCost });
+          }
+          showAlert(error.message || 'Unable to generate explanation.', 'error');
+      } finally {
+          setExplainingQuestionId(null);
+      }
   };
 
   const useJoker5050 = () => {
@@ -489,6 +519,34 @@ export const ExamRoom = () => {
       <div className="mt-6 text-center text-gray-400 font-medium text-sm">
          {t('question')} {currentIndex + 1} {t('of')} {exam.questions.length} • {t('answered')}: {userAnswers.filter(ans => ans !== -1).length}
       </div>
+      {showPointsModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                <h3 className="text-xl font-bold text-gray-800">{t('insufficient_points_title')}</h3>
+                <p className="text-gray-600">{pointModalMessage}</p>
+                <div className="space-y-3">
+                    <button
+                        onClick={() => { watchAdForPoints(); setShowPointsModal(false); }}
+                        className="w-full bg-brand-100 text-brand-700 font-semibold rounded-xl py-3 hover:bg-brand-200 transition-colors"
+                    >
+                        {t('watch_ad_cta')}
+                    </button>
+                    <button
+                        onClick={() => { setShowPointsModal(false); navigate('/student/shop'); }}
+                        className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
+                    >
+                        {t('go_to_shop_cta')}
+                    </button>
+                    <button
+                        onClick={() => setShowPointsModal(false)}
+                        className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 hover:bg-gray-50 transition-colors"
+                    >
+                        {t('close')}
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

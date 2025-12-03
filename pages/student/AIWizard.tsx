@@ -7,7 +7,7 @@ import { Subject, Exam } from '../../types';
 import { Bot, Loader2, Sparkles, GraduationCap, Book, Filter } from 'lucide-react';
 
 export const AIWizard = () => {
-  const { user, addExam, approvedTopics, availableSubjects, t, showAlert, language, systemSettings, updateUser } = useStore();
+  const { user, addExam, approvedTopics, availableSubjects, t, showAlert, language, systemSettings, updateUser, watchAdForPoints } = useStore();
   const navigate = useNavigate();
   
   const [gradeLevel, setGradeLevel] = useState<number>(user?.classLevel || 5);
@@ -16,6 +16,8 @@ export const AIWizard = () => {
   const [topic, setTopic] = useState('');
   const [timeLimit, setTimeLimit] = useState<number>(10);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPointsModal, setShowPointsModal] = useState(false);
+  const [pointModalMessage, setPointModalMessage] = useState('');
 
   const filteredSubjects = useMemo(() => availableSubjects.filter(s => {
       if (s.id === 'sub-eng') return true; 
@@ -51,6 +53,11 @@ export const AIWizard = () => {
   const wizardCost = systemSettings.aiWizardCost || 0;
   const insufficientPoints = user ? user.points < wizardCost : true;
 
+  const openPointsModal = (message: string) => {
+      setPointModalMessage(message);
+      setShowPointsModal(true);
+  };
+
   const handleGenerate = async () => {
     if (!user) return;
     setIsLoading(true);
@@ -67,8 +74,8 @@ export const AIWizard = () => {
         return;
       }
       if (wizardCost > 0 && insufficientPoints) {
-        showAlert(t('not_enough_points'), 'error');
         setIsLoading(false);
+        openPointsModal(t('insufficient_points_message').replace('{points}', `${wizardCost}`));
         return;
       }
       const levelString = `${subjectId === 'sub-eng' ? englishLevel : `Grade ${gradeLevel}`}${topic ? ` focusing on ${topic}` : ''}`;
@@ -209,6 +216,34 @@ export const AIWizard = () => {
             {isLoading ? <><Loader2 className="animate-spin" /> {t('generating')}</> : <>{t('generate_exam')} <Sparkles size={20} className="text-yellow-400" /></>}
         </button>
       </div>
+      {showPointsModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                <h3 className="text-xl font-bold text-gray-800">{t('insufficient_points_title')}</h3>
+                <p className="text-gray-600">{pointModalMessage}</p>
+                <div className="space-y-3">
+                    <button
+                        onClick={() => { watchAdForPoints(); setShowPointsModal(false); }}
+                        className="w-full bg-brand-100 text-brand-700 font-semibold rounded-xl py-3 hover:bg-brand-200 transition-colors"
+                    >
+                        {t('watch_ad_cta')}
+                    </button>
+                    <button
+                        onClick={() => { setShowPointsModal(false); navigate('/student/shop'); }}
+                        className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
+                    >
+                        {t('go_to_shop_cta')}
+                    </button>
+                    <button
+                        onClick={() => setShowPointsModal(false)}
+                        className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 hover:bg-gray-50 transition-colors"
+                    >
+                        {t('close')}
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
