@@ -104,7 +104,6 @@ export const ExamRoom = () => {
         } else {
             setUserAnswers(new Array(foundExam.questions.length).fill(-1));
         }
-        setIsReviewMode(false); 
         setRewardsEarned(existingResult.rewardsEarned);
         setTimeLeft(0);
     } else {
