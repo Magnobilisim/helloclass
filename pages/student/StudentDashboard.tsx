@@ -25,7 +25,7 @@ export const StudentDashboard = () => {
 
   const startExam = (examId: string) => { navigate(`/student/exam/${examId}`); };
 
-  const handleExamLaunch = (exam: Exam) => {
+  const handleExamLaunch = async (exam: Exam) => {
     if (!user) {
         navigate('/auth');
         return;
@@ -43,10 +43,9 @@ export const StudentDashboard = () => {
     if (!success) {
         return;
     }
-    // allow store state to update before navigating so exam page sees the purchase
-    setTimeout(() => {
-        goToExam();
-    }, 0);
+    // give store context a moment to update before routing so access checks see the purchase
+    await new Promise(resolve => setTimeout(resolve, 150));
+    goToExam();
   };
 
   return (
