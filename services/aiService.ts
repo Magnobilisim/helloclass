@@ -109,6 +109,45 @@ const toDataUrl = (base64: string) => {
   return `data:image/png;base64,${base64}`;
 };
 
+interface ImageJob {
+  prompt: string;
+  questionIndex: number;
+}
+
+interface ImageJobResult extends ImageJob {
+  imageUrl?: string;
+}
+
+const runImageJobs = async (
+  jobs: ImageJob[],
+  concurrency = 2
+): Promise<ImageJobResult[]> => {
+  if (!jobs.length) return [];
+  const results: ImageJobResult[] = new Array(jobs.length);
+  let pointer = 0;
+
+  const worker = async () => {
+    while (pointer < jobs.length) {
+      const current = pointer++;
+      const job = jobs[current];
+      try {
+        const imageUrl = await generateQuestionImage(job.prompt);
+        results[current] = { ...job, imageUrl };
+      } catch (error) {
+        console.error("Image job failed:", error);
+        results[current] = { ...job };
+      }
+    }
+  };
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, jobs.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
+  return results;
+};
+
 const questionPlanSchema = {
   name: "ExamQuestionPlan",
   schema: {
@@ -309,6 +348,7 @@ Return JSON that matches the schema.`,
     };
 
     const questions: Question[] = [];
+    const imageJobs: ImageJob[] = [];
     for (const [index, plan] of payload.questions.entries()) {
       const shouldForceImage =
         !plan.needsImage && needsVisualCue(plan.text || "");
@@ -318,7 +358,9 @@ Return JSON that matches the schema.`,
           plan.imagePrompt && plan.imagePrompt.trim().length > 10
             ? plan.imagePrompt
             : createFallbackImagePrompt(plan.text, language);
-        imageUrl = await generateQuestionImage(promptSource);
+        imageJobs.push({ prompt: promptSource, questionIndex: index });
+        // temporary placeholder; will update after batch generation
+        imageUrl = undefined;
       }
 
       questions.push({
@@ -328,6 +370,18 @@ Return JSON that matches the schema.`,
         correctIndex: plan.correctIndex,
         explanation: plan.explanation || defaultExplanation(language),
         imageUrl,
+      });
+    }
+
+    if (imageJobs.length) {
+      const jobResults = await runImageJobs(
+        imageJobs,
+        Math.min(3, imageJobs.length)
+      );
+      jobResults.forEach(({ questionIndex, imageUrl }) => {
+        if (imageUrl) {
+          questions[questionIndex].imageUrl = imageUrl;
+        }
       });
     }
 
