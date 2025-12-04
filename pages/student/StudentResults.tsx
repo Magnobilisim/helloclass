@@ -16,6 +16,7 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
   const highlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const targetId = studentId || user?.id;
+  const showLearningDetails = !studentId;
 
   const myResults = results
     .filter(r => r.studentId === targetId)
@@ -115,7 +116,7 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
                               <div className="text-3xl font-black text-gray-800 tracking-tighter"><span className={isPass ? 'text-brand-600' : 'text-gray-400'}>{res.score}</span><span className="text-gray-300 text-xl">/{res.totalQuestions}</span></div>
                           </div>
                       </div>
-                      {(learningStatus || learningReport) && (
+                      {showLearningDetails && (learningStatus || learningReport) && (
                           <div className="mt-4 pt-4 border-t border-gray-50 pl-4 space-y-2">
                               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{t('learning_outcomes_title')}</p>
                               {learningStatus === 'pending' && (
