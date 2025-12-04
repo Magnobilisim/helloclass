@@ -223,7 +223,7 @@ const generateQuestionImage = async (
     const result = await client.images.generate({
       model: IMAGE_MODEL,
       prompt: `Educational exam illustration with clean lines, no text labels. ${prompt}`,
-      size: "512x512",
+      size: "1024x1024",
     });
     const base64 = result.data?.[0]?.b64_json;
     if (base64) {
