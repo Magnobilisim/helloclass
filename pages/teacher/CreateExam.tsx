@@ -3,13 +3,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Question, Exam, UserRole } from '../../types';
-import { Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, X, Check, Loader2 } from 'lucide-react';
+import { generateExamQuestions } from '../../services/aiService';
+import { Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, X, Check, Loader2, Bot } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../../utils/imageUtils';
 import { uploadMedia } from '../../services/mediaService';
 
 export const CreateExam = () => {
-  const { user, addExam, updateExam: updateExamInStore, exams, approvedTopics, availableSubjects, t, showAlert } = useStore();
+  const { user, addExam, updateExam: updateExamInStore, exams, approvedTopics, availableSubjects, t, showAlert, language, systemSettings, updateUser } = useStore();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -30,6 +31,7 @@ export const CreateExam = () => {
   const [questions, setQuestions] = useState<Question[]>([
     { id: 'q1', text: '', options: ['', '', '', ''], correctIndex: 0, explanation: '' }
   ]);
+  const [aiGeneratingIndex, setAiGeneratingIndex] = useState<number | null>(null);
 
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -41,6 +43,7 @@ export const CreateExam = () => {
 
   const inputClass = "w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all font-medium";
   const labelClass = "block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide";
+  const aiQuestionCost = user?.role === UserRole.TEACHER ? (systemSettings.aiWizardCost || 0) : 0;
 
   const filteredSubjects = availableSubjects.filter(s => {
       if (s.name === 'İngilizce' || s.name === 'English') return true; 
@@ -140,6 +143,64 @@ export const CreateExam = () => {
     const updated = [...questions];
     updated[qIndex].options[oIndex] = value;
     setQuestions(updated);
+  };
+
+  const applyAIQuestion = (index: number, generated: Question) => {
+    setQuestions(prev => {
+        const updated = [...prev];
+        const base = updated[index];
+        updated[index] = {
+            ...base,
+            text: generated.text,
+            options: [...generated.options],
+            correctIndex: generated.correctIndex,
+            explanation: generated.explanation || '',
+            imageUrl: generated.imageUrl,
+            optionImages: undefined
+        };
+        return updated;
+    });
+  };
+
+  const handleGenerateAIQuestion = async (qIndex: number) => {
+    if (!user) return;
+    const cost = user.role === UserRole.TEACHER ? aiQuestionCost : 0;
+    if (cost > 0 && (user.points || 0) < cost) {
+        showAlert(t('insufficient_points_message').replace('{points}', `${cost}`), 'error');
+        return;
+    }
+
+    const selectedSubject = availableSubjects.find(s => s.id === subjectId);
+    const subjName = selectedSubject?.name || 'General';
+    const levelString = (selectedSubject?.name === 'English' || selectedSubject?.name === 'İngilizce')
+        ? englishLevel
+        : `Grade ${classLevel}`;
+
+    setAiGeneratingIndex(qIndex);
+    try {
+        const generated = await generateExamQuestions({
+            subjectName: subjName,
+            gradeOrLevel: levelString,
+            topic: topic || undefined,
+            questionCount: 1,
+            language,
+        });
+        if (!generated || !generated.length) {
+            throw new Error(t('ai_generate_question_error'));
+        }
+        applyAIQuestion(qIndex, generated[0]);
+        if (cost > 0) {
+            updateUser({ ...user, points: user.points - cost });
+            showAlert(t('ai_wizard_payment_success').replace('{points}', `${cost}`), 'success');
+        } else {
+            showAlert(t('ai_generate_question_success'), 'success');
+        }
+    } catch (error: any) {
+        console.error(error);
+        showAlert(error.message || t('ai_generate_question_error'), 'error');
+    } finally {
+        setAiGeneratingIndex(null);
+    }
   };
 
   const initiateCrop = (file: File, target: {qIndex: number, type: 'question' | 'option' | 'explanation', oIndex?: number}) => {
@@ -304,7 +365,16 @@ export const CreateExam = () => {
                     <div key={q.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                         <div className="flex justify-between mb-4">
                             <span className="font-bold bg-brand-500 text-white px-4 py-1.5 rounded-xl shadow-sm shadow-brand-200">{t('question')} {qIndex + 1}</span>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 items-center">
+                                <button 
+                                    type="button" 
+                                    onClick={() => handleGenerateAIQuestion(qIndex)} 
+                                    disabled={aiGeneratingIndex === qIndex}
+                                    className="px-3 py-2 rounded-xl bg-indigo-50 text-indigo-600 font-bold text-xs flex items-center gap-2 hover:bg-indigo-100 transition-colors disabled:opacity-60"
+                                >
+                                    {aiGeneratingIndex === qIndex ? <Loader2 size={16} className="animate-spin" /> : <Bot size={16} />}
+                                    {t('ai_generate_question')}
+                                </button>
                                 <label className="cursor-pointer p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
                                     <ImageIcon size={20} className="text-gray-600" />
                                     <input type="file" className="hidden" onChange={(e) => { if(e.target.files?.[0]) initiateCrop(e.target.files[0], {qIndex, type:'question'}) }} />
@@ -323,6 +393,9 @@ export const CreateExam = () => {
                                         <X size={16} />
                                     </button>
                                 </div>
+                            )}
+                            {user?.role === UserRole.TEACHER && aiQuestionCost > 0 && (
+                                <p className="text-xs text-gray-400 font-bold mb-2">{t('ai_generate_question_cost').replace('{points}', `${aiQuestionCost}`)}</p>
                             )}
                             <label className={labelClass}>{t('enter_question')}</label>
                             <textarea 

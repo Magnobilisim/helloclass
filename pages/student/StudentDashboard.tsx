@@ -52,7 +52,6 @@ export const StudentDashboard = () => {
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row justify-between md:items-end gap-4">
         <div><h2 className="text-3xl font-extrabold text-gray-800">{t('hi')}, {user?.name.split(' ')[0]}! 👋</h2><p className="text-gray-500 font-medium">{t('ready_to_learn')}</p></div>
-        <Link to="/student/wizard" className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"><Bot size={20} />{t('ai_wizard')}</Link>
       </header>
 
       <section className="bg-gradient-to-b from-brand-50 to-white p-6 rounded-3xl border border-brand-100 shadow-sm relative overflow-hidden">

@@ -29,7 +29,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         notifications: '/student/notifications'
     },
     [UserRole.TEACHER]: {
-        profile: '/teacher'
+        profile: '/teacher/profile'
     },
     [UserRole.ADMIN]: {
         profile: '/admin'
@@ -81,6 +81,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         return [
           { to: '/teacher', icon: LayoutDashboard, label: t('dashboard') },
           { to: '/teacher/create', icon: BookOpen, label: t('create_exam') },
+          { to: '/teacher/shop', icon: ShoppingBag, label: t('shop') },
+          { to: '/teacher/profile', icon: UserIcon, label: t('profile') },
           ...common
         ];
       case UserRole.ADMIN:

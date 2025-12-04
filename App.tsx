@@ -10,7 +10,6 @@ import { StudentExams } from './pages/student/StudentExams';
 import { StudentShop } from './pages/student/StudentShop';
 import { StudentResults } from './pages/student/StudentResults';
 import { ExamRoom } from './pages/student/ExamRoom';
-import { AIWizard } from './pages/student/AIWizard';
 import { SocialFeed } from './pages/student/SocialFeed';
 import { UserProfile } from './pages/student/UserProfile';
 import { Notifications } from './pages/student/Notifications';
@@ -18,6 +17,8 @@ import { StudentPrizeExams } from './pages/student/StudentPrizeExams';
 import { Chat } from './pages/Chat';
 import { TeacherDashboard } from './pages/teacher/TeacherDashboard';
 import { CreateExam } from './pages/teacher/CreateExam';
+import { TeacherProfile } from './pages/teacher/TeacherProfile';
+import { TeacherShop } from './pages/teacher/TeacherShop';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminSettings } from './pages/admin/AdminSettings';
 import { UserRole } from './types';
@@ -92,11 +93,6 @@ const MainRouter = () => {
                <ExamRoom />
             </ProtectedRoute>
           } />
-          <Route path="/student/wizard" element={
-            <ProtectedRoute roles={[UserRole.STUDENT]}>
-               <AIWizard />
-            </ProtectedRoute>
-          } />
           <Route path="/student/social" element={
             <ProtectedRoute roles={[UserRole.STUDENT]}>
                <SocialFeed />
@@ -142,6 +138,16 @@ const MainRouter = () => {
           <Route path="/teacher/edit/:id" element={
             <ProtectedRoute roles={[UserRole.TEACHER]}>
                <CreateExam />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/profile" element={
+            <ProtectedRoute roles={[UserRole.TEACHER]}>
+               <TeacherProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/shop" element={
+            <ProtectedRoute roles={[UserRole.TEACHER]}>
+               <TeacherShop />
             </ProtectedRoute>
           } />
 

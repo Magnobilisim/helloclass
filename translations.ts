@@ -187,6 +187,10 @@ export const TRANSLATIONS = {
     advanced: 'İleri',
     grade: 'Sınıf',
     level: 'Seviye',
+    ai_generate_question: 'Soru Sihirbazı',
+    ai_generate_question_success: 'Soru başarıyla hazırlandı.',
+    ai_generate_question_error: 'AI sorusu oluşturulamadı.',
+    ai_generate_question_cost: 'Her soru {points} puan',
 
     // Social
     classroom_feed: 'Sınıf Akışı',
@@ -433,6 +437,7 @@ export const TRANSLATIONS = {
 
     // Profile & Notifications & Messages
     profile: 'Profilim',
+    profile_saved: 'Profil güncellendi.',
     notifications: 'Bildirimler',
     bio: 'Biyografi',
     school: 'Okul',
@@ -689,6 +694,10 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     advanced: 'Advanced',
     grade: 'Grade',
     level: 'Level',
+    ai_generate_question: 'AI Question Wizard',
+    ai_generate_question_success: 'Question prepared successfully.',
+    ai_generate_question_error: 'Unable to generate AI question.',
+    ai_generate_question_cost: 'Each question costs {points} points',
 
     // Social
     classroom_feed: 'Classroom Feed',
@@ -934,6 +943,7 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
 
     // Profile & Notifications & Messages
     profile: 'Profile',
+    profile_saved: 'Profile updated.',
     notifications: 'Notifications',
     bio: 'Bio',
     school: 'School',
