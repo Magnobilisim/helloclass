@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, FileText, Gift, Plus, Trash2 } from 'lucide-react';
+import { Settings, Save, FileText, Gift, Plus, Trash2, Youtube, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 
 export const AdminSettings = () => {
@@ -20,6 +20,7 @@ export const AdminSettings = () => {
   const [packageDesc, setPackageDesc] = useState('');
   const [aiWizardCost, setAiWizardCost] = useState(systemSettings.aiWizardCost || 0);
   const [aiExplainCost, setAiExplainCost] = useState(systemSettings.aiExplainCost || 0);
+  const [socialLinks, setSocialLinks] = useState(systemSettings.socialLinks || { youtube: '', instagram: '', x: '', linkedin: '' });
 
   useEffect(() => {
     if (systemSettings) {
@@ -33,6 +34,7 @@ export const AdminSettings = () => {
         setPackages(systemSettings.pointPackages || []);
         setAiWizardCost(systemSettings.aiWizardCost ?? 0);
         setAiExplainCost(systemSettings.aiExplainCost ?? 0);
+        setSocialLinks(systemSettings.socialLinks || { youtube: '', instagram: '', x: '', linkedin: '' });
     }
   }, [systemSettings]);
 
@@ -67,7 +69,8 @@ export const AdminSettings = () => {
           referralRewardPoints: referralReward,
           pointPackages: packages,
           aiWizardCost,
-          aiExplainCost
+          aiExplainCost,
+          socialLinks
       });
   };
   
@@ -154,6 +157,52 @@ export const AdminSettings = () => {
                       className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900"
                    />
                    <p className="text-xs text-gray-400 mt-1">{t('ai_explain_cost_hint')}</p>
+                </div>
+
+                <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-2">{t('social_links')}</label>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
+                         <Youtube size={16} className="text-red-500" />
+                         <input
+                            type="url"
+                            placeholder="YouTube"
+                            value={socialLinks.youtube || ''}
+                            onChange={e => setSocialLinks(prev => ({ ...prev, youtube: e.target.value }))}
+                            className="flex-1 bg-transparent py-2 text-sm text-gray-800 outline-none"
+                         />
+                      </div>
+                      <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
+                         <Instagram size={16} className="text-pink-500" />
+                         <input
+                            type="url"
+                            placeholder="Instagram"
+                            value={socialLinks.instagram || ''}
+                            onChange={e => setSocialLinks(prev => ({ ...prev, instagram: e.target.value }))}
+                            className="flex-1 bg-transparent py-2 text-sm text-gray-800 outline-none"
+                         />
+                      </div>
+                      <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
+                         <Twitter size={16} className="text-blue-500" />
+                         <input
+                            type="url"
+                            placeholder="X / Twitter"
+                            value={socialLinks.x || ''}
+                            onChange={e => setSocialLinks(prev => ({ ...prev, x: e.target.value }))}
+                            className="flex-1 bg-transparent py-2 text-sm text-gray-800 outline-none"
+                         />
+                      </div>
+                      <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
+                         <Linkedin size={16} className="text-blue-600" />
+                         <input
+                            type="url"
+                            placeholder="LinkedIn"
+                            value={socialLinks.linkedin || ''}
+                            onChange={e => setSocialLinks(prev => ({ ...prev, linkedin: e.target.value }))}
+                            className="flex-1 bg-transparent py-2 text-sm text-gray-800 outline-none"
+                         />
+                      </div>
+                   </div>
                 </div>
 
                 <div>

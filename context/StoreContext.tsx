@@ -76,7 +76,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       pointPackages: DEFAULT_POINT_PACKAGES,
       aiWizardCost: 200,
       aiExplainCost: 25,
-      joker5050Cost: 30
+      joker5050Cost: 30,
+      socialLinks: {
+        youtube: '',
+        instagram: '',
+        x: '',
+        linkedin: ''
+      }
   };
   const mergeSettings = (incoming?: Partial<SystemSettings>): SystemSettings => ({
       ...defaultSettings,
@@ -84,7 +90,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       pointPackages: incoming?.pointPackages && incoming.pointPackages.length ? incoming.pointPackages : defaultSettings.pointPackages,
       aiWizardCost: typeof incoming?.aiWizardCost === 'number' ? incoming.aiWizardCost : defaultSettings.aiWizardCost,
       aiExplainCost: typeof incoming?.aiExplainCost === 'number' ? incoming.aiExplainCost : defaultSettings.aiExplainCost,
-      joker5050Cost: typeof incoming?.joker5050Cost === 'number' ? incoming.joker5050Cost : defaultSettings.joker5050Cost
+      joker5050Cost: typeof incoming?.joker5050Cost === 'number' ? incoming.joker5050Cost : defaultSettings.joker5050Cost,
+      socialLinks: {
+        ...(defaultSettings.socialLinks || {}),
+        ...(incoming?.socialLinks || {})
+      }
   });
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(defaultSettings);
   
@@ -987,6 +997,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return pool.slice(0, count);
   };
 
+  const updatePrizeExamMeta = (prizeExamId: string, data: Partial<PrizeExam>) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      setPrizeExams(prev => prev.map(pe => pe.id === prizeExamId ? { ...pe, ...data } : pe));
+  };
+
   const drawPrizeWinner = (prizeExamId: string) => {
       if (user?.role !== UserRole.ADMIN) return;
       
@@ -1015,7 +1030,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               return;
           }
           const winnerSchool = winnerUser.schoolId ? schools.find(s => s.id === winnerUser.schoolId)?.name : undefined;
-          const updatedPrizeExams = prizeExams.map(pe => 
+          setPrizeExams(prev => prev.map(pe => 
               pe.id === prizeExamId 
               ? { 
                   ...pe, 
@@ -1026,12 +1041,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   winnerClassLevel: winnerUser.classLevel,
                   drawDate: now,
                   finalists: undefined,
-                  finalistNote: undefined
+                  finalistNote: undefined,
+                  finalistQuizDate: undefined,
+                  finalistQuizLink: undefined
                 } 
               : pe
-          );
-
-          setPrizeExams(updatedPrizeExams);
+          ));
           addNotification(winnerUser.id, '🎉 You Won!', `Congratulations! You won the prize for ${prizeExam.prizeTitle}!`, 'success', '/student/prize-exams');
           addLog('Prize Draw', `${prizeExam.month} Winner: ${winnerUser.name}`, 'info');
           showAlert(t('prize_winner_declared').replace('{name}', winnerUser.name), 'success');
@@ -1056,7 +1071,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
 
           const finalistNote = t('prize_finalists_note');
-          const updatedPrizeExams = prizeExams.map(pe => 
+          setPrizeExams(prev => prev.map(pe => 
               pe.id === prizeExamId 
               ? { 
                   ...pe, 
@@ -1068,12 +1083,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   winnerSchool: undefined,
                   winnerClassLevel: undefined,
                   drawDate: now,
-                  finalistQuizDate: pe.finalistQuizDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+                  finalistQuizDate: pe.finalistQuizDate,
+                  finalistQuizLink: pe.finalistQuizLink
                 } 
               : pe
-          );
-
-          setPrizeExams(updatedPrizeExams);
+          ));
           finalists.forEach(finalist => {
               addNotification(finalist.userId, t('prize_finalists_title'), t('prize_finalist_notification'), 'info', '/student/prize-exams');
           });
@@ -1138,6 +1152,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addTopic, removeTopic, addSchool, removeSchool, markNotificationRead, addSubject, removeSubject, toggleFollow,
       addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage,
       addPrizeExam, drawPrizeWinner, payEntryFee,
+      updatePrizeExamMeta,
       alert, showAlert, setLanguage, t
     }}>
       {children}

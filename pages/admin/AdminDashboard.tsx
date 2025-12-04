@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { UserRole, ShopItem, PrizeExam } from '../../types';
-import { ShieldAlert, CheckCircle, Ban, Search, Users, BookOpen, AlertTriangle, DollarSign, Trash2, Edit2, PieChart, Bookmark, Plus, LucideIcon, X, School as SchoolIcon, Layers, Megaphone, Radio, Image as ImageIcon, Coins, CreditCard, ShoppingBag, History, ChevronDown, Check, Eye, Gift, Trophy, Upload, Calendar, Star, Sparkles, Receipt, ArrowRight, Loader2, FileText, Image, AlertOctagon } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Ban, Search, Users, BookOpen, AlertTriangle, DollarSign, Trash2, Edit2, PieChart, Bookmark, Plus, LucideIcon, X, School as SchoolIcon, Layers, Megaphone, Radio, Image as ImageIcon, Coins, CreditCard, ShoppingBag, History, ChevronDown, Check, Eye, Gift, Trophy, Upload, Calendar, Star, Sparkles, Receipt, ArrowRight, Loader2, FileText, Image, AlertOctagon, Link as LinkIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { uploadMedia } from '../../services/mediaService';
 
@@ -18,7 +18,7 @@ export const AdminDashboard = () => {
       users, exams, posts, logs, banUser, deleteUser, changeRole, deletePost, dismissReport, deleteExam, systemSettings, 
       approvedTopics, addTopic, removeTopic, schools, addSchool, removeSchool, availableSubjects, addSubject, removeSubject, 
       shopItems, addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, payouts, processPayout, deleteExamImage, reportPost,
-      prizeExams, addPrizeExam, drawPrizeWinner, results,
+      prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta,
       user: currentUser, t 
   } = useStore();
   const location = useLocation();
@@ -81,6 +81,8 @@ export const AdminDashboard = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [viewParticipantsId, setViewParticipantsId] = useState<string | null>(null);
+  const [editingQuizInfo, setEditingQuizInfo] = useState<{ id: string; date: string; link: string }>({ id: '', date: '', link: '' });
+  const [showQuizModal, setShowQuizModal] = useState(false);
 
   // Derived Values
   const totalUsers = users.length;
@@ -211,6 +213,24 @@ export const AdminDashboard = () => {
           });
           setPrizeExamId(''); setPrizeTitle(''); setPrizeDesc(''); setPrizeImage(''); setEntryFee(0);
       }
+  };
+
+  const openQuizModal = (exam: PrizeExam) => {
+      setEditingQuizInfo({
+          id: exam.id,
+          date: exam.finalistQuizDate ? exam.finalistQuizDate.slice(0, 16) : '',
+          link: exam.finalistQuizLink || ''
+      });
+      setShowQuizModal(true);
+  };
+
+  const handleSaveQuizInfo = () => {
+      if (!editingQuizInfo.id) return;
+      updatePrizeExamMeta(editingQuizInfo.id, {
+          finalistQuizDate: editingQuizInfo.date ? new Date(editingQuizInfo.date).toISOString() : undefined,
+          finalistQuizLink: editingQuizInfo.link || undefined
+      });
+      setShowQuizModal(false);
   };
 
   const getParticipants = (examId: string) => {
@@ -464,8 +484,23 @@ export const AdminDashboard = () => {
                                   </div>
                               </div>
                               {pe.winnerName && <div className="mt-auto mb-4 bg-yellow-50 text-yellow-700 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-2"><Trophy size={16} /> {pe.winnerName}</div>}
+                              {pe.finalists && pe.finalists.length > 0 && (
+                                  <div className="mb-4 space-y-1 text-xs text-gray-500 font-bold">
+                                      {pe.finalistQuizDate && <div>{t('prize_finalist_quiz_date').replace('{date}', new Date(pe.finalistQuizDate).toLocaleString())}</div>}
+                                      {pe.finalistQuizLink && (
+                                          <a href={pe.finalistQuizLink} target="_blank" rel="noreferrer" className="text-indigo-600 underline flex items-center gap-1 text-xs">
+                                              <LinkIcon size={12} /> {pe.finalistQuizLink}
+                                          </a>
+                                      )}
+                                  </div>
+                              )}
                               <div className="flex gap-2 mt-auto">
                                   <button onClick={() => setViewParticipantsId(pe.examId)} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 border border-gray-200">{t('view_participants')}</button>
+                                  {(!pe.isActive && pe.finalists && pe.finalists.length > 0) && (
+                                      <button onClick={() => openQuizModal(pe)} className="flex-1 bg-indigo-50 text-indigo-600 py-2 rounded-xl text-xs font-bold hover:bg-indigo-100 border border-indigo-200">
+                                          {t('prize_finalists_title')}
+                                      </button>
+                                  )}
                                   {pe.isActive && <button onClick={() => { if(window.confirm(t('confirm_draw_winner'))) drawPrizeWinner(pe.id); }} className="flex-1 bg-gray-900 text-white py-2 rounded-xl text-xs font-bold hover:bg-gray-800">{t('draw_winner')}</button>}
                               </div>
                           </div>
@@ -705,6 +740,45 @@ export const AdminDashboard = () => {
                             {t('send_now')}
                         </button>
                   </div>
+              </div>
+          </div>
+      )}
+
+      {/* Finalist Quiz Modal */}
+      {showQuizModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl relative flex flex-col space-y-4 p-6">
+                  <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-bold text-gray-900">{t('prize_finalists_title')}</h3>
+                      <button onClick={() => setShowQuizModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                  </div>
+                  <div className="space-y-3">
+                      <div>
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">{t('prize_finalist_quiz_date').replace('{date}', '').trim()}</label>
+                          <input
+                              type="datetime-local"
+                              value={editingQuizInfo.date}
+                              onChange={e => setEditingQuizInfo(prev => ({ ...prev, date: e.target.value }))}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500"
+                          />
+                      </div>
+                      <div>
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">{t('link')}</label>
+                          <input
+                              type="url"
+                              value={editingQuizInfo.link}
+                              onChange={e => setEditingQuizInfo(prev => ({ ...prev, link: e.target.value }))}
+                              placeholder="https://..."
+                              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500"
+                          />
+                      </div>
+                  </div>
+                  <button
+                      onClick={handleSaveQuizInfo}
+                      className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors"
+                  >
+                      {t('save')}
+                  </button>
               </div>
           </div>
       )}

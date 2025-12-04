@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { UserRole } from '../types';
-import { Sparkles, GraduationCap, ShieldCheck, Users, UserPlus, LogIn, FileText, X, LockKeyhole, Mail, ArrowRight, CheckCircle, Apple, Chrome } from 'lucide-react';
+import { Sparkles, GraduationCap, ShieldCheck, Users, UserPlus, LogIn, FileText, X, LockKeyhole, Mail, ArrowRight, CheckCircle, Apple, Chrome, Youtube, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { TEACHER_BRANCHES } from '../constants';
 import { useLocation } from 'react-router-dom';
 
@@ -36,6 +36,13 @@ export const Auth = () => {
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('');
   const [classLevel, setClassLevel] = useState<number>(5);
+  const socialLinks = systemSettings.socialLinks || {};
+  const socialEntries = [
+    { key: 'youtube', url: socialLinks.youtube, Icon: Youtube, color: 'text-red-500' },
+    { key: 'instagram', url: socialLinks.instagram, Icon: Instagram, color: 'text-pink-500' },
+    { key: 'x', url: socialLinks.x, Icon: Twitter, color: 'text-blue-500' },
+    { key: 'linkedin', url: socialLinks.linkedin, Icon: Linkedin, color: 'text-blue-600' },
+  ].filter(item => item.url);
 
   const handleDemoLogin = (demoRole: UserRole) => {
     if (demoRole === UserRole.STUDENT) login('student@helloclass.com', demoRole);
@@ -381,6 +388,22 @@ export const Auth = () => {
             <span className="text-xs font-bold">{t('admin')}</span>
           </button>
         </div>
+
+        {socialEntries.length > 0 && (
+          <div className="mt-6 flex items-center justify-center gap-4 text-gray-400">
+            {socialEntries.map(({ key, url, Icon, color }) => (
+              <a
+                key={key}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className={`p-2 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors ${color}`}
+              >
+                <Icon size={18} />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Forgot Password Modal with 3-Step Flow */}

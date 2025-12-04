@@ -213,6 +213,12 @@ export interface SystemSettings {
   aiWizardCost: number;
   aiExplainCost: number;
   joker5050Cost: number;
+  socialLinks?: {
+    youtube?: string;
+    instagram?: string;
+    x?: string;
+    linkedin?: string;
+  };
 }
 
 export interface PointPackage {
@@ -279,6 +285,7 @@ export interface PrizeExam {
   finalists?: PrizeFinalist[];
   finalistNote?: string;
   finalistQuizDate?: string;
+  finalistQuizLink?: string;
 }
 
 export type AlertType = 'success' | 'error' | 'info' | 'warning';
@@ -358,6 +365,7 @@ export interface StoreContextType {
   addPrizeExam: (exam: PrizeExam) => void;
   drawPrizeWinner: (prizeExamId: string) => void;
   payEntryFee: (prizeExamId: string, amount: number) => boolean;
+  updatePrizeExamMeta: (prizeExamId: string, data: Partial<PrizeExam>) => void;
 
   // Utils
   alert: { message: string; type: AlertType } | null;
