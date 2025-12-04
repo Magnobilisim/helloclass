@@ -410,6 +410,101 @@ export interface GenerateLearningReportParams {
   gradeLevel?: number;
 }
 
+const buildFallbackLearningReport = ({
+  examTitle,
+  subjectName,
+  topic,
+  difficulty,
+  score,
+  totalQuestions,
+  language,
+  questions,
+}: GenerateLearningReportParams): Omit<LearningReport, "generatedAt"> => {
+  const localized = language === "tr";
+  const accuracy =
+    totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+  const labelSubject =
+    subjectName || (localized ? "Genel Dersler" : "General Subjects");
+  const labelTopic = topic || (localized ? "Genel Konular" : "General Topics");
+  const diffLabel = localized
+    ? difficulty === "Hard"
+      ? "Zor"
+      : difficulty === "Medium"
+      ? "Orta"
+      : "Kolay"
+    : difficulty;
+
+  const summary = localized
+    ? `Tebrikler! "${examTitle}" sınavında ${totalQuestions} sorudan ${score} doğru yaparak %${accuracy} başarı elde ettin.`
+    : `Great job! You answered ${score} of ${totalQuestions} questions correctly on "${examTitle}" and achieved ${accuracy}% accuracy.`;
+
+  const outcomes: string[] = [];
+  outcomes.push(
+    localized
+      ? `${labelSubject} alanında ${diffLabel} seviyedeki sorulara güçlü bir yanıt verdin.`
+      : `You showed solid understanding of ${diffLabel} level questions in ${labelSubject}.`
+  );
+  outcomes.push(
+    localized
+      ? `${labelTopic} konularındaki temel sorulara hızlı geri dönüşler yaptın.`
+      : `You responded confidently to key items around ${labelTopic}.`
+  );
+
+  if (accuracy >= 80) {
+    outcomes.push(
+      localized
+        ? "Stratejini koruyarak yeni içeriklere geçmeye hazırsın."
+        : "Keep the same routine—you are ready to tackle new topics."
+    );
+  } else if (accuracy >= 50) {
+    outcomes.push(
+      localized
+        ? "Çözdüğün sorularda sağlam bir temel oluşturdun."
+        : "You built a reliable foundation with the questions you solved."
+    );
+  } else {
+    outcomes.push(
+      localized
+        ? "Temel kavramları tekrar edip yeni sorularla pratik yapmak faydalı olur."
+        : "Revisiting core ideas and practicing more questions will help."
+    );
+  }
+
+  const incorrect = questions.filter((q) => !q.isCorrect);
+  const truncateText = (text: string, limit = 90) =>
+    text.length > limit ? `${text.slice(0, limit).trim()}...` : text;
+
+  let focusAreas: string[];
+  if (incorrect.length === 0) {
+    focusAreas = [
+      localized
+        ? "Harika performans! Yeni konulara geçerek kendini zorlayabilirsin."
+        : "Excellent work! Challenge yourself with new topics next.",
+    ];
+  } else {
+    focusAreas = incorrect.slice(0, 2).map((q) =>
+      localized
+        ? `Soru ${q.index + 1}: "${truncateText(
+            q.question
+          )}" kısmını tekrar incele.`
+        : `Review question ${q.index + 1}: "${truncateText(q.question)}".`
+    );
+    if (incorrect.length > 2) {
+      focusAreas.push(
+        localized
+          ? "Diğer yanlış sorular için benzer soru tipleriyle alıştırma yap."
+          : "Practice similar formats for the remaining incorrect questions."
+      );
+    }
+  }
+
+  return {
+    summary,
+    outcomes,
+    focusAreas,
+  };
+};
+
 export const generateLearningReport = async ({
   examTitle,
   subjectName,
@@ -421,6 +516,21 @@ export const generateLearningReport = async ({
   questions,
   gradeLevel,
 }: GenerateLearningReportParams): Promise<Omit<LearningReport, "generatedAt">> => {
+  if (!aiClient) {
+    console.warn("OpenAI API key missing. Using fallback learning report.");
+    return buildFallbackLearningReport({
+      examTitle,
+      subjectName,
+      topic,
+      difficulty,
+      score,
+      totalQuestions,
+      language,
+      questions,
+      gradeLevel,
+    });
+  }
+
   try {
     const client = ensureClient();
     const targetLanguage = language === "tr" ? "Turkish" : "English";
@@ -501,7 +611,17 @@ Provide:
     };
   } catch (error) {
     console.error("Learning Report Error:", error);
-    throw error;
+    return buildFallbackLearningReport({
+      examTitle,
+      subjectName,
+      topic,
+      difficulty,
+      score,
+      totalQuestions,
+      language,
+      questions,
+      gradeLevel,
+    });
   }
 };
 
