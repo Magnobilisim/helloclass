@@ -90,6 +90,20 @@ const defaultExplanation = (language: Language) =>
     ? "Bu sorunun açıklaması henüz hazırlanmadı."
     : "No explanation provided yet.";
 
+const createFallbackImagePrompt = (questionText: string, language: Language) => {
+  const trimmed = questionText
+    ?.replace(/\s+/g, " ")
+    .replace(/["“”]/g, "")
+    .trim()
+    .slice(0, 180);
+  if (language === "tr") {
+    return `Temiz çizgilerle, etiket içermeyen eğitsel çizim: ${trimmed ||
+      "soru senaryosu"}.`;
+  }
+  return `Educational, label-free sketch with clean lines: ${trimmed ||
+    "the described question scenario"}.`;
+};
+
 const toDataUrl = (base64: string) => {
   if (base64.startsWith("data:")) return base64;
   return `data:image/png;base64,${base64}`;
@@ -301,8 +315,12 @@ Return JSON that matches the schema.`,
       const shouldForceImage =
         !plan.needsImage && needsVisualCue(plan.text || "");
       let imageUrl: string | undefined;
-      if ((plan.needsImage || shouldForceImage) && plan.imagePrompt) {
-        imageUrl = await generateQuestionImage(plan.imagePrompt);
+      if (plan.needsImage || shouldForceImage) {
+        const promptSource =
+          plan.imagePrompt && plan.imagePrompt.trim().length > 10
+            ? plan.imagePrompt
+            : createFallbackImagePrompt(plan.text, language);
+        imageUrl = await generateQuestionImage(promptSource);
       }
 
       questions.push({
