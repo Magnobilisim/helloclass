@@ -144,7 +144,7 @@ const safetySchema = {
       safe: { type: "boolean" },
       reason: { type: "string" },
     },
-    required: ["safe"],
+    required: ["safe", "reason"],
   },
 };
 

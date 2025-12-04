@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
 import { Exam } from '../../types';
@@ -22,20 +22,51 @@ export const ExamRoom = () => {
   const [rewardsEarned, setRewardsEarned] = useState<number | null>(null);
   
   const [isReviewMode, setIsReviewMode] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [explainingQuestionId, setExplainingQuestionId] = useState<string | null>(null);
   const [explanationMap, setExplanationMap] = useState<Record<string, string>>({});
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [pointModalMessage, setPointModalMessage] = useState('');
+  const [pointModalContext, setPointModalContext] = useState<'GENERIC' | 'EXAM_ACCESS' | 'EXPLAIN'>('GENERIC');
+  const [accessBlocked, setAccessBlocked] = useState(false);
+  const [requiredUnlockPoints, setRequiredUnlockPoints] = useState<number | null>(null);
+  const [activeTimeLimitMinutes, setActiveTimeLimitMinutes] = useState<number | null>(null);
+  const [showRetakeModal, setShowRetakeModal] = useState(false);
+  const [retakeMinutes, setRetakeMinutes] = useState(10);
+  const retakeInputRef = useRef<HTMLInputElement>(null);
+
+  const getStoredTimeLimit = (examId: string, defaultMinutes: number) => {
+    if (typeof window === 'undefined') return defaultMinutes;
+    const raw = sessionStorage.getItem(`exam_time_${examId}`);
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    return !isNaN(parsed) && parsed > 0 ? parsed : defaultMinutes;
+  };
+
+  const persistTimeLimit = (examId: string, minutes: number) => {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem(`exam_time_${examId}`, String(minutes));
+  };
+
+  const clearTimeLimit = (examId: string) => {
+    if (typeof window === 'undefined') return;
+    sessionStorage.removeItem(`exam_time_${examId}`);
+  };
+
+  const triggerPointsModal = (message: string, context: 'GENERIC' | 'EXAM_ACCESS' | 'EXPLAIN' = 'GENERIC') => {
+    setPointModalMessage(message);
+    setPointModalContext(context);
+    setShowPointsModal(true);
+  };
 
   useEffect(() => {
-    const foundExam = exams.find(e => e.id === id);
-    
     if (!user) {
         navigate('/auth');
         return;
     }
 
+    const foundExam = exams.find(e => e.id === id);
     if (!foundExam) {
+        setExam(null);
         setIsLoading(false);
         return;
     }
@@ -44,21 +75,30 @@ export const ExamRoom = () => {
     const isOwned = user.purchasedExamIds?.includes(foundExam.id);
     const isCreator = user.id === foundExam.creatorId;
     const isAdmin = user.role === 'ADMIN';
-
     const activePrizeExam = prizeExams.find(pe => pe.examId === foundExam.id && pe.isActive);
     const isPrizeParticipant = activePrizeExam?.participants?.includes(user.id);
+    const lacksAccess = isPaid && !isOwned && !isCreator && !isAdmin && !isPrizeParticipant;
 
-    if (isPaid && !isOwned && !isCreator && !isAdmin && !isPrizeParticipant) {
-        showAlert(t('not_enough_points') + " / Access Denied", 'error');
-        navigate('/student/exams');
+    if (lacksAccess) {
+        setExam(foundExam);
+        setAccessBlocked(true);
+        setRequiredUnlockPoints(foundExam.price);
+        setIsLoading(false);
+        triggerPointsModal(t('insufficient_points_message').replace('{points}', `${foundExam.price}`), 'EXAM_ACCESS');
         return;
     }
 
+    setAccessBlocked(false);
+    setRequiredUnlockPoints(null);
     setExam(foundExam);
+
+    const chosenMinutes = getStoredTimeLimit(foundExam.id, foundExam.timeLimit);
+    setActiveTimeLimitMinutes(chosenMinutes);
+    setRetakeMinutes(chosenMinutes);
 
     const existingResult = results.find(r => r.examId === foundExam.id && r.studentId === user.id);
     
-    if (existingResult) {
+    if (existingResult && !isRetrying) {
         setScore(existingResult.score);
         setIsFinished(true);
         if (existingResult.answers) {
@@ -66,27 +106,29 @@ export const ExamRoom = () => {
         } else {
             setUserAnswers(new Array(foundExam.questions.length).fill(-1));
         }
-        setIsReviewMode(false); 
         setRewardsEarned(existingResult.rewardsEarned);
+        setTimeLeft(0);
     } else {
         if (id && user) startExamSession(id);
-        
         setUserAnswers(new Array(foundExam.questions.length).fill(-1));
         setRewardsEarned(null);
+        setTimeLeft(chosenMinutes * 60);
+        setIsFinished(false);
     }
 
     setIsLoading(false);
-  }, [id, exams, navigate, user, results, prizeExams, startExamSession]);
+  }, [id, exams, navigate, user, results, prizeExams, startExamSession, t, isRetrying]);
 
   useEffect(() => {
       if (exam && !isFinished && !isReviewMode && id && user) {
+          const effectiveMinutes = activeTimeLimitMinutes ?? exam.timeLimit;
           const sessionKey = `${user.id}_${id}`;
           const session = examSessions[sessionKey] || examSessions[id];
-          if (session && session.startedAt) {
+          if (session && session.status === 'started' && session.startedAt) {
               const now = Date.now();
               const startTime = new Date(session.startedAt).getTime(); 
               const elapsedSeconds = Math.floor((now - startTime) / 1000);
-              const remaining = (exam.timeLimit * 60) - elapsedSeconds;
+              const remaining = (effectiveMinutes * 60) - elapsedSeconds;
               
               if (remaining <= 0) {
                   setTimeLeft(0);
@@ -94,10 +136,10 @@ export const ExamRoom = () => {
                   setTimeLeft(remaining);
               }
           } else {
-              setTimeLeft(exam.timeLimit * 60);
+              setTimeLeft(effectiveMinutes * 60);
           }
       }
-  }, [exam, isFinished, isReviewMode, id, examSessions, user]);
+  }, [exam, isFinished, isReviewMode, id, examSessions, user, activeTimeLimitMinutes]);
 
   useEffect(() => {
     if (timeLeft > 0 && !isFinished && !isReviewMode && exam) {
@@ -114,8 +156,19 @@ export const ExamRoom = () => {
       }
   }, [timeLeft, exam, isFinished, isReviewMode]);
 
+  useEffect(() => {
+      if (showRetakeModal) {
+          const id = requestAnimationFrame(() => retakeInputRef.current?.focus());
+          return () => cancelAnimationFrame(id);
+      }
+  }, [showRetakeModal]);
+
   const handleOptionSelect = (index: number) => {
     if (isFinished || !exam) return;
+    if (timeLeft <= 0) {
+        finishExam();
+        return;
+    }
     if (hiddenOptions.includes(index)) return;
     const newAnswers = [...userAnswers];
     newAnswers[currentIndex] = index;
@@ -126,7 +179,9 @@ export const ExamRoom = () => {
     if (!exam || !user || isFinished) return;
     const answersToUse = finalAnswers ? [...finalAnswers] : [...userAnswers];
     setIsFinished(true);
+    setIsRetrying(false);
     setUserAnswers(answersToUse);
+    clearTimeLimit(exam.id);
     
     saveResult(exam.id, answersToUse);
     
@@ -146,11 +201,6 @@ export const ExamRoom = () => {
 
   const explainCost = systemSettings.aiExplainCost || 0;
 
-  const openPointsModal = (message: string) => {
-      setPointModalMessage(message);
-      setShowPointsModal(true);
-  };
-
   const handleExplain = async (qIndex: number) => {
       if (!exam || !user) return;
       const question = exam.questions[qIndex];
@@ -159,7 +209,7 @@ export const ExamRoom = () => {
       try {
           if (explainCost > 0) {
               if (user.points < explainCost) {
-                  openPointsModal(t('insufficient_points_message').replace('{points}', `${explainCost}`));
+                  triggerPointsModal(t('insufficient_points_message').replace('{points}', `${explainCost}`), 'EXPLAIN');
                   setExplainingQuestionId(null);
                   return;
               }
@@ -190,11 +240,21 @@ export const ExamRoom = () => {
   };
 
   const useJoker5050 = () => {
-    if (!user?.inventory.includes('JOKER_5050') || !exam) {
+    if (!user || !exam) {
+        showAlert(t('no_joker'), 'error');
+        return;
+    }
+    if (!user.inventory.includes('JOKER_5050')) {
         showAlert(t('no_joker'), 'error');
         return;
     }
     if (hiddenOptions.length > 0) return;
+
+    const jokerCost = systemSettings.joker5050Cost || 0;
+    if (jokerCost > 0 && user.points < jokerCost) {
+        triggerPointsModal(t('insufficient_points_message').replace('{points}', `${jokerCost}`), 'GENERIC');
+        return;
+    }
 
     const currentQ = exam.questions[currentIndex];
     const wrongOptions = currentQ.options
@@ -218,15 +278,21 @@ export const ExamRoom = () => {
 
     setHiddenOptions(toHide);
     
-    const newInv = [...user.inventory];
+    const newInv = [...(user.inventory || [])];
     const idx = newInv.indexOf('JOKER_5050');
     if (idx > -1) newInv.splice(idx, 1);
-    // updateUser({ ...user, inventory: newInv }); // StoreContext should handle logic, keeping UI clean
+    
+    const updatedPoints = jokerCost > 0 ? user.points - jokerCost : user.points;
+    updateUser({ ...user, inventory: newInv, points: updatedPoints });
     showAlert(t('joker_5050_used'), 'info');
   };
 
   const useJokerSkip = () => {
-    if (!user?.inventory.includes('JOKER_SKIP') || !exam) {
+    if (!user || !exam) {
+        showAlert(t('no_joker'), 'error');
+        return;
+    }
+    if (!user.inventory.includes('JOKER_SKIP')) {
         showAlert(t('no_joker'), 'error');
         return;
     }
@@ -237,6 +303,11 @@ export const ExamRoom = () => {
     newAnswers[currentIndex] = -1; 
     setUserAnswers(newAnswers);
 
+    const newInv = [...(user.inventory || [])];
+    const idx = newInv.indexOf('JOKER_SKIP');
+    if (idx > -1) newInv.splice(idx, 1);
+    updateUser({ ...user, inventory: newInv });
+
     if (currentIndex < exam.questions.length - 1) {
         setCurrentIndex(prev => prev + 1);
         setHiddenOptions([]);
@@ -244,6 +315,36 @@ export const ExamRoom = () => {
         finishExam(newAnswers);
     }
   };
+
+  if (accessBlocked && exam) {
+      return (
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center px-6 text-gray-600">
+              <AlertCircle size={48} className="mb-4 text-yellow-500" />
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('not_enough_points')}</h2>
+              <p className="max-w-md">{t('insufficient_points_message').replace('{points}', `${requiredUnlockPoints ?? exam.price}`)}</p>
+              <div className="flex flex-col gap-3 w-full max-w-sm mt-8">
+                  <button
+                      onClick={() => watchAdForPoints()}
+                      className="bg-brand-100 text-brand-700 font-semibold rounded-2xl py-3 hover:bg-brand-200 transition-colors"
+                  >
+                      {t('watch_ad_cta')}
+                  </button>
+                  <button
+                      onClick={() => navigate('/student/shop')}
+                      className="bg-gray-900 text-white font-semibold rounded-2xl py-3 hover:scale-[1.02] transition-transform"
+                  >
+                      {t('go_to_shop_cta')}
+                  </button>
+                  <button
+                      onClick={() => navigate('/student/exams')}
+                      className="border border-gray-200 text-gray-600 font-semibold rounded-2xl py-3 hover:bg-gray-50 transition-colors"
+                  >
+                      {t('go_to_market')}
+                  </button>
+              </div>
+          </div>
+      );
+  }
 
   if (isLoading) {
       return (
@@ -268,18 +369,36 @@ export const ExamRoom = () => {
 
   const handlePrevious = () => {
       if (currentIndex === 0) return;
+      if (timeLeft <= 0 && !isFinished) {
+          finishExam();
+          return;
+      }
       setCurrentIndex(prev => Math.max(0, prev - 1));
       setHiddenOptions([]);
   };
 
   const handleNext = () => {
       if (!exam || currentIndex >= exam.questions.length - 1) return;
+      if (timeLeft <= 0 && !isFinished) {
+          finishExam();
+          return;
+      }
       setCurrentIndex(prev => prev + 1);
       setHiddenOptions([]);
   };
 
   const handleRetake = () => {
+      if (!exam) return;
+      setRetakeMinutes(activeTimeLimitMinutes ?? exam.timeLimit);
+      setShowRetakeModal(true);
+  };
+
+  const confirmRetake = () => {
       if (!exam || !id) return;
+      const minutes = Math.max(1, retakeMinutes);
+      setIsRetrying(true);
+      persistTimeLimit(exam.id, minutes);
+      setActiveTimeLimitMinutes(minutes);
       startExamSession(id);
       setIsFinished(false);
       setIsReviewMode(false);
@@ -288,9 +407,43 @@ export const ExamRoom = () => {
       setScore(0);
       const freshAnswers = new Array(exam.questions.length).fill(-1);
       setUserAnswers(freshAnswers);
-      setTimeLeft(exam.timeLimit * 60);
+      setExplanationMap({});
+      setTimeLeft(minutes * 60);
       setRewardsEarned(null);
+      setShowRetakeModal(false);
   };
+
+  const pointsModal = showPointsModal ? (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-800">{t('insufficient_points_title')}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                {pointModalContext === 'EXPLAIN' ? t('ai_explain') : t('exam_details')}
+            </span>
+            <p className="text-gray-600">{pointModalMessage}</p>
+            <div className="space-y-3">
+                <button
+                    onClick={() => { watchAdForPoints(); setShowPointsModal(false); }}
+                    className="w-full bg-brand-100 text-brand-700 font-semibold rounded-xl py-3 hover:bg-brand-200 transition-colors"
+                >
+                    {t('watch_ad_cta')}
+                </button>
+                <button
+                    onClick={() => { setShowPointsModal(false); navigate('/student/shop'); }}
+                    className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
+                >
+                    {t('go_to_shop_cta')}
+                </button>
+                <button
+                    onClick={() => setShowPointsModal(false)}
+                    className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 hover:bg-gray-50 transition-colors"
+                >
+                    {t('close')}
+                </button>
+            </div>
+        </div>
+    </div>
+  ) : null;
 
   if (isFinished) {
     const correctCount = exam.questions.reduce((acc, q, idx) => acc + (userAnswers[idx] === q.correctIndex ? 1 : 0), 0);
@@ -405,6 +558,40 @@ export const ExamRoom = () => {
               {t('back_dashboard')}
             </button>
         </div>
+        {showRetakeModal && exam && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+                    <h3 className="text-xl font-bold text-gray-800">{t('retake_exam')}</h3>
+                    <p className="text-sm text-gray-500">{t('time_min')}</p>
+                    <input
+                        type="number"
+                        min={1}
+                        value={retakeMinutes}
+                        ref={retakeInputRef}
+                        onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setRetakeMinutes(Math.max(1, isNaN(val) ? 1 : val));
+                        }}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center text-3xl font-black text-gray-800"
+                    />
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            onClick={() => setShowRetakeModal(false)}
+                            className="flex-1 border border-gray-200 rounded-2xl py-3 font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                            {t('cancel')}
+                        </button>
+                        <button
+                            onClick={confirmRetake}
+                            className="flex-1 bg-brand-500 text-white rounded-2xl py-3 font-semibold hover:bg-brand-600 transition-colors"
+                        >
+                            {t('start')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        {pointsModal}
       </div>
     );
   }
@@ -519,29 +706,34 @@ export const ExamRoom = () => {
       <div className="mt-6 text-center text-gray-400 font-medium text-sm">
          {t('question')} {currentIndex + 1} {t('of')} {exam.questions.length} • {t('answered')}: {userAnswers.filter(ans => ans !== -1).length}
       </div>
-      {showPointsModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-                <h3 className="text-xl font-bold text-gray-800">{t('insufficient_points_title')}</h3>
-                <p className="text-gray-600">{pointModalMessage}</p>
-                <div className="space-y-3">
+      {pointsModal}
+      {showRetakeModal && exam && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+                <h3 className="text-xl font-bold text-gray-800">{t('retake_exam')}</h3>
+                <p className="text-sm text-gray-500">{t('time_min')}</p>
+                <input
+                    type="number"
+                    min={1}
+                    value={retakeMinutes}
+                    onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setRetakeMinutes(Math.max(1, isNaN(val) ? 1 : val));
+                    }}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center text-3xl font-black text-gray-800"
+                />
+                <div className="flex gap-3 pt-2">
                     <button
-                        onClick={() => { watchAdForPoints(); setShowPointsModal(false); }}
-                        className="w-full bg-brand-100 text-brand-700 font-semibold rounded-xl py-3 hover:bg-brand-200 transition-colors"
+                        onClick={() => setShowRetakeModal(false)}
+                        className="flex-1 border border-gray-200 rounded-2xl py-3 font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                     >
-                        {t('watch_ad_cta')}
+                        {t('cancel')}
                     </button>
                     <button
-                        onClick={() => { setShowPointsModal(false); navigate('/student/shop'); }}
-                        className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
+                        onClick={confirmRetake}
+                        className="flex-1 bg-brand-500 text-white rounded-2xl py-3 font-semibold hover:bg-brand-600 transition-colors"
                     >
-                        {t('go_to_shop_cta')}
-                    </button>
-                    <button
-                        onClick={() => setShowPointsModal(false)}
-                        className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 hover:bg-gray-50 transition-colors"
-                    >
-                        {t('close')}
+                        {t('retake')}
                     </button>
                 </div>
             </div>

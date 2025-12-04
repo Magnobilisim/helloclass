@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { User, Exam } from '../../types';
-import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink, Share2 } from 'lucide-react';
+import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink, Share2, Package } from 'lucide-react';
 import { StudentResults } from './StudentResults';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export const UserProfile = () => {
-  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow, exams } = useStore();
+  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow, exams, shopItems } = useStore();
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -19,6 +19,18 @@ export const UserProfile = () => {
   const [notifSettings, setNotifSettings] = useState({ email: true, app: true });
   const [showListModal, setShowListModal] = useState<'followers' | 'following' | null>(null);
   const [referralUrl, setReferralUrl] = useState('');
+  const inventoryCounts = useMemo(() => {
+      const counts: Record<string, number> = {};
+      (profileUser?.inventory || []).forEach(item => {
+          counts[item] = (counts[item] || 0) + 1;
+      });
+      return counts;
+  }, [profileUser?.inventory]);
+
+  const ownedInventoryItems = useMemo(
+    () => shopItems.filter(item => (inventoryCounts[item.type] || 0) > 0),
+    [shopItems, inventoryCounts]
+  );
 
   useEffect(() => {
       if (id && id !== currentUser?.id) {
@@ -293,6 +305,46 @@ export const UserProfile = () => {
                  <div className="text-xs font-bold text-gray-400 uppercase">{t('following')}</div>
              </div>
         </div>
+
+        <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+            <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                    <Package size={20} />
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-gray-900">{t('inventory')}</h3>
+                    <p className="text-sm text-gray-500">{t('inventory')}</p>
+                </div>
+            </div>
+            {ownedInventoryItems.length === 0 ? (
+                <div className="border border-dashed border-gray-200 rounded-2xl p-10 text-center text-gray-500 flex flex-col items-center gap-3">
+                    <Package size={32} className="text-gray-300" aria-hidden="true" />
+                    <p className="font-bold">{t('empty_inventory')}</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {ownedInventoryItems.map(item => {
+                        const count = inventoryCounts[item.type] || 0;
+                        const nameKey = `item_name_${item.type}`;
+                        const descKey = `item_desc_${item.type}`;
+                        const translatedName = t(nameKey) !== nameKey ? t(nameKey) : item.name;
+                        const translatedDesc = t(descKey) !== descKey ? t(descKey) : item.description;
+                        return (
+                            <div key={`profile-inv-${item.id}`} className="p-5 border border-gray-100 rounded-2xl shadow-sm flex items-center gap-4">
+                                <div className="text-3xl bg-gray-50 p-4 rounded-2xl">{item.icon}</div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
+                                        {translatedName}
+                                        {count > 1 && <span className="text-[10px] font-bold text-gray-400">×{count}</span>}
+                                    </h4>
+                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{translatedDesc}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </section>
 
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
             <StudentResults studentId={profileUser.id} />

@@ -60,6 +60,8 @@ export interface User {
   referralCount?: number;
   totalReferralPoints?: number;
   totalPointsPurchased?: number;
+  lifetimeExamPoints?: number;
+  lifetimeAdPoints?: number;
 }
 
 export interface Question {
@@ -200,6 +202,8 @@ export interface SystemSettings {
   referralRewardPoints: number;
   pointPackages: PointPackage[];
   aiWizardCost: number;
+  aiExplainCost: number;
+  joker5050Cost: number;
 }
 
 export interface PointPackage {

@@ -38,7 +38,9 @@ const ensureReferralFields = (u: User): User => ({
     referralCode: u.referralCode || `HC-${u.id}`,
     referralCount: u.referralCount || 0,
     totalReferralPoints: u.totalReferralPoints || 0,
-    totalPointsPurchased: u.totalPointsPurchased || 0
+    totalPointsPurchased: u.totalPointsPurchased || 0,
+    lifetimeExamPoints: u.lifetimeExamPoints || 0,
+    lifetimeAdPoints: u.lifetimeAdPoints || 0
 });
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -72,13 +74,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adRewardPoints: 50,
       referralRewardPoints: 100,
       pointPackages: DEFAULT_POINT_PACKAGES,
-      aiWizardCost: 200
+      aiWizardCost: 200,
+      aiExplainCost: 25,
+      joker5050Cost: 30
   };
   const mergeSettings = (incoming?: Partial<SystemSettings>): SystemSettings => ({
       ...defaultSettings,
       ...incoming,
       pointPackages: incoming?.pointPackages && incoming.pointPackages.length ? incoming.pointPackages : defaultSettings.pointPackages,
-      aiWizardCost: typeof incoming?.aiWizardCost === 'number' ? incoming.aiWizardCost : defaultSettings.aiWizardCost
+      aiWizardCost: typeof incoming?.aiWizardCost === 'number' ? incoming.aiWizardCost : defaultSettings.aiWizardCost,
+      aiExplainCost: typeof incoming?.aiExplainCost === 'number' ? incoming.aiExplainCost : defaultSettings.aiExplainCost,
+      joker5050Cost: typeof incoming?.joker5050Cost === 'number' ? incoming.joker5050Cost : defaultSettings.joker5050Cost
   });
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(defaultSettings);
   
@@ -433,7 +439,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const purchaseItem = (item: ShopItem): boolean => {
     if (!user) return false;
-    if (user.inventory.includes(item.type) && item.type === 'AVATAR_FRAME') {
+    if (item.type === 'AVATAR_FRAME' && user.inventory.includes(item.type)) {
         showAlert(t('owned'), 'info');
         return true; 
     }
@@ -466,7 +472,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         showAlert(t('ad_reward_disabled'), 'warning');
         return;
     }
-    updateUser({ ...user, points: user.points + reward });
+    updateUser({ 
+        ...user, 
+        points: user.points + reward,
+        lifetimeAdPoints: (user.lifetimeAdPoints || 0) + reward 
+    });
     addNotification(user.id, t('ad_reward_title'), t('ad_reward_body').replace('{points}', `${reward}`), 'success');
     showAlert(t('ad_reward_title'), 'success');
   };
@@ -598,7 +608,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         showAlert('Exam result updated', 'info');
     } else {
         setResults([...results, fullResult]);
-        const updatedUser = { ...user, points: user.points + rewardsEarned, updatedAt: new Date().toISOString() };
+        const updatedUser = { 
+            ...user, 
+            points: user.points + rewardsEarned, 
+            lifetimeExamPoints: (user.lifetimeExamPoints || 0) + rewardsEarned,
+            updatedAt: new Date().toISOString() 
+        };
         updateUser(updatedUser);
         addNotification(user.id, t('exam_completed'), `${exam.title}: +${rewardsEarned} ${t('points')}!`, 'success', '/student/results');
         showAlert(`${t('points_gained')}: +${rewardsEarned}`, 'success');

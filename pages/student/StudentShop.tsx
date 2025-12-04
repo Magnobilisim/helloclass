@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { ShoppingBag, Star, Check, PlayCircle, Loader2, Package, CreditCard } from 'lucide-react';
 
@@ -8,6 +8,13 @@ export const StudentShop = () => {
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [activeTab, setActiveTab] = useState<'market' | 'inventory'>('market');
   const adReward = systemSettings.adRewardPoints || 0;
+  const inventoryCounts = useMemo(() => {
+      const counts: Record<string, number> = {};
+      (user?.inventory || []).forEach(item => {
+          counts[item] = (counts[item] || 0) + 1;
+      });
+      return counts;
+  }, [user?.inventory]);
 
   const handleWatchAd = () => {
     setIsWatchingAd(true);
@@ -165,6 +172,7 @@ export const StudentShop = () => {
                 </div>
             ) : (
                 shopItems.filter(item => user?.inventory.includes(item.type)).map(item => {
+                    const count = inventoryCounts[item.type] || 0;
                     const isEquipped = user?.activeFrame === item.type;
                     const canEquip = item.type === 'AVATAR_FRAME';
                     
@@ -177,7 +185,10 @@ export const StudentShop = () => {
                         <div key={`inv-${item.id}`} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-5">
                             <div className="text-4xl bg-gray-50 p-4 rounded-2xl">{item.icon}</div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-gray-800 truncate">{translatedName}</h4>
+                                <h4 className="font-bold text-gray-800 truncate flex items-center gap-2">
+                                    {translatedName}
+                                    {count > 1 && <span className="text-xs font-bold text-gray-400">×{count}</span>}
+                                </h4>
                                 <p className="text-xs text-gray-400 mt-1 line-clamp-2">{translatedDesc}</p>
                             </div>
                             {canEquip ? (
