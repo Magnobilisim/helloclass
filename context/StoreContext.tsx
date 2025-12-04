@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, Transaction, ExamSession, PointPurchase } from '../types';
 import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
-import { checkContentSafety } from '../services/aiService';
+import { checkContentSafety, setSafetyLanguage } from '../services/aiService';
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
@@ -192,7 +192,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('hc_results', JSON.stringify(results)); }, [results]);
   useEffect(() => { localStorage.setItem('hc_messages', JSON.stringify(messages)); }, [messages]);
   useEffect(() => { localStorage.setItem('hc_logs', JSON.stringify(logs)); }, [logs]);
-  useEffect(() => { localStorage.setItem('hc_language', language); }, [language]);
+  useEffect(() => { 
+    localStorage.setItem('hc_language', language); 
+    setSafetyLanguage(language);
+  }, [language]);
   useEffect(() => { localStorage.setItem('hc_settings', JSON.stringify(systemSettings)); }, [systemSettings]);
   useEffect(() => { localStorage.setItem('hc_topics', JSON.stringify(approvedTopics)); }, [approvedTopics]);
   useEffect(() => { localStorage.setItem('hc_schools', JSON.stringify(schools)); }, [schools]);

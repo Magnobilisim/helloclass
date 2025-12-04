@@ -312,9 +312,15 @@ Return JSON that matches the schema.`,
   }
 };
 
-export const checkContentSafety = async (
+let safetyLanguage: Language = "tr";
+
+export const setSafetyLanguage = (language: Language) => {
+  safetyLanguage = language;
+};
+
+export async function checkContentSafety(
   content: string
-): Promise<{ safe: boolean; reason?: string }> => {
+): Promise<{ safe: boolean; reason?: string }> {
   try {
     if (!aiClient) {
       console.warn("OpenAI API key missing. Skipping safety check.");
@@ -322,6 +328,7 @@ export const checkContentSafety = async (
     }
 
     const client = ensureClient();
+    const targetLanguage = safetyLanguage === "tr" ? "Turkish" : "English";
     const response = await client.responses.create({
       model: TEXT_MODEL,
       text: {
@@ -337,13 +344,19 @@ export const checkContentSafety = async (
           content: [
             {
               type: "input_text",
-              text: "You moderate content for a K-12 social network. Flag bullying, hate speech, or unsafe behavior.",
+              text: `You moderate content for a K-12 social network. Flag bullying, hate speech, or unsafe behavior. Always write the 'reason' in ${targetLanguage}, referencing any flagged terms clearly so that students understand why the content was blocked.`,
             },
           ],
         },
         {
           role: "user",
-          content: [{ type: "input_text", text: `Text: """${content}"""` }],
+          content: [
+            {
+              type: "input_text",
+              text: `Language: ${targetLanguage}
+Text: """${content}"""`,
+            },
+          ],
         },
       ],
     });
@@ -354,7 +367,7 @@ export const checkContentSafety = async (
     console.error("Safety Check Error:", error);
     return { safe: true };
   }
-};
+}
 
 export const getAnswerExplanation = async (
   questionText: string,
