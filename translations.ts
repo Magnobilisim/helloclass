@@ -444,6 +444,8 @@ export const TRANSLATIONS = {
     prize_finalist_quiz_date: 'Bilgi yarışması: {date}',
     prize_finalist_quiz_link: 'Canlı yayını izle',
     finalist: 'Finalist',
+    prize_finalists_upcoming: 'Yaklaşan bilgi yarışmaları',
+    prize_finalists_past: 'Geçmiş bilgi yarışmaları',
 
     // Profile & Notifications & Messages
     profile: 'Profilim',
@@ -960,6 +962,8 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     prize_finalist_quiz_date: 'Quiz show date: {date}',
     prize_finalist_quiz_link: 'Join live session',
     finalist: 'Finalist',
+    prize_finalists_upcoming: 'Upcoming quiz finals',
+    prize_finalists_past: 'Past quiz finals',
 
     // Profile & Notifications & Messages
     profile: 'Profile',

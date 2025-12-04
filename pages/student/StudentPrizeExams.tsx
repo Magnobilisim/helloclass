@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
+import { PrizeExam } from '../../types';
 import { Gift, Calendar, Trophy, AlertCircle, ArrowRight, CheckCircle, Clock, Timer, Star, Coins, PlayCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +23,49 @@ export const StudentPrizeExams = () => {
       !pe.isActive || pe.month !== currentMonth
   ).sort((a, b) => b.month.localeCompare(a.month));
   const finalistContests = prizeExams.filter(pe => (pe.finalists && pe.finalists.length > 0));
+  const nowMs = Date.now();
+  const finalistUpcoming = finalistContests.filter(pc => {
+      if (!pc.finalistQuizDate) return true;
+      return new Date(pc.finalistQuizDate).getTime() >= nowMs;
+  });
+  const finalistPast = finalistContests.filter(pc => {
+      if (!pc.finalistQuizDate) return false;
+      return new Date(pc.finalistQuizDate).getTime() < nowMs;
+  });
+
+  const renderFinalistCard = (pc: PrizeExam, isPast = false) => (
+        <div key={`${pc.id}-${isPast ? 'past' : 'upcoming'}`} className="bg-white p-5 rounded-3xl border border-indigo-100 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                <div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{pc.month} • {t('grade')} {pc.grade}</p>
+                    <h4 className="text-lg font-black text-gray-900">{pc.prizeTitle}</h4>
+                </div>
+                {pc.finalistQuizDate && (
+                    <div className={`text-sm font-bold px-3 py-1 rounded-xl ${isPast ? 'text-gray-500 bg-gray-100' : 'text-indigo-600 bg-indigo-50'}`}>
+                        {t('prize_finalist_quiz_date').replace('{date}', new Date(pc.finalistQuizDate).toLocaleString())}
+                    </div>
+                )}
+            </div>
+            {pc.finalistQuizLink && (
+                <a href={pc.finalistQuizLink} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-2 text-xs font-bold underline mb-3 ${isPast ? 'text-gray-500' : 'text-indigo-600'}`}>
+                    {t('prize_finalist_quiz_link')}
+                </a>
+            )}
+            <div className="space-y-2">
+                {(pc.finalists || []).map(finalist => (
+                    <div key={`${pc.id}-${finalist.userId}`} className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex justify-between items-center text-sm">
+                        <div>
+                            <p className="font-bold text-gray-900">{finalist.name}</p>
+                            <p className="text-xs text-gray-500 font-semibold">
+                                {[finalist.schoolName, finalist.classLevel ? `${finalist.classLevel}. ${t('grade')}` : null].filter(Boolean).join(' • ')}
+                            </p>
+                        </div>
+                        <div className="text-xs font-bold text-gray-400 uppercase">{t('finalist')}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+  );
 
   const userResult = activeContest 
       ? results.find(r => r.examId === activeContest.examId && r.studentId === user?.id)
@@ -204,46 +248,23 @@ export const StudentPrizeExams = () => {
             )}
         </section>
 
-        {finalistContests.length > 0 && (
+        {(finalistUpcoming.length > 0 || finalistPast.length > 0) && (
             <section>
                 <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                     <Trophy className="text-indigo-500" /> {t('prize_finalists_title')}
                 </h3>
-                <div className="space-y-4">
-                    {finalistContests.map(pc => (
-                        <div key={`finalist-${pc.id}`} className="bg-white p-5 rounded-3xl border border-indigo-100 shadow-sm">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-                                <div>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{pc.month} • {t('grade')} {pc.grade}</p>
-                                    <h4 className="text-lg font-black text-gray-900">{pc.prizeTitle}</h4>
-                                </div>
-                                {pc.finalistQuizDate && (
-                                    <div className="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">
-                                        {t('prize_finalist_quiz_date').replace('{date}', new Date(pc.finalistQuizDate).toLocaleString())}
-                                    </div>
-                                )}
-                            </div>
-                            {pc.finalistQuizLink && (
-                                <a href={pc.finalistQuizLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 underline mb-3">
-                                    {t('prize_finalist_quiz_link')}
-                                </a>
-                            )}
-                            <div className="space-y-2">
-                                {(pc.finalists || []).map(finalist => (
-                                    <div key={`${pc.id}-${finalist.userId}`} className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex justify-between items-center text-sm">
-                                        <div>
-                                            <p className="font-bold text-gray-900">{finalist.name}</p>
-                                            <p className="text-xs text-gray-500 font-semibold">
-                                                {[finalist.schoolName, finalist.classLevel ? `${finalist.classLevel}. ${t('grade')}` : null].filter(Boolean).join(' • ')}
-                                            </p>
-                                        </div>
-                                        <div className="text-xs font-bold text-gray-400 uppercase">{t('finalist')}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                {finalistUpcoming.length > 0 && (
+                    <div className="space-y-4 mb-8">
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('prize_finalists_upcoming')}</p>
+                        {finalistUpcoming.map(pc => renderFinalistCard(pc))}
+                    </div>
+                )}
+                {finalistPast.length > 0 && (
+                    <div className="space-y-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('prize_finalists_past')}</p>
+                        {finalistPast.map(pc => renderFinalistCard(pc, true))}
+                    </div>
+                )}
             </section>
         )}
 
