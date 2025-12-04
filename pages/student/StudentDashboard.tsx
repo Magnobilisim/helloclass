@@ -3,9 +3,10 @@ import React from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Play, TrendingUp, Clock, Bot, Trophy, ArrowRight, CheckCircle, Repeat, ShoppingCart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Exam } from '../../types';
 
 export const StudentDashboard = () => {
-  const { user, exams, users, t, availableSubjects, results } = useStore();
+  const { user, exams, users, t, availableSubjects, results, purchaseExam } = useStore();
   const navigate = useNavigate();
 
   const availableExams = exams.filter(e => e.isPublished);
@@ -23,6 +24,20 @@ export const StudentDashboard = () => {
     .slice(0, 3);
 
   const startExam = (examId: string) => { navigate(`/student/exam/${examId}`); };
+
+  const handleExamLaunch = (exam: Exam) => {
+    if (!user) {
+        navigate('/auth');
+        return;
+    }
+
+    const hasExam = user.purchasedExamIds?.includes(exam.id) || exam.price === 0;
+    if (!hasExam) {
+        const success = purchaseExam(exam.id);
+        if (!success) return;
+    }
+    navigate(`/student/exam/${exam.id}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -90,12 +105,12 @@ export const StudentDashboard = () => {
               <div className="mt-auto flex items-center justify-between">
                  <div className="flex items-center gap-1 text-xs text-gray-500 font-medium"><Clock size={14} /> {exam.timeLimit}{t('min')}</div>
                  {isPurchased || exam.price === 0 ? (
-                    <button onClick={() => startExam(exam.id)} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${isSolved ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}>
+                    <button onClick={() => handleExamLaunch(exam)} className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${isSolved ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}>
                         {isSolved ? <><Repeat size={16} /> {t('retake')}</> : <><Play size={16} /> {t('start')}</>}
                     </button>
                  ) : (
                     <button
-                        onClick={() => navigate(`/student/exam/${exam.id}`)}
+                        onClick={() => handleExamLaunch(exam)}
                         disabled={!canAfford}
                         className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${canAfford ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
                     >
