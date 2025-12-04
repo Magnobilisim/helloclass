@@ -1,5 +1,5 @@
 
-import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata } from './types';
+import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata, PrizeExam } from './types';
 
 // Genişletilmiş Türkiye Okul Listesi (Örneklem)
 export const INITIAL_SCHOOLS: School[] = [
@@ -222,6 +222,45 @@ export const INITIAL_EXAMS: Exam[] = [
       { id: 'q4', text: 'I ___ breakfast at 8am.', options: ['eat', 'ate', 'eaten', 'eating'], correctIndex: 1 },
       { id: 'q5', text: 'He ___ not know the answer.', options: ['do', 'did', 'does', 'done'], correctIndex: 2 }
     ]
+  }
+];
+
+export const INITIAL_PRIZE_EXAMS: PrizeExam[] = [
+  {
+    id: 'prize-sample-1',
+    examId: 'exam1',
+    grade: 5,
+    prizeTitle: '5. Sınıf Matematik Mega Turnuvası',
+    prizeImage: 'https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=600&q=60',
+    prizeDescription: 'Sınıfının en iyilerine özel STEM atölye seti ve sertifika paketi.',
+    entryFee: 25,
+    month: '2025-11',
+    isActive: false,
+    winnerId: 'sample-winner-1',
+    winnerName: 'Ahmet Kaya',
+    winnerSchool: 'İstanbul Atatürk Fen Lisesi',
+    winnerClassLevel: 5,
+    drawDate: '2025-12-04T10:00:00.000Z',
+    participants: ['sample-winner-1', 'student1', 'student2']
+  },
+  {
+    id: 'prize-sample-2',
+    examId: 'exam2',
+    grade: 8,
+    prizeTitle: '8. Sınıf Fen Bilimleri Süper Ligi',
+    prizeImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=60',
+    prizeDescription: 'STEM atölye turu ve özel mentörlük seansı.',
+    entryFee: 40,
+    month: '2025-10',
+    isActive: false,
+    finalists: [
+      { userId: 'finalist-1', name: 'Elif Yılmaz', schoolName: 'Ankara Atatürk Ortaokulu', classLevel: 8 },
+      { userId: 'finalist-2', name: 'Mert Demir', schoolName: 'İzmir Bilim Koleji', classLevel: 8 },
+      { userId: 'finalist-3', name: 'Sena Aydın', schoolName: 'Bursa Nilüfer Ortaokulu', classLevel: 8 },
+    ],
+    finalistNote: 'Sistem, en yüksek puanı paylaşan adaylar arasından rastgele üç finalist seçti. Bu öğrenciler arasında yapılacak bilgi yarışması sonucu kesin kazanan açıklanacak.',
+    drawDate: '2025-11-30T18:00:00.000Z',
+    participants: ['finalist-1', 'finalist-2', 'finalist-3', 'student1', 'student2']
   }
 ];
 

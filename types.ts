@@ -252,6 +252,13 @@ export interface SubjectDef {
   grades: number[];
 }
 
+export interface PrizeFinalist {
+  userId: string;
+  name: string;
+  schoolName?: string;
+  classLevel?: number;
+}
+
 export interface PrizeExam {
   id: string;
   examId: string;
@@ -264,9 +271,13 @@ export interface PrizeExam {
   isActive: boolean;
   winnerId?: string;
   winnerName?: string;
+  winnerSchool?: string;
+  winnerClassLevel?: number;
   drawDate?: string;
   createdAt?: string;
   participants?: string[]; // Array of User IDs who paid entry fee
+  finalists?: PrizeFinalist[];
+  finalistNote?: string;
 }
 
 export type AlertType = 'success' | 'error' | 'info' | 'warning';

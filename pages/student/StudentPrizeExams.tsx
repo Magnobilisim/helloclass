@@ -207,32 +207,71 @@ export const StudentPrizeExams = () => {
             <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                 <Star className="text-yellow-500" /> {t('hall_of_fame')}
             </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {pastContests.filter(pc => pc.winnerName).map(pc => (
-                    <div key={pc.id} className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition-shadow relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-5">
-                            <Trophy size={64} />
+            {(() => {
+                const completedContests = pastContests.filter(pc => pc.winnerName || (pc.finalists && pc.finalists.length));
+                if (completedContests.length === 0) {
+                    return (
+                        <div className="py-12 text-center bg-gray-50 rounded-3xl border border-gray-100">
+                            <p className="text-gray-400 text-sm font-medium italic">{t('no_past_winners')}</p>
                         </div>
-                        <div className="relative w-20 h-20 shrink-0">
-                            <img src={pc.prizeImage} className="w-full h-full rounded-2xl object-cover bg-gray-100 shadow-inner" />
-                            <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-white p-1.5 rounded-full shadow-sm border-2 border-white">
-                                <Trophy size={14} />
+                    );
+                }
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {completedContests.map(pc => (
+                            <div key={pc.id} className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden space-y-4">
+                                <div className="absolute top-0 right-0 p-4 opacity-5">
+                                    <Trophy size={64} />
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="relative w-20 h-20 shrink-0">
+                                        <img src={pc.prizeImage} className="w-full h-full rounded-2xl object-cover bg-gray-100 shadow-inner" />
+                                        <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-white p-1.5 rounded-full shadow-sm border-2 border-white">
+                                            <Trophy size={14} />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-0 relative z-10">
+                                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 tracking-wider">{pc.month} • {t('grade')} {pc.grade}</div>
+                                        <div className="font-black text-gray-900 text-lg truncate">{pc.prizeTitle}</div>
+                                        <div className="text-xs text-brand-600 font-bold truncate">{t('won_prize_prefix')} {pc.prizeTitle}</div>
+                                    </div>
+                                </div>
+                                {pc.winnerName && (
+                                    <div className="bg-green-50 border border-green-100 rounded-2xl p-4">
+                                        <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-1">{t('winner')}</p>
+                                        <div className="text-lg font-black text-gray-900">{pc.winnerName}</div>
+                                        {(pc.winnerSchool || pc.winnerClassLevel) && (
+                                            <div className="text-xs text-gray-500 font-bold mt-1">
+                                                {[pc.winnerSchool, pc.winnerClassLevel ? `${pc.winnerClassLevel}. ${t('grade')}` : null].filter(Boolean).join(' • ')}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                {pc.finalists && pc.finalists.length > 0 && (
+                                    <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-3">
+                                        <div>
+                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('prize_finalists_title')}</p>
+                                            <p className="text-xs text-gray-500 mt-1">{pc.finalistNote || t('prize_finalists_note')}</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {pc.finalists.map(finalist => (
+                                                <div key={`${pc.id}-${finalist.userId}`} className="bg-white rounded-xl border border-gray-100 p-3">
+                                                    <div className="font-bold text-gray-900">{finalist.name}</div>
+                                                    {(finalist.schoolName || finalist.classLevel) && (
+                                                        <div className="text-xs text-gray-500 font-semibold">
+                                                            {[finalist.schoolName, finalist.classLevel ? `${finalist.classLevel}. ${t('grade')}` : null].filter(Boolean).join(' • ')}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                        <div className="flex-1 min-w-0 relative z-10">
-                            <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 tracking-wider">{pc.month} • {t('grade')} {pc.grade}</div>
-                            <div className="font-black text-gray-900 text-lg truncate">{pc.winnerName}</div>
-                            <div className="text-xs text-brand-600 font-bold truncate">{t('won_prize_prefix')} {pc.prizeTitle}</div>
-                        </div>
+                        ))}
                     </div>
-                ))}
-                {pastContests.filter(pc => pc.winnerName).length === 0 && (
-                    <div className="col-span-full py-12 text-center bg-gray-50 rounded-3xl border border-gray-100">
-                        <p className="text-gray-400 text-sm font-medium italic">{t('no_past_winners')}</p>
-                    </div>
-                )}
-            </div>
+                );
+            })()}
         </section>
     </div>
   );

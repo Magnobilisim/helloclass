@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, Transaction, ExamSession, PointPurchase } from '../types';
-import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS } from '../constants';
+import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase } from '../types';
+import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
 import { checkContentSafety, generateLearningReport, setSafetyLanguage } from '../services/aiService';
 
@@ -55,7 +55,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [shopItems, setShopItems] = useState<ShopItem[]>(SHOP_ITEMS);
   const [payouts, setPayouts] = useState<Payout[]>([]);
-  const [prizeExams, setPrizeExams] = useState<PrizeExam[]>([]);
+  const [prizeExams, setPrizeExams] = useState<PrizeExam[]>(INITIAL_PRIZE_EXAMS);
   const [transactions, setTransactions] = useState<Transaction[]>([]); 
   const [pointPurchases, setPointPurchases] = useState<PointPurchase[]>([]);
   const [examSessions, setExamSessions] = useState<Record<string, ExamSession>>({}); 
@@ -978,6 +978,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showAlert('Prize Exam Created', 'success');
   };
 
+  const pickRandomSubset = <T,>(items: T[], count: number): T[] => {
+      const pool = [...items];
+      for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return pool.slice(0, count);
+  };
+
   const drawPrizeWinner = (prizeExamId: string) => {
       if (user?.role !== UserRole.ADMIN) return;
       
@@ -997,21 +1006,79 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const maxScore = Math.max(...candidates.map(c => c.score));
       const topScorers = candidates.filter(c => c.score === maxScore);
       
-      const winnerResult = topScorers[Math.floor(Math.random() * topScorers.length)];
-      const winnerUser = users.find(u => u.id === winnerResult.studentId);
+      const now = new Date().toISOString();
+      if (topScorers.length === 1) {
+          const winnerResult = topScorers[0];
+          const winnerUser = users.find(u => u.id === winnerResult.studentId);
+          if (!winnerUser) {
+              showAlert('Winner user not found.', 'error');
+              return;
+          }
+          const winnerSchool = winnerUser.schoolId ? schools.find(s => s.id === winnerUser.schoolId)?.name : undefined;
+          const updatedPrizeExams = prizeExams.map(pe => 
+              pe.id === prizeExamId 
+              ? { 
+                  ...pe, 
+                  isActive: false, 
+                  winnerId: winnerUser.id, 
+                  winnerName: winnerUser.name, 
+                  winnerSchool,
+                  winnerClassLevel: winnerUser.classLevel,
+                  drawDate: now,
+                  finalists: undefined,
+                  finalistNote: undefined
+                } 
+              : pe
+          );
 
-      if (!winnerUser) return;
+          setPrizeExams(updatedPrizeExams);
+          addNotification(winnerUser.id, '🎉 You Won!', `Congratulations! You won the prize for ${prizeExam.prizeTitle}!`, 'success', '/student/prize-exams');
+          addLog('Prize Draw', `${prizeExam.month} Winner: ${winnerUser.name}`, 'info');
+          showAlert(t('prize_winner_declared').replace('{name}', winnerUser.name), 'success');
+      } else {
+          const finalistsCount = Math.min(3, topScorers.length);
+          const selected = pickRandomSubset(topScorers, finalistsCount);
+          const finalists = selected.map(result => {
+              const finalistUser = users.find(u => u.id === result.studentId);
+              if (!finalistUser) return null;
+              const schoolName = finalistUser.schoolId ? schools.find(s => s.id === finalistUser.schoolId)?.name : undefined;
+              return {
+                  userId: finalistUser.id,
+                  name: finalistUser.name,
+                  schoolName,
+                  classLevel: finalistUser.classLevel
+              };
+          }).filter((f): f is PrizeFinalist => !!f);
 
-      const updatedPrizeExams = prizeExams.map(pe => 
-          pe.id === prizeExamId 
-          ? { ...pe, isActive: false, winnerId: winnerUser.id, winnerName: winnerUser.name, drawDate: new Date().toISOString() } 
-          : pe
-      );
+          if (!finalists.length) {
+              showAlert('Unable to determine finalists.', 'error');
+              return;
+          }
 
-      setPrizeExams(updatedPrizeExams);
-      addNotification(winnerUser.id, '🎉 You Won!', `Congratulations! You won the prize for ${prizeExam.prizeTitle}!`, 'success', '/student/prize-exams');
-      addLog('Prize Draw', `${prizeExam.month} Winner: ${winnerUser.name}`, 'info');
-      showAlert(`Winner drawn: ${winnerUser.name}`, 'success');
+          const finalistNote = t('prize_finalists_note');
+          const updatedPrizeExams = prizeExams.map(pe => 
+              pe.id === prizeExamId 
+              ? { 
+                  ...pe, 
+                  isActive: false, 
+                  finalists,
+                  finalistNote,
+                  winnerId: undefined,
+                  winnerName: undefined,
+                  winnerSchool: undefined,
+                  winnerClassLevel: undefined,
+                  drawDate: now
+                } 
+              : pe
+          );
+
+          setPrizeExams(updatedPrizeExams);
+          finalists.forEach(finalist => {
+              addNotification(finalist.userId, t('prize_finalists_title'), t('prize_finalist_notification'), 'info', '/student/prize-exams');
+          });
+          addLog('Prize Finalists Selected', `${prizeExam.month} • ${finalists.length} finalists`, 'info');
+          showAlert(t('prize_finalists_selected').replace('{count}', `${finalists.length}`), 'info');
+      }
   };
 
   const payEntryFee = (prizeExamId: string, amount: number): boolean => {
@@ -1021,7 +1088,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           
           const updatedPrizeExams = prizeExams.map(pe => {
               if (pe.id === prizeExamId) {
-                  return { ...pe, participants: [...(pe.participants || []), user.id] };
+                  const participants = pe.participants || [];
+                  if (participants.includes(user.id)) return pe;
+                  return { ...pe, participants: [...participants, user.id] };
               }
               return pe;
           });
