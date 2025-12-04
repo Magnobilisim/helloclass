@@ -58,7 +58,30 @@ export const AdminSettings = () => {
       setPackages(prev => prev.filter(pkg => pkg.id !== id));
   };
 
+  const normalizeSocialLink = (key: keyof typeof socialLinks, value?: string) => {
+      if (!value) return '';
+      const trimmed = value.trim();
+      if (!trimmed) return '';
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      const sanitized = trimmed.replace(/^@/, '');
+      const baseMap: Record<string, string> = {
+          youtube: 'https://www.youtube.com/',
+          instagram: 'https://www.instagram.com/',
+          x: 'https://twitter.com/',
+          linkedin: 'https://www.linkedin.com/'
+      };
+      const base = baseMap[key] || 'https://';
+      return `${base}${sanitized}`;
+  };
+
   const handleSave = () => {
+      const normalizedLinks = {
+          youtube: normalizeSocialLink('youtube', socialLinks.youtube),
+          instagram: normalizeSocialLink('instagram', socialLinks.instagram),
+          x: normalizeSocialLink('x', socialLinks.x),
+          linkedin: normalizeSocialLink('linkedin', socialLinks.linkedin),
+      };
+      setSocialLinks(normalizedLinks);
       updateSystemSettings({
           commissionRate: commission,
           maintenanceMode: maintenance,
@@ -70,7 +93,7 @@ export const AdminSettings = () => {
           pointPackages: packages,
           aiWizardCost,
           aiExplainCost,
-          socialLinks
+          socialLinks: normalizedLinks
       });
   };
   
