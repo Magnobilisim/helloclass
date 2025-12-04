@@ -94,7 +94,22 @@ export const SocialFeed = () => {
       }
   };
 
-  const handleConfirmReport = () => { if (reportModalPostId) { reportPost(reportModalPostId, reportReason); setReportModalPostId(null); } };
+  const handleOpenReportModal = (postId: string) => {
+      setReportReason(ReportReason.INAPPROPRIATE);
+      setReportModalPostId(postId);
+  };
+
+  const handleCloseReportModal = () => {
+      setReportModalPostId(null);
+      setReportReason(ReportReason.INAPPROPRIATE);
+  };
+
+  const handleConfirmReport = () => { 
+      if (reportModalPostId) { 
+          reportPost(reportModalPostId, reportReason); 
+          handleCloseReportModal(); 
+      } 
+  };
 
   const toggleComments = (postId: string) => {
       const newSet = new Set(expandedComments);
@@ -222,7 +237,7 @@ export const SocialFeed = () => {
                             </div>
                         </div>
                    </div>
-                   <button onClick={() => setReportModalPostId(post.id)} className="text-gray-300 hover:text-red-500"><AlertTriangle size={14} /></button>
+                   <button onClick={() => handleOpenReportModal(post.id)} className="text-gray-300 hover:text-red-500"><AlertTriangle size={14} /></button>
                 </div>
                 {post.content && <p className="text-gray-900 font-medium mb-4 whitespace-pre-wrap">{post.content}</p>}
                 {post.imageUrl && <div className="mb-4 rounded-2xl overflow-hidden border border-gray-100"><img src={post.imageUrl} className="w-full max-h-[400px] object-cover" /></div>}
@@ -264,6 +279,37 @@ export const SocialFeed = () => {
                    <button onClick={() => setSafetyViolation(null)} className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold">{t('understand')}</button>
                </div>
            </div>
+       )}
+
+       {/* Report Modal */}
+       {reportModalPostId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                <div className="bg-white w-full max-w-md rounded-3xl p-6 relative shadow-2xl">
+                    <button onClick={handleCloseReportModal} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                        <X size={18} />
+                    </button>
+                    <div className="space-y-4">
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-900">{t('report')}</h3>
+                            <p className="text-sm text-gray-500">{t('report_modal_hint')}</p>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase tracking-wide">{t('reason')}</label>
+                            <select value={reportReason} onChange={(e) => setReportReason(e.target.value as ReportReason)} className="w-full border border-gray-200 rounded-xl p-3 text-sm bg-gray-50">
+                                <option value={ReportReason.SPAM}>{t('report_reason_spam')}</option>
+                                <option value={ReportReason.HARASSMENT}>{t('report_reason_harassment')}</option>
+                                <option value={ReportReason.INAPPROPRIATE}>{t('report_reason_inappropriate')}</option>
+                                <option value={ReportReason.MISINFORMATION}>{t('report_reason_misinformation')}</option>
+                                <option value={ReportReason.OTHER}>{t('report_reason_other')}</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={handleCloseReportModal} className="flex-1 border border-gray-200 rounded-xl py-3 font-bold text-gray-600">{t('cancel')}</button>
+                            <button onClick={handleConfirmReport} className="flex-1 bg-red-500 text-white rounded-xl py-3 font-bold">{t('report')}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
        )}
     </div>
   );
