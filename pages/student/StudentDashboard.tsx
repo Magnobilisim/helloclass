@@ -31,12 +31,22 @@ export const StudentDashboard = () => {
         return;
     }
 
-    const hasExam = user.purchasedExamIds?.includes(exam.id) || exam.price === 0;
-    if (!hasExam) {
-        const success = purchaseExam(exam.id);
-        if (!success) return;
+    const alreadyOwned = user.purchasedExamIds?.includes(exam.id) || exam.price === 0;
+    const goToExam = () => navigate(`/student/exam/${exam.id}`);
+
+    if (alreadyOwned) {
+        goToExam();
+        return;
     }
-    navigate(`/student/exam/${exam.id}`);
+
+    const success = purchaseExam(exam.id);
+    if (!success) {
+        return;
+    }
+    // allow store state to update before navigating so exam page sees the purchase
+    setTimeout(() => {
+        goToExam();
+    }, 0);
   };
 
   return (
