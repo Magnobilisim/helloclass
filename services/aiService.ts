@@ -435,38 +435,50 @@ const buildFallbackLearningReport = ({
     : difficulty;
 
   const summary = localized
-    ? `Tebrikler! "${examTitle}" sınavında ${totalQuestions} sorudan ${score} doğru yaparak %${accuracy} başarı elde ettin.`
-    : `Great job! You answered ${score} of ${totalQuestions} questions correctly on "${examTitle}" and achieved ${accuracy}% accuracy.`;
+    ? accuracy >= 70
+      ? `Tebrikler! "${examTitle}" sınavında ${totalQuestions} sorudan ${score} doğru yaparak %${accuracy} başarı elde ettin.`
+      : accuracy >= 40
+      ? `"${examTitle}" sınavında ${totalQuestions} sorudan ${score} doğru yaptın. Hadi bu temeli güçlendirelim.`
+      : `"${examTitle}" sınavında henüz istediğin sonuca ulaşamadın ancak her çözüm bir adımdır.`
+    : accuracy >= 70
+    ? `Great job! You answered ${score} of ${totalQuestions} questions correctly on "${examTitle}" (${accuracy}%).`
+    : accuracy >= 40
+    ? `You answered ${score}/${totalQuestions} on "${examTitle}". Let's reinforce that foundation.`
+    : `Results on "${examTitle}" weren’t what you hoped, but every attempt moves you forward.`;
 
   const outcomes: string[] = [];
-  outcomes.push(
-    localized
-      ? `${labelSubject} alanında ${diffLabel} seviyedeki sorulara güçlü bir yanıt verdin.`
-      : `You showed solid understanding of ${diffLabel} level questions in ${labelSubject}.`
-  );
-  outcomes.push(
-    localized
-      ? `${labelTopic} konularındaki temel sorulara hızlı geri dönüşler yaptın.`
-      : `You responded confidently to key items around ${labelTopic}.`
-  );
-
   if (accuracy >= 80) {
     outcomes.push(
       localized
-        ? "Stratejini koruyarak yeni içeriklere geçmeye hazırsın."
-        : "Keep the same routine—you are ready to tackle new topics."
+        ? `${labelSubject} alanında ${diffLabel} seviyedeki soruları akıcı biçimde tamamladın.`
+        : `You handled ${diffLabel}-level ${labelSubject} questions with ease.`
+    );
+    outcomes.push(
+      localized
+        ? `${labelTopic} konularında kavramlar arası bağlantı kurabildiğini gösterdin.`
+        : `You demonstrated strong connections across ${labelTopic} concepts.`
     );
   } else if (accuracy >= 50) {
     outcomes.push(
       localized
-        ? "Çözdüğün sorularda sağlam bir temel oluşturdun."
-        : "You built a reliable foundation with the questions you solved."
+        ? `${labelSubject} alanındaki temel soruların çoğunda doğru stratejileri kullandın.`
+        : `You applied the right strategies on most core ${labelSubject} questions.`
+    );
+    outcomes.push(
+      localized
+        ? `${labelTopic} konularında ilerleme kaydettin; ufak tekrarlarla hızlanabilirsin.`
+        : `You progressed through ${labelTopic}; a bit of review will boost your pace.`
     );
   } else {
     outcomes.push(
       localized
-        ? "Temel kavramları tekrar edip yeni sorularla pratik yapmak faydalı olur."
-        : "Revisiting core ideas and practicing more questions will help."
+        ? `${labelSubject} alanında temel kavramları yeniden gözden geçirmek için iyi bir zaman.`
+        : `It’s a good time to revisit foundational ${labelSubject} ideas.`
+    );
+    outcomes.push(
+      localized
+        ? `${labelTopic} sorularını adım adım çözmek, doğruluk oranını artıracaktır.`
+        : `Working through ${labelTopic} exercises step by step will raise accuracy.`
     );
   }
 
@@ -476,11 +488,18 @@ const buildFallbackLearningReport = ({
 
   let focusAreas: string[];
   if (incorrect.length === 0) {
-    focusAreas = [
-      localized
-        ? "Harika performans! Yeni konulara geçerek kendini zorlayabilirsin."
-        : "Excellent work! Challenge yourself with new topics next.",
-    ];
+    focusAreas =
+      accuracy >= 80
+        ? [
+            localized
+              ? "Harika performans! Yeni konulara geçerek kendini zorlayabilirsin."
+              : "Excellent work! Challenge yourself with new topics next.",
+          ]
+        : [
+            localized
+              ? "Sonraki denemede zaman yönetimine dikkat ederek aynı tempoda ilerle."
+              : "Maintain your pace and focus on timing in the next attempt.",
+          ];
   } else {
     focusAreas = incorrect.slice(0, 2).map((q) =>
       localized
