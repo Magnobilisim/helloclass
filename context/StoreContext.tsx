@@ -173,7 +173,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (loadedSubjects) setAvailableSubjects(JSON.parse(loadedSubjects));
     if (loadedShop) setShopItems(JSON.parse(loadedShop));
     if (loadedPayouts) setPayouts(JSON.parse(loadedPayouts));
-    if (loadedPrizeExams) setPrizeExams(JSON.parse(loadedPrizeExams));
+    if (loadedPrizeExams) {
+        try {
+            const parsedPrize = JSON.parse(loadedPrizeExams);
+            if (Array.isArray(parsedPrize) && parsedPrize.length > 0) {
+                setPrizeExams(parsedPrize);
+            } else {
+                setPrizeExams(INITIAL_PRIZE_EXAMS);
+            }
+        } catch (e) {
+            console.error('Failed to parse prize exams', e);
+            setPrizeExams(INITIAL_PRIZE_EXAMS);
+        }
+    } else {
+        setPrizeExams(INITIAL_PRIZE_EXAMS);
+    }
     if (loadedTransactions) setTransactions(JSON.parse(loadedTransactions));
     if (loadedSessions) setExamSessions(JSON.parse(loadedSessions));
     if (loadedPointPurchases) {
