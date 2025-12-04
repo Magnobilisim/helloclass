@@ -41,8 +41,6 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
                 const isPass = percent >= 50;
                 const isDeleted = !exam;
                 const subjName = exam ? availableSubjects.find(s => s.id === exam.subjectId)?.name : 'Unknown';
-                const learningStatus = res.learningReportStatus;
-                const learningReport = res.learningReport;
                 
                 return (
                    <div key={res.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -72,39 +70,13 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
                               <div className="text-3xl font-black text-gray-800 tracking-tighter"><span className={isPass ? 'text-brand-600' : 'text-gray-400'}>{res.score}</span><span className="text-gray-300 text-xl">/{res.totalQuestions}</span></div>
                           </div>
                       </div>
-                      {(learningStatus || learningReport) && (
-                          <div className="mt-4 pt-4 border-t border-gray-50 pl-4 space-y-2">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{t('learning_outcomes_title')}</p>
-                              {learningStatus === 'pending' && (
-                                  <p className="text-xs text-gray-500">{t('learning_outcomes_pending')}</p>
-                              )}
-                              {learningStatus === 'failed' && (
-                                  <p className="text-xs text-red-500">{t('learning_outcomes_error')}</p>
-                              )}
-                              {learningStatus === 'ready' && learningReport && (
-                                  <div className="space-y-2">
-                                      <p className="text-sm text-gray-700">{learningReport.summary}</p>
-                                      <ul className="space-y-1.5 text-sm text-gray-800 list-disc pl-4">
-                                          {learningReport.outcomes.map((item, idx) => (
-                                              <li key={`lr-${res.id}-${idx}`}>{item}</li>
-                                          ))}
-                                      </ul>
-                                      {learningReport.focusAreas.length > 0 && (
-                                          <div>
-                                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-2">{t('learning_outcomes_focus_title')}</p>
-                                              <ul className="space-y-1.5 text-sm text-gray-600 list-disc pl-4">
-                                                  {learningReport.focusAreas.map((item, idx) => (
-                                                      <li key={`focus-${res.id}-${idx}`}>{item}</li>
-                                                  ))}
-                                              </ul>
-                                          </div>
-                                      )}
-                                  </div>
-                              )}
-                          </div>
-                      )}
                       {!isDeleted && isOwnProfile && (
-                          <div className="mt-4 pt-4 border-t border-gray-100 pl-4 flex justify-end"><Link to={`/student/exams`} className="text-xs font-bold text-gray-400 hover:text-brand-600 flex items-center gap-1 transition-colors">{t('view_in_market')} <ArrowRight size={12} /></Link></div>
+                          <div className="mt-4 pt-4 border-t border-gray-100 pl-4 flex justify-end">
+                              <Link to="/student/results" className="text-xs font-bold text-gray-400 hover:text-brand-600 flex items-center gap-1 transition-colors">
+                                  {t('view_learning_outcomes')}
+                                  <ArrowRight size={12} />
+                              </Link>
+                          </div>
                       )}
                    </div>
                 );
