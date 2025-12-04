@@ -21,6 +21,7 @@ export const StudentPrizeExams = () => {
   const pastContests = prizeExams.filter(pe => 
       !pe.isActive || pe.month !== currentMonth
   ).sort((a, b) => b.month.localeCompare(a.month));
+  const finalistContests = prizeExams.filter(pe => (pe.finalists && pe.finalists.length > 0));
 
   const userResult = activeContest 
       ? results.find(r => r.examId === activeContest.examId && r.studentId === user?.id)
@@ -202,6 +203,49 @@ export const StudentPrizeExams = () => {
                 </div>
             )}
         </section>
+
+        {finalistContests.length > 0 && (
+            <section>
+                <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <Trophy className="text-indigo-500" /> {t('prize_finalists_title')}
+                </h3>
+                <div className="space-y-4">
+                    {finalistContests.map(pc => (
+                        <div key={`finalist-${pc.id}`} className="bg-white p-5 rounded-3xl border border-indigo-100 shadow-sm">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                                <div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{pc.month} • {t('grade')} {pc.grade}</p>
+                                    <h4 className="text-lg font-black text-gray-900">{pc.prizeTitle}</h4>
+                                </div>
+                                {pc.finalistQuizDate && (
+                                    <div className="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">
+                                        {t('prize_finalist_quiz_date').replace('{date}', new Date(pc.finalistQuizDate).toLocaleString())}
+                                    </div>
+                                )}
+                            </div>
+                            {pc.finalistQuizLink && (
+                                <a href={pc.finalistQuizLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 underline mb-3">
+                                    {t('prize_finalist_quiz_link')}
+                                </a>
+                            )}
+                            <div className="space-y-2">
+                                {(pc.finalists || []).map(finalist => (
+                                    <div key={`${pc.id}-${finalist.userId}`} className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex justify-between items-center text-sm">
+                                        <div>
+                                            <p className="font-bold text-gray-900">{finalist.name}</p>
+                                            <p className="text-xs text-gray-500 font-semibold">
+                                                {[finalist.schoolName, finalist.classLevel ? `${finalist.classLevel}. ${t('grade')}` : null].filter(Boolean).join(' • ')}
+                                            </p>
+                                        </div>
+                                        <div className="text-xs font-bold text-gray-400 uppercase">{t('finalist')}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        )}
 
         <section>
             <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">

@@ -442,6 +442,8 @@ export const TRANSLATIONS = {
     prize_finalist_notification: 'Finalist oldun! Bilgi yarışması detayları yakında paylaşılacak.',
     prize_winner_declared: 'Kazanan duyuruldu: {name}',
     prize_finalist_quiz_date: 'Bilgi yarışması: {date}',
+    prize_finalist_quiz_link: 'Canlı yayını izle',
+    finalist: 'Finalist',
 
     // Profile & Notifications & Messages
     profile: 'Profilim',
@@ -956,6 +958,8 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     prize_finalist_notification: 'You are a finalist! Quiz details will be shared soon.',
     prize_winner_declared: 'Winner announced: {name}',
     prize_finalist_quiz_date: 'Quiz show date: {date}',
+    prize_finalist_quiz_link: 'Join live session',
+    finalist: 'Finalist',
 
     // Profile & Notifications & Messages
     profile: 'Profile',
