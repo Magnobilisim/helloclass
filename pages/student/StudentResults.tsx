@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Award, Calendar, CheckCircle, XCircle, AlertCircle, ArrowRight, Star, Bookmark, Play } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface StudentResultsProps {
     studentId?: string;
@@ -10,6 +10,10 @@ interface StudentResultsProps {
 
 export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => {
   const { results, user, exams, t, availableSubjects } = useStore();
+  const location = useLocation();
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const highlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const targetId = studentId || user?.id;
 
@@ -18,6 +22,38 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const isOwnProfile = user?.id === targetId;
+
+  useEffect(() => {
+    if (!targetId || studentId) {
+      setHighlightId(null);
+      return;
+    }
+    const params = new URLSearchParams(location.search);
+    const targetHighlight = params.get('highlight');
+    if (targetHighlight) {
+      setHighlightId(targetHighlight);
+      if (highlightTimeout.current) {
+        clearTimeout(highlightTimeout.current);
+      }
+      highlightTimeout.current = setTimeout(() => setHighlightId(null), 5000);
+    } else {
+      setHighlightId(null);
+    }
+    return () => {
+      if (highlightTimeout.current) {
+        clearTimeout(highlightTimeout.current);
+      }
+    };
+  }, [location.search, targetId, studentId]);
+
+  useEffect(() => {
+    if (!highlightId) return;
+    const node = cardRefs.current[highlightId];
+    if (node) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      node.focus?.();
+    }
+  }, [highlightId, myResults.length]);
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
@@ -43,9 +79,16 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
                 const subjName = exam ? availableSubjects.find(s => s.id === exam.subjectId)?.name : 'Unknown';
                 const learningStatus = res.learningReportStatus;
                 const learningReport = res.learningReport;
+                const isHighlighted = highlightId === res.id;
                 
                 return (
-                   <div key={res.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow relative overflow-hidden group">
+                   <div
+                      key={res.id}
+                      ref={(el) => { cardRefs.current[res.id] = el; }}
+                      className={`bg-white p-5 rounded-3xl shadow-sm border flex flex-col hover:shadow-md transition-all relative overflow-hidden group ${
+                        isHighlighted ? 'border-brand-500 ring-2 ring-brand-400 animate-pulse' : 'border-gray-100'
+                      }`}
+                    >
                       <div className={`absolute top-0 left-0 w-2 h-full ${isPass ? 'bg-green-500' : 'bg-red-500'}`}></div>
                       <div className="flex justify-between items-start mb-3 pl-4">
                           <div className="flex-1">
@@ -104,7 +147,14 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
                           </div>
                       )}
                       {!isDeleted && isOwnProfile && (
-                          <div className="mt-4 pt-4 border-t border-gray-100 pl-4 flex justify-end"><Link to={`/student/exams`} className="text-xs font-bold text-gray-400 hover:text-brand-600 flex items-center gap-1 transition-colors">{t('view_in_market')} <ArrowRight size={12} /></Link></div>
+                          <div className="mt-4 pt-4 border-t border-gray-100 pl-4 flex justify-end">
+                              <Link
+                                  to={`/student/results?highlight=${res.id}`}
+                                  className="text-xs font-bold text-gray-400 hover:text-brand-600 flex items-center gap-1 transition-colors"
+                              >
+                                  {t('view_learning_outcomes')} <ArrowRight size={12} />
+                              </Link>
+                          </div>
                       )}
                    </div>
                 );
