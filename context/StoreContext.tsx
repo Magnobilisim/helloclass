@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, Transaction, ExamSession, PointPurchase } from '../types';
 import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
-import { checkContentSafety, setSafetyLanguage } from '../services/aiService';
+import { checkContentSafety, generateLearningReport, setSafetyLanguage } from '../services/aiService';
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
@@ -601,7 +601,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         totalQuestions: exam.questions.length,
         date: new Date().toISOString(),
         rewardsEarned,
-        answers: answers
+        answers: answers,
+        learningReportStatus: 'pending'
     };
 
     const existingResult = results.find(r => r.examId === examId && r.studentId === user.id);
@@ -631,6 +632,35 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             status: 'completed'
         }
     }));
+
+    const subjectName = availableSubjects.find(s => s.id === exam.subjectId)?.name || exam.subjectId;
+    const questionsPayload = exam.questions.map((q, idx) => ({
+        index: idx,
+        question: q.text,
+        correctAnswer: q.options[q.correctIndex],
+        studentAnswer: answers[idx] === -1 || answers[idx] === undefined ? null : q.options[answers[idx]],
+        isCorrect: answers[idx] === q.correctIndex
+    }));
+
+    (async () => {
+        try {
+            const report = await generateLearningReport({
+                examTitle: exam.title,
+                subjectName,
+                topic: exam.topic,
+                difficulty: exam.difficulty,
+                score: calculatedScore,
+                totalQuestions: exam.questions.length,
+                language,
+                gradeLevel: user.classLevel,
+                questions: questionsPayload
+            });
+            setResults(prev => prev.map(r => r.id === fullResult.id ? { ...r, learningReport: { ...report, generatedAt: new Date().toISOString() }, learningReportStatus: 'ready' } : r));
+        } catch (error) {
+            console.error('Failed to generate learning report', error);
+            setResults(prev => prev.map(r => r.id === fullResult.id ? { ...r, learningReportStatus: 'failed' } : r));
+        }
+    })();
   };
 
   const addPost = async (content: string, tags?: string[], schoolId?: string, imageUrl?: string): Promise<{success: boolean, reason?: string}> => {

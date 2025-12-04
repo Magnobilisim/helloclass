@@ -510,6 +510,10 @@ export const ExamRoom = () => {
         );
     }
 
+    const latestResult = user ? results.find(r => r.examId === exam.id && r.studentId === user.id) : null;
+    const learningStatus = latestResult?.learningReportStatus;
+    const learningReport = latestResult?.learningReport;
+
     return (
       <div className="h-full flex flex-col items-center justify-center text-center p-6">
          <div className="text-6xl mb-4 animate-bounce">
@@ -536,6 +540,47 @@ export const ExamRoom = () => {
                 <p className="text-2xl font-bold text-gray-700">{blankCount}</p>
             </div>
          </div>
+
+        {latestResult && (
+            <div className="w-full max-w-lg bg-white/80 backdrop-blur border border-gray-100 rounded-3xl p-5 text-left mb-8 space-y-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t('learning_outcomes_title')}</p>
+                    <span className="text-[10px] font-bold text-gray-400">{new Date(latestResult.date).toLocaleDateString()}</span>
+                </div>
+                {learningStatus === 'pending' && (
+                    <p className="text-sm text-gray-500">{t('learning_outcomes_pending')}</p>
+                )}
+                {learningStatus === 'failed' && (
+                    <p className="text-sm text-red-500">{t('learning_outcomes_error')}</p>
+                )}
+                {learningStatus === 'ready' && learningReport && (
+                    <>
+                        <p className="text-sm text-gray-700">{learningReport.summary}</p>
+                        <ul className="space-y-2">
+                            {learningReport.outcomes.map((item, idx) => (
+                                <li key={`outcome-${idx}`} className="flex items-start gap-2 text-sm text-gray-800">
+                                    <span className="text-brand-500 mt-1">•</span>
+                                    <span>{item}</span>
+                                </li>
+                            ))}
+                        </ul>
+                        {learningReport.focusAreas.length > 0 && (
+                            <div className="pt-2 border-t border-gray-100">
+                                <p className="text-xs font-bold text-gray-400 uppercase mb-2">{t('learning_outcomes_focus_title')}</p>
+                                <ul className="space-y-2">
+                                    {learningReport.focusAreas.map((item, idx) => (
+                                        <li key={`focus-${idx}`} className="flex items-start gap-2 text-sm text-gray-600">
+                                            <span className="text-gray-400 mt-1">→</span>
+                                            <span>{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        )}
 
         <div className="flex flex-col gap-3 w-full max-w-sm">
             <button 

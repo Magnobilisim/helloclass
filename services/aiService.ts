@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { Language, Question } from "../types";
+import { Language, LearningReport, Question } from "../types";
 
 const env = typeof import.meta !== "undefined" ? import.meta.env : undefined;
 
@@ -177,6 +177,27 @@ const singleQuestionSchema = {
       explanation: { type: "string" },
     },
     required: ["text", "options", "correctIndex"],
+  },
+};
+
+const learningReportSchema = {
+  name: "LearningOutcomeReport",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      summary: { type: "string" },
+      outcomes: {
+        type: "array",
+        minItems: 1,
+        items: { type: "string" },
+      },
+      focusAreas: {
+        type: "array",
+        items: { type: "string" },
+      },
+    },
+    required: ["summary", "outcomes"],
   },
 };
 
@@ -368,6 +389,121 @@ Text: """${content}"""`,
     return { safe: true };
   }
 }
+
+interface LearningReportQuestionInput {
+  index: number;
+  question: string;
+  correctAnswer: string;
+  studentAnswer?: string | null;
+  isCorrect: boolean;
+}
+
+export interface GenerateLearningReportParams {
+  examTitle: string;
+  subjectName?: string;
+  topic?: string;
+  difficulty: string;
+  score: number;
+  totalQuestions: number;
+  language: Language;
+  questions: LearningReportQuestionInput[];
+  gradeLevel?: number;
+}
+
+export const generateLearningReport = async ({
+  examTitle,
+  subjectName,
+  topic,
+  difficulty,
+  score,
+  totalQuestions,
+  language,
+  questions,
+  gradeLevel,
+}: GenerateLearningReportParams): Promise<Omit<LearningReport, "generatedAt">> => {
+  try {
+    const client = ensureClient();
+    const targetLanguage = language === "tr" ? "Turkish" : "English";
+
+    const questionNarrative = questions
+      .map(
+        (q) =>
+          `Q${q.index + 1}: ${q.question}
+Correct: ${q.correctAnswer}
+Student: ${q.studentAnswer ?? "Skipped"}
+Result: ${q.isCorrect ? "Correct" : "Incorrect"}`
+      )
+      .join("\n\n");
+
+    const response = await client.responses.create({
+      model: TEXT_MODEL,
+      text: {
+        format: {
+          type: "json_schema",
+          name: learningReportSchema.name,
+          schema: learningReportSchema.schema,
+        },
+      },
+      input: [
+        {
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text: `You are an encouraging K-12 counselor. Summarize the student's learning gains after an exam. Respond in ${targetLanguage} using concise, student-friendly language. Highlight concrete skills mastered and suggest gentle next steps if needed.`,
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: `Exam Title: ${examTitle}
+Subject: ${subjectName || "Unknown"}
+Topic: ${topic || "General"}
+Difficulty: ${difficulty}
+Grade Level: ${gradeLevel ?? "Unknown"}
+Score: ${score}/${totalQuestions}
+
+Question Review:
+${questionNarrative}
+
+Provide:
+1. "summary": 1-2 sentences celebrating achievements.
+2. "outcomes": array of 2-3 bullet sentences describing concrete kazanımlar/skills learned.
+3. "focusAreas": array of up to 2 gentle suggestions for next practice (empty array if not needed).`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const parsed = JSON.parse(extractOutputText(response) || "{}");
+    const outcomes =
+      Array.isArray(parsed.outcomes) && parsed.outcomes.length > 0
+        ? parsed.outcomes
+        : [
+            language === "tr"
+              ? "Bu sınavdan elde edilen kazanımlar özetlenemedi."
+              : "Learning outcomes could not be summarized.",
+          ];
+
+    return {
+      summary:
+        typeof parsed.summary === "string" && parsed.summary.trim()
+          ? parsed.summary.trim()
+          : language === "tr"
+          ? "Kazanım özeti hazırlanamadı."
+          : "Learning summary is not available.",
+      outcomes,
+      focusAreas: Array.isArray(parsed.focusAreas) ? parsed.focusAreas : [],
+    };
+  } catch (error) {
+    console.error("Learning Report Error:", error);
+    throw error;
+  }
+};
 
 export const getAnswerExplanation = async (
   questionText: string,

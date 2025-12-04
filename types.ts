@@ -106,6 +106,8 @@ export interface ExamResult {
   date: string;
   rewardsEarned: number;
   answers: number[];
+  learningReport?: LearningReport;
+  learningReportStatus?: 'pending' | 'ready' | 'failed';
 }
 
 export interface Transaction {
@@ -122,6 +124,13 @@ export interface ExamSession {
   studentId: string;
   startedAt: string; // ISO String for DB (Strict)
   status: 'started' | 'completed';
+}
+
+export interface LearningReport {
+  summary: string;
+  outcomes: string[];
+  focusAreas: string[];
+  generatedAt: string;
 }
 
 export enum ReportReason {
