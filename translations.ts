@@ -204,6 +204,7 @@ export const TRANSLATIONS = {
     write_comment: 'Bir yorum yaz...',
     safety_warning: 'Uygunsuz İçerik Tespit Edildi',
     safety_warning_desc: 'Paylaşmak istediğiniz içerik topluluk kurallarımıza uymuyor (Zorbalık, Nefret Söylemi veya Müstehcenlik). Lütfen içeriğinizi düzenleyin.',
+    safety_warning_detail: 'Bu metin K-12 sosyal ağı için uygun olmayan ifadeler içeriyor (zorbalık, nefret söylemi veya müstehcenlik içerebilir).',
     understand: 'Anladım',
     all_schools: 'Tüm Okullar',
     follow: 'Takip Et',
