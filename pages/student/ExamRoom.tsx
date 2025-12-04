@@ -690,7 +690,13 @@ export const ExamRoom = () => {
                  </h3>
 
                  {currentQ.imageUrl && (
-                    <img src={currentQ.imageUrl} className="w-full h-48 object-cover rounded-xl mb-6 shadow-sm" alt="Question" />
+                    <div className="w-full max-h-60 bg-white border border-gray-100 rounded-2xl mb-6 flex items-center justify-center p-4 overflow-hidden">
+                        <img
+                            src={currentQ.imageUrl}
+                            className="max-h-52 w-auto object-contain"
+                            alt={t('question')}
+                        />
+                    </div>
                  )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -15,6 +15,7 @@ export const AIWizard = () => {
   const [subjectId, setSubjectId] = useState<string>(availableSubjects[0]?.id || 'sub-math');
   const [topic, setTopic] = useState('');
   const [timeLimit, setTimeLimit] = useState<number>(10);
+  const [questionCount, setQuestionCount] = useState<number>(5);
   const [isLoading, setIsLoading] = useState(false);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [pointModalMessage, setPointModalMessage] = useState('');
@@ -50,8 +51,9 @@ export const AIWizard = () => {
       }
   }, [topicOptions, topic]);
 
-  const wizardCost = systemSettings.aiWizardCost || 0;
-  const insufficientPoints = user ? user.points < wizardCost : true;
+  const wizardCostPerQuestion = systemSettings.aiWizardCost || 0;
+  const wizardTotalCost = wizardCostPerQuestion * questionCount;
+  const insufficientPoints = user ? user.points < wizardTotalCost : true;
 
   const openPointsModal = (message: string) => {
       setPointModalMessage(message);
@@ -73,9 +75,14 @@ export const AIWizard = () => {
         setIsLoading(false);
         return;
       }
-      if (wizardCost > 0 && insufficientPoints) {
+      if (questionCount < 1 || questionCount > 50) {
+        showAlert(t('ai_question_count_hint'), 'error');
         setIsLoading(false);
-        openPointsModal(t('insufficient_points_message').replace('{points}', `${wizardCost}`));
+        return;
+      }
+      if (wizardTotalCost > 0 && insufficientPoints) {
+        setIsLoading(false);
+        openPointsModal(t('insufficient_points_message').replace('{points}', `${wizardTotalCost}`));
         return;
       }
       const levelString = `${subjectId === 'sub-eng' ? englishLevel : `Grade ${gradeLevel}`}${topic ? ` focusing on ${topic}` : ''}`;
@@ -84,7 +91,7 @@ export const AIWizard = () => {
         subjectName: subjName as string,
         gradeOrLevel: levelString,
         topic: topic || undefined,
-        questionCount: 5,
+        questionCount,
         language,
       });
       
@@ -103,12 +110,12 @@ export const AIWizard = () => {
         sales: 0,
         isPublished: true,
         isAI: true,
-        questions: questions
+        questions
       };
 
-      if (wizardCost > 0) {
-        updateUser({ ...user, points: user.points - wizardCost });
-        showAlert(t('ai_wizard_payment_success').replace('{points}', `${wizardCost}`), 'success');
+      if (wizardTotalCost > 0) {
+        updateUser({ ...user, points: user.points - wizardTotalCost });
+        showAlert(t('ai_wizard_payment_success').replace('{points}', `${wizardTotalCost}`), 'success');
       }
 
       addExam(newExam);
@@ -206,9 +213,25 @@ export const AIWizard = () => {
             />
             <p className="text-sm text-gray-500 mt-2">{t('ai_time_limit_hint')}</p>
         </div>
-        {wizardCost > 0 && (
-            <div className={`mt-4 p-4 rounded-2xl border ${insufficientPoints ? 'border-red-200 bg-red-50 text-red-700' : 'border-indigo-200 bg-indigo-50 text-indigo-700'}`}>
-                {t('ai_wizard_cost_notice').replace('{points}', `${wizardCost}`)}
+        <div className="animate-fade-in" style={{animationDelay: '0.4s'}}>
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold">5</div>
+                <label className="text-lg font-bold text-gray-800">{t('questions')}</label>
+            </div>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={questionCount}
+              onChange={e => setQuestionCount(Math.min(50, Math.max(1, Number(e.target.value))))}
+              className="w-full bg-gray-50 border-2 border-gray-200 text-gray-900 rounded-2xl p-4 font-bold outline-none focus:border-orange-500 focus:bg-white transition-all"
+            />
+            <p className="text-sm text-gray-500 mt-2">{t('ai_question_count_hint')}</p>
+        </div>
+        {wizardCostPerQuestion > 0 && (
+            <div className={`mt-2 p-4 rounded-2xl border space-y-1 ${insufficientPoints ? 'border-red-200 bg-red-50 text-red-700' : 'border-indigo-200 bg-indigo-50 text-indigo-700'}`}>
+                <p className="font-bold">{t('ai_wizard_cost_per_question').replace('{points}', `${wizardCostPerQuestion}`)}</p>
+                <p className="text-xs">{t('ai_wizard_cost_notice').replace('{points}', `${wizardTotalCost}`)}</p>
             </div>
         )}
 
