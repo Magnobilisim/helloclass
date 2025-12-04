@@ -209,9 +209,15 @@ const generateQuestionImage = async (
     const result = await client.images.generate({
       model: IMAGE_MODEL,
       prompt: `Educational exam illustration with clean lines, no text labels. ${prompt}`,
-      size: "1024x1024",
+      size: "512x512",
+      response_format: "b64_json",
     });
-    return result.data?.[0]?.url;
+    const base64 = result.data?.[0]?.b64_json;
+    if (base64) {
+      return toDataUrl(base64);
+    }
+    const fallbackUrl = result.data?.[0]?.url;
+    return fallbackUrl;
   } catch (error) {
     console.error("Image generation error:", error);
     return undefined;
