@@ -1067,7 +1067,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   winnerName: undefined,
                   winnerSchool: undefined,
                   winnerClassLevel: undefined,
-                  drawDate: now
+                  drawDate: now,
+                  finalistQuizDate: pe.finalistQuizDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
                 } 
               : pe
           );

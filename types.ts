@@ -278,6 +278,7 @@ export interface PrizeExam {
   participants?: string[]; // Array of User IDs who paid entry fee
   finalists?: PrizeFinalist[];
   finalistNote?: string;
+  finalistQuizDate?: string;
 }
 
 export type AlertType = 'success' | 'error' | 'info' | 'warning';

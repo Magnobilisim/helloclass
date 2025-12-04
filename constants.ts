@@ -259,6 +259,7 @@ export const INITIAL_PRIZE_EXAMS: PrizeExam[] = [
       { userId: 'finalist-3', name: 'Sena Aydın', schoolName: 'Bursa Nilüfer Ortaokulu', classLevel: 8 },
     ],
     finalistNote: 'Sistem, en yüksek puanı paylaşan adaylar arasından rastgele üç finalist seçti. Bu öğrenciler arasında yapılacak bilgi yarışması sonucu kesin kazanan açıklanacak.',
+    finalistQuizDate: '2025-12-05T15:00:00.000Z',
     drawDate: '2025-11-30T18:00:00.000Z',
     participants: ['finalist-1', 'finalist-2', 'finalist-3', 'student1', 'student2']
   }

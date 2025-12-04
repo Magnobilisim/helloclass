@@ -252,6 +252,11 @@ export const StudentPrizeExams = () => {
                                         <div>
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('prize_finalists_title')}</p>
                                             <p className="text-xs text-gray-500 mt-1">{pc.finalistNote || t('prize_finalists_note')}</p>
+                                            {pc.finalistQuizDate && (
+                                                <p className="text-xs font-bold text-indigo-600 mt-1">
+                                                    {t('prize_finalist_quiz_date').replace('{date}', new Date(pc.finalistQuizDate).toLocaleString())}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             {pc.finalists.map(finalist => (
