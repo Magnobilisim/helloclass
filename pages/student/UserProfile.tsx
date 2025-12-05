@@ -285,7 +285,7 @@ export const UserProfile = () => {
             )}
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
              <div className="bg-white p-6 rounded-3xl border border-gray-100 text-center">
                  <div className="text-2xl font-black text-brand-500">{profileUser.points}</div>
                  <div className="text-xs font-bold text-gray-400 uppercase">{t('points')}</div>
@@ -424,10 +424,10 @@ export const UserProfile = () => {
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2 min-w-0">
                         <label className="text-xs font-bold text-gray-400 uppercase">{t('referral_code_label')}</label>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1">{profileUser.referralCode}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono text-sm text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1 break-all">{profileUser.referralCode}</span>
                             <button 
                                 onClick={() => handleCopy(profileUser.referralCode!)}
                                 className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors"
@@ -436,10 +436,10 @@ export const UserProfile = () => {
                             </button>
                         </div>
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2 min-w-0">
                         <label className="text-xs font-bold text-gray-400 uppercase">{t('referral_link_label')}</label>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1 truncate">{referralUrl}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono text-xs text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1 break-all">{referralUrl}</span>
                             <button 
                                 onClick={() => handleCopy(referralUrl)}
                                 className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors"
