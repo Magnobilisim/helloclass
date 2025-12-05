@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
-import { Exam } from '../../types';
+import { Exam, UserRole } from '../../types';
 import { Timer, Zap, StepForward, Bot, MessageCircle, Loader2, AlertCircle, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getAnswerExplanation } from '../../services/aiService';
@@ -11,6 +11,8 @@ export const ExamRoom = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { exams, user, saveResult, showAlert, t, results, startExamSession, examSessions, prizeExams, language, systemSettings, updateUser, watchAdForPoints } = useStore();
+  const basePath = user?.role === UserRole.TEACHER ? '/teacher' : '/student';
+  const isStudentUser = user?.role === UserRole.STUDENT;
   const [exam, setExam] = useState<Exam | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -74,8 +76,13 @@ export const ExamRoom = () => {
     const isPaid = foundExam.price > 0;
     const isOwned = user.purchasedExamIds?.includes(foundExam.id);
     const isCreator = user.id === foundExam.creatorId;
-    const isAdmin = user.role === 'ADMIN';
+    const isAdmin = user.role === UserRole.ADMIN;
     const activePrizeExam = prizeExams.find(pe => pe.examId === foundExam.id && pe.isActive);
+    if (activePrizeExam && !isStudentUser) {
+        showAlert(t('prize_students_only'), 'warning');
+        navigate(basePath === '/teacher' ? '/teacher/exams' : '/student/prize-exams', { replace: true });
+        return;
+    }
     const isPrizeParticipant = activePrizeExam?.participants?.includes(user.id);
     const lacksAccess = isPaid && !isOwned && !isCreator && !isAdmin && !isPrizeParticipant;
 
@@ -117,7 +124,7 @@ export const ExamRoom = () => {
     }
 
     setIsLoading(false);
-  }, [id, exams, navigate, user, results, prizeExams, startExamSession, t, isRetrying]);
+  }, [id, exams, navigate, user, results, prizeExams, startExamSession, t, isRetrying, showAlert, basePath, isStudentUser]);
 
   useEffect(() => {
       if (exam && !isFinished && !isReviewMode && id && user) {
@@ -329,14 +336,14 @@ export const ExamRoom = () => {
                   >
                       {t('watch_ad_cta')}
                   </button>
-                  <button
-                      onClick={() => navigate('/student/shop')}
+                    <button 
+                      onClick={() => navigate(`${basePath}/shop`)}
                       className="bg-gray-900 text-white font-semibold rounded-2xl py-3 hover:scale-[1.02] transition-transform"
                   >
                       {t('go_to_shop_cta')}
                   </button>
                   <button
-                      onClick={() => navigate('/student/exams')}
+                      onClick={() => navigate(`${basePath}/exams`)}
                       className="border border-gray-200 text-gray-600 font-semibold rounded-2xl py-3 hover:bg-gray-50 transition-colors"
                   >
                       {t('go_to_market')}
@@ -360,7 +367,7 @@ export const ExamRoom = () => {
           <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
               <AlertCircle size={48} className="mb-4 text-red-400" />
               <p className="font-bold">Exam not found or access denied.</p>
-              <button onClick={() => navigate('/student')} className="mt-4 text-brand-600 font-bold hover:underline">
+              <button onClick={() => navigate(basePath)} className="mt-4 text-brand-600 font-bold hover:underline">
                   Go Home
               </button>
           </div>
@@ -429,7 +436,7 @@ export const ExamRoom = () => {
                     {t('watch_ad_cta')}
                 </button>
                 <button
-                    onClick={() => { setShowPointsModal(false); navigate('/student/shop'); }}
+                    onClick={() => { setShowPointsModal(false); navigate(`${basePath}/shop`); }}
                     className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
                 >
                     {t('go_to_shop_cta')}
@@ -456,7 +463,7 @@ export const ExamRoom = () => {
         return (
             <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-6 pb-20">
                 <div className="flex items-center gap-4 mb-6">
-                    <button onClick={() => { setIsReviewMode(false); setIsFinished(false); navigate('/student/results'); }} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+                    <button onClick={() => { setIsReviewMode(false); setIsFinished(false); navigate(isStudentUser ? '/student/results' : `${basePath}/exams`); }} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
                         <StepForward className="rotate-180" size={20} />
                     </button>
                     <h2 className="text-2xl font-bold text-gray-800">{t('review_answers')}</h2>
@@ -597,7 +604,7 @@ export const ExamRoom = () => {
             </button>
             
             <button 
-              onClick={() => navigate('/student')}
+              onClick={() => navigate(basePath)}
               className="bg-gray-900 text-white px-8 py-3 rounded-2xl font-bold hover:scale-105 transition-transform"
             >
               {t('back_dashboard')}

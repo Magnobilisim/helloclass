@@ -81,6 +81,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         return [
           { to: '/teacher', icon: LayoutDashboard, label: t('dashboard') },
           { to: '/teacher/create', icon: BookOpen, label: t('create_exam') },
+          { to: '/teacher/exams', icon: ClipboardList, label: t('exams') },
           { to: '/teacher/shop', icon: ShoppingBag, label: t('shop') },
           { to: '/teacher/profile', icon: UserIcon, label: t('profile') },
           ...common

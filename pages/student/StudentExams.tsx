@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, Sparkles, GraduationCap, Book, Repeat, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, GraduationCap, Book, Repeat, Eye } from 'lucide-react';
+import { UserRole } from '../../types';
 
 export const StudentExams = () => {
   const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, results, watchAdForPoints, manualAds } = useStore();
@@ -28,6 +29,10 @@ export const StudentExams = () => {
       if (s.id === 'sub-eng') return true; // Standard English ID
       return s.grades.includes(selectedGrade);
   });
+
+  const isStudent = user?.role === UserRole.STUDENT;
+  const basePath = user?.role === UserRole.TEACHER ? '/teacher' : '/student';
+  const shopPath = isStudent ? '/student/shop' : '/teacher/shop';
 
   const publishedExams = exams.filter(e => e.isPublished);
 
@@ -83,6 +88,10 @@ export const StudentExams = () => {
       return items;
   }, [filteredExams, examAds]);
 
+  const goToExam = (examId: string) => {
+    navigate(`${basePath}/exam/${examId}`);
+  };
+
   const handleStartOrBuy = (examId: string, price: number) => {
     const isPurchased = user?.purchasedExamIds?.includes(examId);
     if (!isPurchased && price > 0) {
@@ -99,7 +108,7 @@ export const StudentExams = () => {
   };
   const handleViewDetails = (examId: string) => {
     sessionStorage.removeItem(`exam_time_${examId}`);
-    navigate(`/student/exam/${examId}`);
+    goToExam(examId);
   };
 
   const openStartModal = (examId: string) => {
@@ -108,7 +117,7 @@ export const StudentExams = () => {
     const canEditTime = exam.timeLimit <= 0;
     if (!canEditTime) {
         sessionStorage.removeItem(`exam_time_${examId}`);
-        navigate(`/student/exam/${examId}`);
+        goToExam(examId);
         return;
     }
     setCustomTime(exam.timeLimit || 15);
@@ -118,7 +127,7 @@ export const StudentExams = () => {
   const confirmStart = () => {
       if (selectedExamId && customTime) {
           sessionStorage.setItem(`exam_time_${selectedExamId}`, customTime.toString());
-          navigate(`/student/exam/${selectedExamId}`);
+          goToExam(selectedExamId);
           setSelectedExamId(null);
           setCustomTime(null);
       }
@@ -266,7 +275,7 @@ export const StudentExams = () => {
                           {t('watch_ad_cta')}
                       </button>
                       <button
-                          onClick={() => { setShowPointModal(false); navigate('/student/shop'); }}
+                          onClick={() => { setShowPointModal(false); navigate(shopPath); }}
                           className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
                       >
                           {t('go_to_shop_cta')}

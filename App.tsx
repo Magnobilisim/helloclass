@@ -145,6 +145,16 @@ const MainRouter = () => {
                <TeacherProfile />
             </ProtectedRoute>
           } />
+          <Route path="/teacher/exams" element={
+            <ProtectedRoute roles={[UserRole.TEACHER]}>
+               <StudentExams />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/exam/:id" element={
+            <ProtectedRoute roles={[UserRole.TEACHER]}>
+               <ExamRoom />
+            </ProtectedRoute>
+          } />
           <Route path="/teacher/shop" element={
             <ProtectedRoute roles={[UserRole.TEACHER]}>
                <TeacherShop />

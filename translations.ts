@@ -523,6 +523,7 @@ export const TRANSLATIONS = {
     finalist: 'Finalist',
     prize_finalists_upcoming: 'Yaklaşan bilgi yarışmaları',
     prize_finalists_past: 'Geçmiş bilgi yarışmaları',
+    prize_students_only: 'Ödüllü sınavlara yalnızca öğrenciler katılabilir.',
 
     // Profile & Notifications & Messages
     profile: 'Profilim',
@@ -1116,6 +1117,7 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     finalist: 'Finalist',
     prize_finalists_upcoming: 'Upcoming quiz finals',
     prize_finalists_past: 'Past quiz finals',
+    prize_students_only: 'Prize contests are only available to students.',
 
     // Profile & Notifications & Messages
     profile: 'Profile',
