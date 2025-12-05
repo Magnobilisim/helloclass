@@ -253,12 +253,20 @@ export const UserProfile = () => {
                                 {schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                         </div>
-                        <button 
-                            onClick={handleSave}
-                            className="mt-4 w-full bg-brand-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-600 transition-colors"
-                        >
-                            {t('save')}
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                            <button 
+                                onClick={handleSave}
+                                className="flex-1 bg-brand-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-600 transition-colors"
+                            >
+                                {t('save')}
+                            </button>
+                            <button 
+                                onClick={logout}
+                                className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-bold border border-red-100 hover:bg-red-100 transition-colors"
+                            >
+                                {t('logout')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
