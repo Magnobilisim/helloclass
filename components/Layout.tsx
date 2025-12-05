@@ -110,13 +110,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const hasGoldenFrame = user.activeFrame === 'AVATAR_FRAME';
 
   // LOGIC FIX: Create explicit mobile links list ensuring Shop is visible
-  const socialLink: NavItemProps = { to: user.role === UserRole.ADMIN ? '/admin/social' : user.role === UserRole.TEACHER ? '/teacher/social' : '/student/social', icon: Globe, label: t('social') };
   const getMobileLinks = (): NavItemProps[] => {
       if (user.role === UserRole.STUDENT) {
           return [
               { to: '/student', icon: LayoutDashboard, label: t('dashboard') },
               { to: '/student/exams', icon: BookOpen, label: t('exams') },
-              socialLink,
+              { to: '/student/social', icon: Globe, label: t('social') },
+              { to: '/student/prize-exams', icon: Gift, label: t('prize_exams') },
               { to: '/student/profile', icon: UserIcon, label: t('profile') },
           ];
       }
@@ -124,16 +124,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           return [
               { to: '/teacher', icon: LayoutDashboard, label: t('dashboard') },
               { to: '/teacher/exams', icon: BookOpen, label: t('exams') },
-              socialLink,
+              { to: '/teacher/social', icon: Globe, label: t('social') },
               { to: '/teacher/profile', icon: UserIcon, label: t('profile') },
           ];
       }
       if (user.role === UserRole.ADMIN) {
           return [
               { to: '/admin', icon: LayoutDashboard, label: t('dashboard') },
-              { to: '/admin/users', icon: Users, label: t('users') },
-              socialLink,
-              { to: '/admin/settings', icon: Settings, label: t('settings') },
+              { to: '/admin/reports', icon: AlertTriangle, label: t('reports') },
+              { to: '/admin/exams', icon: ClipboardList, label: t('exams') },
+              { to: '/admin/social', icon: Globe, label: t('social') },
+              { to: '/admin/profile', icon: UserIcon, label: t('profile') },
           ];
       }
       return [];
@@ -244,18 +245,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Bottom Nav (Mobile) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-between items-center">
-          {getMobileLinks().map((link) => {
+        <div className="grid grid-cols-5 gap-1">
+          {getMobileLinks().map((link, index) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
-            const isSocial = link.label === t('social');
+            const isMiddle = index === 2 && link.icon === Globe;
             return (
               <Link 
                 key={link.to} 
                 to={link.to} 
                 className={`flex flex-col items-center gap-1 px-2 py-1 rounded-2xl text-[11px] font-semibold transition-all ${isActive ? 'text-brand-600' : 'text-gray-400'}`}
               >
-                <Icon size={isSocial ? 28 : 22} strokeWidth={isActive ? 2.6 : 2} />
+                <Icon size={isMiddle ? 30 : 22} strokeWidth={isActive ? 2.6 : 2} />
                 <span className="truncate max-w-[70px]">{link.label}</span>
               </Link>
             );
