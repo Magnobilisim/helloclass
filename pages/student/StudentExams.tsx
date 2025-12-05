@@ -206,7 +206,6 @@ export const StudentExams = () => {
            const subjName = availableSubjects.find(s => s.id === exam.subjectId)?.name || 'Unknown';
 
            return (
-           return (
            <div key={exam.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-transform">
               <div className="flex justify-between items-start mb-4 relative z-10">
                 <div className="flex gap-2">
