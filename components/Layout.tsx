@@ -219,31 +219,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </div>
 
       {/* Bottom Nav (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-2 py-2 flex justify-around items-center z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-        {getMobileLinks().map((link) => {
-          const Icon = link.icon;
-          const isActive = location.pathname === link.to;
-          return (
-            <Link 
-              key={link.to} 
-              to={link.to} 
-              className={`flex flex-col items-center gap-1 p-2 min-w-[64px] rounded-2xl transition-all ${isActive ? 'text-brand-600 bg-brand-50' : 'text-gray-400 active:scale-95'}`}
-            >
-              <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-[10px] font-bold truncate max-w-[60px]">{link.label}</span>
-            </Link>
-          );
-        })}
-        {/* Mobile Profile Link for Students Only (Admins/Teachers use header or specific links) */}
-        {user.role === UserRole.STUDENT && (
-            <Link 
-                to="/student/profile" 
-                className={`flex flex-col items-center gap-1 p-2 min-w-[64px] rounded-2xl transition-all ${location.pathname === '/student/profile' ? 'text-brand-600 bg-brand-50' : 'text-gray-400 active:scale-95'}`}
-            >
-                <UserIcon size={22} strokeWidth={location.pathname === '/student/profile' ? 2.5 : 2} />
-                <span className="text-[10px] font-bold">{t('profile')}</span>
-            </Link>
-        )}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+        <div className="flex gap-2 overflow-x-auto custom-scrollbar">
+          {getMobileLinks().map((link) => {
+            const Icon = link.icon;
+            const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+            return (
+              <Link 
+                key={link.to} 
+                to={link.to} 
+                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-2xl border text-[11px] font-semibold transition-all min-w-[68px] ${isActive ? 'text-brand-600 border-brand-200 bg-brand-50' : 'text-gray-500 border-transparent bg-gray-50/40'}`
+                }
+              >
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="truncate max-w-[68px]">{link.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );
