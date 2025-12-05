@@ -111,29 +111,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   // LOGIC FIX: Create explicit mobile links list ensuring Shop is visible
   const getMobileLinks = (): NavItemProps[] => {
-      const links = getLinks();
-      
+      const links = [...getLinks()];
       if (user.role === UserRole.STUDENT) {
-          // Dashboard, Exams, Social, Shop (Prioritize Shop over Results as Results is in Profile)
-          const dashboard = links.find(l => l.to === '/student');
-          const prizeLink = links.find(l => l.to === '/student/prize-exams');
-          const social = links.find(l => l.to === '/student/social');
-          const shop = links.find(l => l.to === '/student/shop');
-
-          return [dashboard, prizeLink, social, shop].filter((l): l is NavItemProps => !!l);
+          links.push({ to: '/student/profile', icon: UserIcon, label: t('profile') });
       }
-
-      if (user.role === UserRole.ADMIN) {
-          // Admin needs quick access to Dashboard, Users, Exams, and Settings on mobile
-          const dashboard = links.find(l => l.to === '/admin');
-          const usersLink = links.find(l => l.to === '/admin/users');
-          const exams = links.find(l => l.to === '/admin/exams');
-          const settings = links.find(l => l.to === '/admin/settings');
-
-          return [dashboard, usersLink, exams, settings].filter((l): l is NavItemProps => !!l);
-      }
-
-      return links.slice(0, 4);
+      return links;
   };
 
   return (
