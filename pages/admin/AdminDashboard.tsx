@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { UserRole, ShopItem, PrizeExam } from '../../types';
+import { UserRole, ShopItem, PrizeExam, ManualAd, ManualAdPlacement } from '../../types';
 import { ShieldAlert, CheckCircle, Ban, Search, Users, BookOpen, AlertTriangle, DollarSign, Trash2, Edit2, PieChart, Bookmark, Plus, LucideIcon, X, School as SchoolIcon, Layers, Megaphone, Radio, Image as ImageIcon, Coins, CreditCard, ShoppingBag, History, ChevronDown, Check, Eye, Gift, Trophy, Upload, Calendar, Star, Sparkles, Receipt, ArrowRight, Loader2, FileText, Image, AlertOctagon, Link as LinkIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { uploadMedia } from '../../services/mediaService';
@@ -19,7 +19,8 @@ export const AdminDashboard = () => {
       approvedTopics, addTopic, removeTopic, schools, addSchool, removeSchool, availableSubjects, addSubject, removeSubject, 
       shopItems, addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, payouts, payoutRequests, processPayout, resolvePayoutRequest, deleteExamImage, reportPost,
       prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta,
-      user: currentUser, t 
+      manualAds, addManualAd, updateManualAd, deleteManualAd,
+      user: currentUser, t, showAlert
   } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ export const AdminDashboard = () => {
     if (location.pathname.includes('/definitions')) return 'definitions';
     if (location.pathname.includes('/shop')) return 'shop';
     if (location.pathname.includes('/media')) return 'media';
+    if (location.pathname.includes('/ads')) return 'ads';
     if (location.pathname.includes('/prize-exams')) return 'prize-exams';
     return 'overview';
   };
@@ -83,6 +85,23 @@ export const AdminDashboard = () => {
   const [viewParticipantsId, setViewParticipantsId] = useState<string | null>(null);
   const [editingQuizInfo, setEditingQuizInfo] = useState<{ id: string; date: string; link: string }>({ id: '', date: '', link: '' });
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const adPlacementOptions: { value: ManualAdPlacement; label: string }[] = [
+      { value: 'exam', label: t('ad_placement_exam') },
+      { value: 'social', label: t('ad_placement_social') },
+      { value: 'both', label: t('ad_placement_both') },
+  ];
+  const emptyAdForm = (): Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'> => ({
+      title: '',
+      description: '',
+      imageUrl: '',
+      ctaText: '',
+      ctaUrl: '',
+      placement: 'exam',
+      isActive: true,
+      highlightLabel: ''
+  });
+  const [adForm, setAdForm] = useState<Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'>>(emptyAdForm());
+  const [editingAdId, setEditingAdId] = useState<string | null>(null);
 
   // Derived Values
   const totalUsers = users.length;
@@ -228,6 +247,53 @@ export const AdminDashboard = () => {
       }
   };
 
+  const resetAdForm = () => {
+      setAdForm(emptyAdForm());
+      setEditingAdId(null);
+  };
+
+  const handleAdSubmit = () => {
+      if (!adForm.title.trim()) {
+          showAlert(t('ad_title_required'), 'error');
+          return;
+      }
+      if (editingAdId) {
+          const existing = manualAds.find(ad => ad.id === editingAdId);
+          if (!existing) return;
+          updateManualAd({ ...existing, ...adForm });
+      } else {
+          addManualAd(adForm);
+      }
+      resetAdForm();
+  };
+
+  const handleEditAd = (ad: ManualAd) => {
+      setAdForm({
+          title: ad.title,
+          description: ad.description || '',
+          imageUrl: ad.imageUrl || '',
+          ctaText: ad.ctaText || '',
+          ctaUrl: ad.ctaUrl || '',
+          placement: ad.placement,
+          isActive: ad.isActive,
+          highlightLabel: ad.highlightLabel || ''
+      });
+      setEditingAdId(ad.id);
+  };
+
+  const handleDeleteAd = (id: string) => {
+      if (window.confirm(t('ad_delete_confirm') || 'Delete this ad?')) {
+          deleteManualAd(id);
+          if (editingAdId === id) {
+              resetAdForm();
+          }
+      }
+  };
+
+  const toggleAdStatus = (ad: ManualAd) => {
+      updateManualAd({ ...ad, isActive: !ad.isActive });
+  };
+
   const openQuizModal = (exam: PrizeExam) => {
       setEditingQuizInfo({
           id: exam.id,
@@ -270,7 +336,7 @@ export const AdminDashboard = () => {
     </div>
   );
 
-  const tabOptions = ['overview', 'users', 'exams', 'financials', 'shop', 'media', 'definitions', 'reports', 'logs', 'prize-exams'];
+  const tabOptions = ['overview', 'users', 'exams', 'financials', 'shop', 'media', 'ads', 'definitions', 'reports', 'logs', 'prize-exams'];
 
   return (
     <div className="space-y-8 pb-10">
@@ -378,6 +444,129 @@ export const AdminDashboard = () => {
                           ))}
                       </tbody>
                   </table>
+              </div>
+          </div>
+      )}
+
+      {/* Ads Tab */}
+      {activeTab === 'ads' && (
+          <div className="space-y-6 animate-fade-in">
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-6">
+                      <div>
+                          <h3 className="font-bold text-lg text-gray-900">{t('ad_management')}</h3>
+                          <p className="text-sm text-gray-500">{t('ad_preview')}</p>
+                      </div>
+                      {editingAdId && (
+                          <button onClick={resetAdForm} className="text-sm font-bold text-gray-500 hover:text-gray-800">
+                              {t('cancel')}
+                          </button>
+                      )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                          <div>
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_title')}</label>
+                              <input value={adForm.title} onChange={(e) => setAdForm(prev => ({ ...prev, title: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                          </div>
+                          <div>
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_description')}</label>
+                              <textarea value={adForm.description} onChange={(e) => setAdForm(prev => ({ ...prev, description: e.target.value }))} rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500"></textarea>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_cta_text')}</label>
+                                  <input value={adForm.ctaText} onChange={(e) => setAdForm(prev => ({ ...prev, ctaText: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                              </div>
+                              <div>
+                                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_cta_url')}</label>
+                                  <input value={adForm.ctaUrl} onChange={(e) => setAdForm(prev => ({ ...prev, ctaUrl: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                              </div>
+                          </div>
+                      </div>
+                      <div className="space-y-3">
+                          <div>
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_image_url')}</label>
+                              <input value={adForm.imageUrl} onChange={(e) => setAdForm(prev => ({ ...prev, imageUrl: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                          </div>
+                          <div>
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_highlight_label')}</label>
+                              <input value={adForm.highlightLabel} onChange={(e) => setAdForm(prev => ({ ...prev, highlightLabel: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_placement')}</label>
+                                  <select value={adForm.placement} onChange={(e) => setAdForm(prev => ({ ...prev, placement: e.target.value as ManualAdPlacement }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500">
+                                      {adPlacementOptions.map(option => (
+                                          <option key={option.value} value={option.value}>{option.label}</option>
+                                      ))}
+                                  </select>
+                              </div>
+                              <div>
+                                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_status')}</label>
+                                  <button onClick={() => setAdForm(prev => ({ ...prev, isActive: !prev.isActive }))} className={`w-full h-[50px] rounded-xl border font-bold ${adForm.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                                      {adForm.isActive ? t('ad_active') : t('ad_inactive')}
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3 mt-6">
+                      <button onClick={handleAdSubmit} className="px-6 py-3 rounded-2xl font-bold text-white bg-gray-900 hover:bg-gray-800">
+                          {editingAdId ? t('ad_save') : t('ad_create')}
+                      </button>
+                      {editingAdId && (
+                          <button onClick={resetAdForm} className="px-6 py-3 rounded-2xl font-bold text-gray-600 border border-gray-200 hover:bg-gray-50">
+                              {t('cancel')}
+                          </button>
+                      )}
+                  </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {manualAds.length === 0 ? (
+                      <div className="col-span-full bg-gray-50 border border-dashed border-gray-200 rounded-3xl p-10 text-center text-gray-400">
+                          {t('ad_empty')}
+                      </div>
+                  ) : manualAds.map(ad => (
+                      <div key={ad.id} className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                          {ad.imageUrl && (
+                              <div className="h-40 bg-gray-100 overflow-hidden">
+                                  <img src={ad.imageUrl} className="w-full h-full object-cover" />
+                              </div>
+                          )}
+                          <div className="p-5 flex-1 flex flex-col gap-3">
+                              <div className="flex items-center justify-between">
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ad.isActive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                                      {ad.isActive ? t('ad_active') : t('ad_inactive')}
+                                  </span>
+                                  <span className="text-xs font-bold text-gray-400 uppercase">{t('ad_placement')} · {adPlacementOptions.find(p => p.value === ad.placement)?.label}</span>
+                              </div>
+                              <div>
+                                  {ad.highlightLabel && <span className="text-[10px] font-black text-amber-600 uppercase">{ad.highlightLabel}</span>}
+                                  <h4 className="text-lg font-bold text-gray-900">{ad.title}</h4>
+                                  {ad.description && <p className="text-sm text-gray-500 mt-1 line-clamp-3">{ad.description}</p>}
+                              </div>
+                              {ad.ctaText && ad.ctaUrl && (
+                                  <a href={ad.ctaUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold bg-gray-900 text-white hover:bg-gray-800">
+                                      {ad.ctaText}
+                                  </a>
+                              )}
+                          </div>
+                          <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+                              <div className="flex gap-2">
+                                  <button onClick={() => toggleAdStatus(ad)} className="px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50">
+                                      {ad.isActive ? t('ad_inactive') : t('ad_active')}
+                                  </button>
+                                  <button onClick={() => handleEditAd(ad)} className="px-3 py-2 rounded-xl text-xs font-bold border border-blue-200 text-blue-600 hover:bg-blue-50">
+                                      {t('edit')}
+                                  </button>
+                              </div>
+                              <button onClick={() => handleDeleteAd(ad.id)} className="px-3 py-2 rounded-xl text-xs font-bold border border-red-200 text-red-500 hover:bg-red-50">
+                                  {t('delete')}
+                              </button>
+                          </div>
+                      </div>
+                  ))}
               </div>
           </div>
       )}

@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase, AiUsageLog, PayoutRequest } from '../types';
-import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS, TEACHER_CREDIT_PACKAGES, INITIAL_TRANSACTIONS } from '../constants';
+import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase, AiUsageLog, PayoutRequest, ManualAd } from '../types';
+import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS, TEACHER_CREDIT_PACKAGES, INITIAL_TRANSACTIONS, INITIAL_MANUAL_ADS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
 import { checkContentSafety, generateLearningReport, setSafetyLanguage } from '../services/aiService';
 
@@ -61,6 +61,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [pointPurchases, setPointPurchases] = useState<PointPurchase[]>([]);
   const [examSessions, setExamSessions] = useState<Record<string, ExamSession>>({}); 
   const [aiUsageLogs, setAiUsageLogs] = useState<AiUsageLog[]>([]);
+  const [manualAds, setManualAds] = useState<ManualAd[]>(INITIAL_MANUAL_ADS);
   
   const buildSessionKey = (studentId: string, examId: string) => `${studentId}_${examId}`;
   const generateReferralCode = () => `HC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -147,6 +148,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const loadedSessions = localStorage.getItem('hc_sessions');
     const loadedPointPurchases = localStorage.getItem('hc_point_purchases');
     const loadedAiLogs = localStorage.getItem('hc_ai_logs');
+    const loadedManualAds = localStorage.getItem('hc_manual_ads');
 
     if (loadedUsers) {
         try {
@@ -226,6 +228,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             console.error('Failed to parse AI logs', e);
         }
     }
+    if (loadedManualAds) {
+        try {
+            const parsedAds: ManualAd[] = JSON.parse(loadedManualAds);
+            if (Array.isArray(parsedAds)) {
+                setManualAds(parsedAds);
+            }
+        } catch (e) {
+            console.error('Failed to parse manual ads', e);
+            setManualAds(INITIAL_MANUAL_ADS);
+        }
+    }
     
     if (loadedTopics) {
         try {
@@ -262,6 +275,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('hc_sessions', JSON.stringify(examSessions)); }, [examSessions]);
   useEffect(() => { localStorage.setItem('hc_point_purchases', JSON.stringify(pointPurchases)); }, [pointPurchases]);
   useEffect(() => { localStorage.setItem('hc_ai_logs', JSON.stringify(aiUsageLogs)); }, [aiUsageLogs]);
+  useEffect(() => { localStorage.setItem('hc_manual_ads', JSON.stringify(manualAds)); }, [manualAds]);
   
   useEffect(() => {
     if (user) localStorage.setItem('hc_current_user', JSON.stringify(user));
@@ -1056,6 +1070,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showAlert('Item deleted', 'info');
   };
 
+  const addManualAd = (payload: Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'>) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      const newAd: ManualAd = {
+          ...payload,
+          id: `ad-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+      };
+      setManualAds(prev => [newAd, ...prev]);
+      showAlert(t('ad_created'), 'success');
+  };
+
+  const updateManualAd = (updated: ManualAd) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      setManualAds(prev => prev.map(ad => ad.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : ad));
+      showAlert(t('ad_updated'), 'success');
+  };
+
+  const deleteManualAd = (id: string) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      setManualAds(prev => prev.filter(ad => ad.id !== id));
+      showAlert(t('ad_deleted'), 'info');
+  };
+
   const sendBroadcast = (title: string, message: string, targetRole: UserRole | 'ALL') => {
       if (user?.role !== UserRole.ADMIN) return;
       
@@ -1283,13 +1321,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StoreContext.Provider value={{
-      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, payoutRequests, prizeExams, transactions, examSessions, pointPurchases, aiUsageLogs,
+      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, payoutRequests, prizeExams, transactions, examSessions, pointPurchases, aiUsageLogs, manualAds,
       login, logout, register, updateUser, banUser, deleteUser, changeRole, resetPassword, sendPasswordResetEmail,
       addExam, updateExam, deleteExam, purchaseExam, purchaseItem, toggleEquip, startExamSession, saveResult, addPost, deletePost, toggleLike, toggleDislike, addComment, reportPost, dismissReport, sendMessage, markMessageRead, updateSystemSettings,
       addTopic, removeTopic, addSchool, removeSchool, markNotificationRead, addSubject, removeSubject, toggleFollow,
       addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage, purchaseAiCredits, logAiUsage, requestPayout, resolvePayoutRequest,
       addPrizeExam, drawPrizeWinner, payEntryFee,
-      updatePrizeExamMeta,
+      updatePrizeExamMeta, addManualAd, updateManualAd, deleteManualAd,
       alert, showAlert, setLanguage, t
     }}>
       {children}

@@ -1,5 +1,5 @@
 
-import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata, PrizeExam, Transaction } from './types';
+import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata, PrizeExam, Transaction, ManualAd } from './types';
 
 // Genişletilmiş Türkiye Okul Listesi (Örneklem)
 export const INITIAL_SCHOOLS: School[] = [
@@ -476,5 +476,32 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
     type: 'success',
     isRead: true,
     timestamp: new Date(Date.now() - 3600000).toISOString()
+  }
+];
+
+export const INITIAL_MANUAL_ADS: ManualAd[] = [
+  {
+    id: 'ad-mentor-labs',
+    title: 'Mentor Labs ile canlı STEM atölyeleri',
+    description: 'Her ay sınırlı kontenjanla canlı kodlama ve robotik seansları. Hemen kayıt ol!',
+    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=60',
+    ctaText: 'Detayları Gör',
+    ctaUrl: 'https://helloclass.com/mentor-labs',
+    placement: 'exam',
+    isActive: true,
+    highlightLabel: 'Sponsorlu',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'ad-study-circle',
+    title: 'StudyCircle Premium Deneme',
+    description: 'Sosyal paylaşımda öne çıkmak ve özel rozet kazanmak için 7 günlük ücretsiz deneyin.',
+    imageUrl: 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=800&q=60',
+    ctaText: 'Hemen Başla',
+    ctaUrl: 'https://helloclass.com/studycircle',
+    placement: 'social',
+    isActive: true,
+    highlightLabel: 'Önerilen',
+    createdAt: new Date().toISOString()
   }
 ];

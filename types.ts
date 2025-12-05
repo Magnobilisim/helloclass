@@ -324,6 +324,22 @@ export interface PrizeExam {
   finalistQuizLink?: string;
 }
 
+export type ManualAdPlacement = 'exam' | 'social' | 'both';
+
+export interface ManualAd {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  placement: ManualAdPlacement;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  highlightLabel?: string;
+}
+
 export type AlertType = 'success' | 'error' | 'info' | 'warning';
 
 export interface StoreContextType {
@@ -349,6 +365,7 @@ export interface StoreContextType {
   examSessions: Record<string, ExamSession>; 
   pointPurchases: PointPurchase[];
   aiUsageLogs: AiUsageLog[];
+  manualAds: ManualAd[];
   
   // Auth
   login: (email: string, role: UserRole) => boolean;
@@ -408,6 +425,9 @@ export interface StoreContextType {
   drawPrizeWinner: (prizeExamId: string) => void;
   payEntryFee: (prizeExamId: string, amount: number) => boolean;
   updatePrizeExamMeta: (prizeExamId: string, data: Partial<PrizeExam>) => void;
+  addManualAd: (ad: Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateManualAd: (ad: ManualAd) => void;
+  deleteManualAd: (id: string) => void;
 
   // Utils
   alert: { message: string; type: AlertType } | null;

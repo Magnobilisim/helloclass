@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, Sparkles, GraduationCap, Book, Repeat, Eye } from 'lucide-react';
 
 export const StudentExams = () => {
-  const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, results, watchAdForPoints } = useStore();
+  const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, results, watchAdForPoints, manualAds } = useStore();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -62,6 +62,26 @@ export const StudentExams = () => {
       if (!user) return new Set<string>();
       return new Set(results.filter(r => r.studentId === user.id).map(r => r.examId));
   }, [results, user]);
+
+  const examAds = useMemo(() => manualAds.filter(ad => ad.isActive && (ad.placement === 'exam' || ad.placement === 'both')), [manualAds]);
+
+  const examsWithAds = useMemo(() => {
+      if (examAds.length === 0) {
+          return filteredExams.map(exam => ({ type: 'exam' as const, exam }));
+      }
+      const items: Array<{ type: 'exam'; exam: typeof filteredExams[number] } | { type: 'ad'; ad: typeof examAds[number]; key: string }> = [];
+      let adPointer = 0;
+      const FREQUENCY = 4;
+      filteredExams.forEach((exam, index) => {
+          if (index > 0 && index % FREQUENCY === 0) {
+              const ad = examAds[adPointer % examAds.length];
+              items.push({ type: 'ad', ad, key: `exam-feed-ad-${index}-${ad.id}-${adPointer}` });
+              adPointer += 1;
+          }
+          items.push({ type: 'exam', exam });
+      });
+      return items;
+  }, [filteredExams, examAds]);
 
   const handleStartOrBuy = (examId: string, price: number) => {
     const isPurchased = user?.purchasedExamIds?.includes(examId);
@@ -154,13 +174,38 @@ export const StudentExams = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredExams.map(exam => {
+        {examsWithAds.map(item => {
+          if (item.type === 'ad') {
+              const ad = item.ad;
+              return (
+                <div key={item.key} className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-5 rounded-3xl shadow-lg border border-gray-800 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-300">{t('ads')}</span>
+                        {ad.highlightLabel && <span className="text-[10px] font-black text-amber-300 uppercase">{ad.highlightLabel}</span>}
+                    </div>
+                    <h4 className="text-xl font-black leading-tight">{ad.title}</h4>
+                    {ad.description && <p className="text-sm text-gray-300">{ad.description}</p>}
+                    {ad.imageUrl && (
+                        <div className="rounded-2xl overflow-hidden border border-white/10 mt-2">
+                            <img src={ad.imageUrl} className="w-full h-40 object-cover" />
+                        </div>
+                    )}
+                    {ad.ctaText && ad.ctaUrl && (
+                        <a href={ad.ctaUrl} target="_blank" rel="noreferrer" className="mt-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-gray-900 font-bold text-sm hover:opacity-90 transition-opacity">
+                            {ad.ctaText}
+                        </a>
+                    )}
+                </div>
+              );
+          }
+          const exam = item.exam;
            const isPurchased = user?.purchasedExamIds?.includes(exam.id);
            const isSolved = solvedExamIds.has(exam.id);
            const isFree = exam.price === 0;
            const canAfford = (user?.points || 0) >= exam.price;
            const subjName = availableSubjects.find(s => s.id === exam.subjectId)?.name || 'Unknown';
 
+           return (
            return (
            <div key={exam.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-transform">
               <div className="flex justify-between items-start mb-4 relative z-10">

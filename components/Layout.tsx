@@ -94,6 +94,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           { to: '/admin/financials', icon: PieChart, label: t('financials') },
           { to: '/admin/definitions', icon: Bookmark, label: t('definitions') },
           { to: '/admin/logs', icon: FileText, label: t('logs') },
+          { to: '/admin/ads', icon: Megaphone, label: t('ads') },
           { to: '/admin/settings', icon: Settings, label: t('settings') },
           ...common
         ];

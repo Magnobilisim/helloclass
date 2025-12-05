@@ -207,6 +207,11 @@ const MainRouter = () => {
                <AdminDashboard /> 
             </ProtectedRoute>
           } />
+          <Route path="/admin/ads" element={
+            <ProtectedRoute roles={[UserRole.ADMIN]}>
+               <AdminDashboard /> 
+            </ProtectedRoute>
+          } />
           <Route path="/admin/settings" element={
             <ProtectedRoute roles={[UserRole.ADMIN]}>
                <AdminSettings />

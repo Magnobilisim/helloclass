@@ -9,7 +9,7 @@ import getCroppedImg from '../../utils/imageUtils';
 import { uploadMedia } from '../../services/mediaService';
 
 export const SocialFeed = () => {
-  const { user, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert } = useStore();
+  const { user, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert, manualAds } = useStore();
   const navigate = useNavigate();
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | ''>(''); // This will hold subject ID
@@ -147,6 +147,26 @@ export const SocialFeed = () => {
       return true;
   });
 
+  const socialAds = React.useMemo(() => manualAds.filter(ad => ad.isActive && (ad.placement === 'social' || ad.placement === 'both')), [manualAds]);
+
+  const feedWithAds = React.useMemo(() => {
+      if (!socialAds.length) {
+          return filteredPosts.map(post => ({ type: 'post' as const, post }));
+      }
+      const items: Array<{ type: 'post'; post: typeof filteredPosts[number] } | { type: 'ad'; ad: typeof socialAds[number]; key: string }> = [];
+      const FREQUENCY = 5;
+      let adIndex = 0;
+      filteredPosts.forEach((post, index) => {
+          if (index > 0 && index % FREQUENCY === 0) {
+              const ad = socialAds[adIndex % socialAds.length];
+              items.push({ type: 'ad', ad, key: `social-feed-ad-${index}-${ad.id}-${adIndex}` });
+              adIndex++;
+          }
+          items.push({ type: 'post', post });
+      });
+      return items;
+  }, [filteredPosts, socialAds]);
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-20 relative">
        {/* Cropper Modal */}
@@ -211,8 +231,32 @@ export const SocialFeed = () => {
        </div>
 
        {/* Feed */}
-       <div className="space-y-4">
-          {filteredPosts.length > 0 ? filteredPosts.map(post => {
+      <div className="space-y-4">
+         {feedWithAds.length > 0 ? feedWithAds.map(item => {
+            if (item.type === 'ad') {
+                const ad = item.ad;
+                return (
+                    <div key={item.key} className="bg-white p-5 rounded-3xl border border-amber-100 shadow-sm flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-widest text-amber-500">{t('ads')}</span>
+                            {ad.highlightLabel && <span className="text-[10px] font-black text-amber-400 uppercase">{ad.highlightLabel}</span>}
+                        </div>
+                        <h4 className="text-lg font-black text-gray-900">{ad.title}</h4>
+                        {ad.description && <p className="text-sm text-gray-600">{ad.description}</p>}
+                        {ad.imageUrl && (
+                            <div className="rounded-2xl overflow-hidden border border-gray-100">
+                                <img src={ad.imageUrl} className="w-full h-44 object-cover" />
+                            </div>
+                        )}
+                        {ad.ctaText && ad.ctaUrl && (
+                            <a href={ad.ctaUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold bg-amber-500 text-white hover:bg-amber-600">
+                                {ad.ctaText}
+                            </a>
+                        )}
+                    </div>
+                );
+            }
+            const post = item.post;
              const schoolName = post.schoolId ? schools.find(s => s.id === post.schoolId)?.name : 'Global';
              const isMe = user?.id === post.authorId;
              const isFollowing = user?.following?.includes(post.authorId);
@@ -267,7 +311,7 @@ export const SocialFeed = () => {
                     </div>
                 )}
              </div>
-          )}) : <div className="text-center py-10 text-gray-400">No posts found.</div>}
+            )}) : <div className="text-center py-10 text-gray-400">No posts found.</div>}
        </div>
 
        {/* Safety Modal */}
