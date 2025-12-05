@@ -2,11 +2,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { ThumbsUp, ThumbsDown, MessageSquare, Send, AlertTriangle, Filter, Loader2, X, Globe, ShieldAlert, UserPlus, UserCheck, Image as ImageIcon, Check, Crop, ZoomIn, ZoomOut, RotateCw, Layout, Grid } from 'lucide-react';
-import { ReportReason } from '../../types';
+import { ManualAd, ReportReason, UserRole } from '../../types';
 import { Link, useNavigate } from 'react-router-dom';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../../utils/imageUtils';
 import { uploadMedia } from '../../services/mediaService';
+import { useAdTracking } from '../../hooks/useAdTracking';
 
 export const SocialFeed = () => {
   const { user, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert, manualAds } = useStore();
@@ -148,6 +149,8 @@ export const SocialFeed = () => {
   });
 
   const socialAds = React.useMemo(() => manualAds.filter(ad => ad.isActive && (ad.placement === 'social' || ad.placement === 'both')), [manualAds]);
+  const userRole = user?.role;
+  const locationHint = user?.schoolId;
 
   const feedWithAds = React.useMemo(() => {
       if (!socialAds.length) {
@@ -238,26 +241,15 @@ export const SocialFeed = () => {
       <div className="space-y-4">
          {feedWithAds.length > 0 ? feedWithAds.map(item => {
             if (item.type === 'ad') {
-                const ad = item.ad;
                 return (
-                    <div key={item.key} className="bg-white p-5 rounded-3xl border border-amber-100 shadow-sm flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-widest text-amber-500">{t('ads')}</span>
-                            {ad.highlightLabel && <span className="text-[10px] font-black text-amber-400 uppercase">{ad.highlightLabel}</span>}
-                        </div>
-                        <h4 className="text-lg font-black text-gray-900">{ad.title}</h4>
-                        {ad.description && <p className="text-sm text-gray-600">{ad.description}</p>}
-                        {ad.imageUrl && (
-                            <div className="rounded-2xl overflow-hidden border border-gray-100">
-                                <img src={ad.imageUrl} className="w-full h-44 object-cover" />
-                            </div>
-                        )}
-                        {ad.ctaText && ad.ctaUrl && (
-                            <a href={ad.ctaUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold bg-amber-500 text-white hover:bg-amber-600">
-                                {ad.ctaText}
-                            </a>
-                        )}
-                    </div>
+                    <SocialAdCard
+                      key={item.key}
+                      ad={item.ad}
+                      label={t('ads')}
+                      userId={user?.id}
+                      userRole={userRole}
+                      locationHint={locationHint}
+                    />
                 );
             }
             const post = item.post;
@@ -359,6 +351,50 @@ export const SocialFeed = () => {
                 </div>
             </div>
        )}
+    </div>
+  );
+};
+
+const SocialAdCard: React.FC<{
+  ad: ManualAd;
+  label: string;
+  userId?: string;
+  userRole?: UserRole;
+  locationHint?: string;
+}> = ({ ad, label, userId, userRole, locationHint }) => {
+  const { adRef, logAdClick } = useAdTracking({
+      adId: ad.id,
+      placement: ad.placement,
+      context: 'social',
+      userId,
+      userRole,
+      locationHint
+  });
+
+  return (
+    <div ref={adRef} className="bg-white p-5 rounded-3xl border border-amber-100 shadow-sm flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-widest text-amber-500">{label}</span>
+            {ad.highlightLabel && <span className="text-[10px] font-black text-amber-400 uppercase">{ad.highlightLabel}</span>}
+        </div>
+        <h4 className="text-lg font-black text-gray-900">{ad.title}</h4>
+        {ad.description && <p className="text-sm text-gray-600">{ad.description}</p>}
+        {ad.imageUrl && (
+            <div className="rounded-2xl overflow-hidden border border-gray-100">
+                <img src={ad.imageUrl} className="w-full h-44 object-cover" />
+            </div>
+        )}
+        {ad.ctaText && ad.ctaUrl && (
+            <a
+              href={ad.ctaUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={logAdClick}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold bg-amber-500 text-white hover:bg-amber-600"
+            >
+                {ad.ctaText}
+            </a>
+        )}
     </div>
   );
 };

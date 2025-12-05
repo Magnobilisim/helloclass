@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, GraduationCap, Book, Repeat, Eye } from 'lucide-react';
-import { UserRole } from '../../types';
+import { ManualAd, UserRole } from '../../types';
+import { useAdTracking } from '../../hooks/useAdTracking';
 
 export const StudentExams = () => {
   const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, results, watchAdForPoints, manualAds } = useStore();
@@ -33,6 +34,7 @@ export const StudentExams = () => {
   const isStudent = user?.role === UserRole.STUDENT;
   const basePath = user?.role === UserRole.TEACHER ? '/teacher' : '/student';
   const shopPath = isStudent ? '/student/shop' : '/teacher/shop';
+  const locationHint = user?.schoolId;
 
   const publishedExams = exams.filter(e => e.isPublished);
 
@@ -189,26 +191,15 @@ export const StudentExams = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {examsWithAds.map(item => {
           if (item.type === 'ad') {
-              const ad = item.ad;
               return (
-                <div key={item.key} className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-5 rounded-3xl shadow-lg border border-gray-800 flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-gray-300">{t('ads')}</span>
-                        {ad.highlightLabel && <span className="text-[10px] font-black text-amber-300 uppercase">{ad.highlightLabel}</span>}
-                    </div>
-                    <h4 className="text-xl font-black leading-tight">{ad.title}</h4>
-                    {ad.description && <p className="text-sm text-gray-300">{ad.description}</p>}
-                    {ad.imageUrl && (
-                        <div className="rounded-2xl overflow-hidden border border-white/10 mt-2">
-                            <img src={ad.imageUrl} className="w-full h-40 object-cover" />
-                        </div>
-                    )}
-                    {ad.ctaText && ad.ctaUrl && (
-                        <a href={ad.ctaUrl} target="_blank" rel="noreferrer" className="mt-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-gray-900 font-bold text-sm hover:opacity-90 transition-opacity">
-                            {ad.ctaText}
-                        </a>
-                    )}
-                </div>
+                <ExamAdCard
+                  key={item.key}
+                  ad={item.ad}
+                  label={t('ads')}
+                  userId={user?.id}
+                  userRole={user?.role}
+                  locationHint={locationHint}
+                />
               );
           }
           const exam = item.exam;
@@ -296,4 +287,48 @@ export const StudentExams = () => {
       )}
     </div>
   );
+
+const ExamAdCard: React.FC<{
+  ad: ManualAd;
+  label: string;
+  userId?: string;
+  userRole?: UserRole;
+  locationHint?: string;
+}> = ({ ad, label, userId, userRole, locationHint }) => {
+  const { adRef, logAdClick } = useAdTracking({
+      adId: ad.id,
+      placement: ad.placement,
+      context: 'exam',
+      userId,
+      userRole,
+      locationHint
+  });
+
+  return (
+    <div ref={adRef} className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-5 rounded-3xl shadow-lg border border-gray-800 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-300">{label}</span>
+            {ad.highlightLabel && <span className="text-[10px] font-black text-amber-300 uppercase">{ad.highlightLabel}</span>}
+        </div>
+        <h4 className="text-xl font-black leading-tight">{ad.title}</h4>
+        {ad.description && <p className="text-sm text-gray-300">{ad.description}</p>}
+        {ad.imageUrl && (
+            <div className="rounded-2xl overflow-hidden border border-white/10 mt-2">
+                <img src={ad.imageUrl} className="w-full h-40 object-cover" />
+            </div>
+        )}
+        {ad.ctaText && ad.ctaUrl && (
+            <a
+              href={ad.ctaUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={logAdClick}
+              className="mt-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-gray-900 font-bold text-sm hover:opacity-90 transition-opacity"
+            >
+                {ad.ctaText}
+            </a>
+        )}
+    </div>
+  );
+};
 };
