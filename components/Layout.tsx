@@ -110,12 +110,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const hasGoldenFrame = user.activeFrame === 'AVATAR_FRAME';
 
   // LOGIC FIX: Create explicit mobile links list ensuring Shop is visible
+  const socialLink: NavItemProps = { to: user.role === UserRole.ADMIN ? '/admin/social' : user.role === UserRole.TEACHER ? '/teacher/social' : '/student/social', icon: Globe, label: t('social') };
   const getMobileLinks = (): NavItemProps[] => {
       if (user.role === UserRole.STUDENT) {
           return [
               { to: '/student', icon: LayoutDashboard, label: t('dashboard') },
               { to: '/student/exams', icon: BookOpen, label: t('exams') },
-              { to: '/student/prize-exams', icon: Gift, label: t('prize_exams') },
+              socialLink,
               { to: '/student/profile', icon: UserIcon, label: t('profile') },
           ];
       }
@@ -123,7 +124,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           return [
               { to: '/teacher', icon: LayoutDashboard, label: t('dashboard') },
               { to: '/teacher/exams', icon: BookOpen, label: t('exams') },
-              { to: '/teacher/shop', icon: ShoppingBag, label: t('shop') },
+              socialLink,
               { to: '/teacher/profile', icon: UserIcon, label: t('profile') },
           ];
       }
@@ -131,7 +132,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           return [
               { to: '/admin', icon: LayoutDashboard, label: t('dashboard') },
               { to: '/admin/users', icon: Users, label: t('users') },
-              { to: '/admin/exams', icon: ClipboardList, label: t('exams') },
+              socialLink,
               { to: '/admin/settings', icon: Settings, label: t('settings') },
           ];
       }
@@ -212,7 +213,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                  <h1 className="font-extrabold text-gray-800 text-lg">HelloClass</h1>
               </div>
               <div className="flex items-center gap-3">
-                  <Link to="/chat" className="relative p-2 bg-gray-50 rounded-full text-gray-600">
+          <Link to={user.role === UserRole.STUDENT ? '/student/shop' : user.role === UserRole.TEACHER ? '/teacher/shop' : '/admin/shop'} className="relative p-2 bg-gray-50 rounded-full text-gray-600">
+             <ShoppingBag size={20} />
+          </Link>
+          <Link to="/chat" className="relative p-2 bg-gray-50 rounded-full text-gray-600">
                      <MessageCircle size={20} />
                   </Link>
                   {quickLinks.notifications && (
@@ -240,17 +244,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Bottom Nav (Mobile) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around items-center">
+        <div className="flex justify-between items-center">
           {getMobileLinks().map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+            const isSocial = link.label === t('social');
             return (
               <Link 
                 key={link.to} 
                 to={link.to} 
-                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-2xl text-[11px] font-semibold transition-all ${isActive ? 'text-brand-600' : 'text-gray-400'}`}
+                className={`flex flex-col items-center gap-1 px-2 py-1 rounded-2xl text-[11px] font-semibold transition-all ${isActive ? 'text-brand-600' : 'text-gray-400'}`}
               >
-                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                <Icon size={isSocial ? 28 : 22} strokeWidth={isActive ? 2.6 : 2} />
                 <span className="truncate max-w-[70px]">{link.label}</span>
               </Link>
             );
