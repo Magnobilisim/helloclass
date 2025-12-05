@@ -4,7 +4,7 @@ import { useStore } from '../context/StoreContext';
 import { UserRole } from '../types';
 import { 
   BookOpen, LayoutDashboard, ShoppingBag, 
-  Users, Settings, LogOut, MessageCircle, Star, Languages, AlertTriangle, FileText, ClipboardList, PieChart, Bookmark, LucideIcon, User as UserIcon, Bell, Globe, Gift
+  Users, Settings, LogOut, MessageCircle, Star, Languages, AlertTriangle, FileText, ClipboardList, PieChart, Bookmark, LucideIcon, User as UserIcon, Bell, Globe, Gift, Megaphone
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
