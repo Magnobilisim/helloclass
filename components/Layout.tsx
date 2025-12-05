@@ -111,11 +111,31 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   // LOGIC FIX: Create explicit mobile links list ensuring Shop is visible
   const getMobileLinks = (): NavItemProps[] => {
-      const links = [...getLinks()];
       if (user.role === UserRole.STUDENT) {
-          links.push({ to: '/student/profile', icon: UserIcon, label: t('profile') });
+          return [
+              { to: '/student', icon: LayoutDashboard, label: t('dashboard') },
+              { to: '/student/exams', icon: BookOpen, label: t('exams') },
+              { to: '/student/prize-exams', icon: Gift, label: t('prize_exams') },
+              { to: '/student/profile', icon: UserIcon, label: t('profile') },
+          ];
       }
-      return links;
+      if (user.role === UserRole.TEACHER) {
+          return [
+              { to: '/teacher', icon: LayoutDashboard, label: t('dashboard') },
+              { to: '/teacher/exams', icon: BookOpen, label: t('exams') },
+              { to: '/teacher/shop', icon: ShoppingBag, label: t('shop') },
+              { to: '/teacher/profile', icon: UserIcon, label: t('profile') },
+          ];
+      }
+      if (user.role === UserRole.ADMIN) {
+          return [
+              { to: '/admin', icon: LayoutDashboard, label: t('dashboard') },
+              { to: '/admin/users', icon: Users, label: t('users') },
+              { to: '/admin/exams', icon: ClipboardList, label: t('exams') },
+              { to: '/admin/settings', icon: Settings, label: t('settings') },
+          ];
+      }
+      return [];
   };
 
   return (
@@ -220,7 +240,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Bottom Nav (Mobile) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex gap-2 overflow-x-auto custom-scrollbar">
+        <div className="flex justify-around items-center">
           {getMobileLinks().map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
@@ -228,11 +248,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <Link 
                 key={link.to} 
                 to={link.to} 
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-2xl border text-[11px] font-semibold transition-all min-w-[68px] ${isActive ? 'text-brand-600 border-brand-200 bg-brand-50' : 'text-gray-500 border-transparent bg-gray-50/40'}`
-                }
+                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-2xl text-[11px] font-semibold transition-all ${isActive ? 'text-brand-600' : 'text-gray-400'}`}
               >
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="truncate max-w-[68px]">{link.label}</span>
+                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="truncate max-w-[70px]">{link.label}</span>
               </Link>
             );
           })}
