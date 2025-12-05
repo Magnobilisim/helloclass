@@ -272,6 +272,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (TRANSLATIONS[language] && TRANSLATIONS[language][key as TranslationKeys]) || key;
   };
 
+  const getSafetyFeedback = (aiReason?: string) => {
+    if (language === 'tr') {
+        return t('safety_warning_detail');
+    }
+    return aiReason || t('safety_warning_desc');
+  };
+
   const showAlert = (message: string, type: AlertType) => {
     setAlert({ message, type });
     setTimeout(() => setAlert(null), 3000);
@@ -811,8 +818,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     const safetyResult = await checkContentSafety(content);
     if (!safetyResult.safe) {
-        addNotification(user.id, t('content_unsafe'), `${t('content_unsafe')}: ${safetyResult.reason}`, 'error');
-        return { success: false, reason: safetyResult.reason || 'Unsafe content' };
+        const localizedReason = getSafetyFeedback(safetyResult.reason);
+        addNotification(user.id, t('content_unsafe'), localizedReason, 'error');
+        return { success: false, reason: localizedReason };
     }
 
     const newPost: Post = {
@@ -856,7 +864,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const safetyResult = await checkContentSafety(text);
       if (!safetyResult.safe) {
-          showAlert(`Comment blocked: ${safetyResult.reason}`, 'error');
+          showAlert(getSafetyFeedback(safetyResult.reason), 'error');
           return;
       }
 
