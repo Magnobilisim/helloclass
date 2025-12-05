@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase } from '../types';
-import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS } from '../constants';
+import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase, AiUsageLog } from '../types';
+import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS, TEACHER_CREDIT_PACKAGES, INITIAL_TRANSACTIONS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
 import { checkContentSafety, generateLearningReport, setSafetyLanguage } from '../services/aiService';
 
@@ -56,9 +56,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [shopItems, setShopItems] = useState<ShopItem[]>(SHOP_ITEMS);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [prizeExams, setPrizeExams] = useState<PrizeExam[]>(INITIAL_PRIZE_EXAMS);
-  const [transactions, setTransactions] = useState<Transaction[]>([]); 
+  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS); 
   const [pointPurchases, setPointPurchases] = useState<PointPurchase[]>([]);
   const [examSessions, setExamSessions] = useState<Record<string, ExamSession>>({}); 
+  const [aiUsageLogs, setAiUsageLogs] = useState<AiUsageLog[]>([]);
   
   const buildSessionKey = (studentId: string, examId: string) => `${studentId}_${examId}`;
   const generateReferralCode = () => `HC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -77,6 +78,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       aiWizardCost: 200,
       aiExplainCost: 25,
       joker5050Cost: 30,
+      teacherCreditPackages: TEACHER_CREDIT_PACKAGES,
       socialLinks: {
         youtube: '',
         instagram: '',
@@ -88,6 +90,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...defaultSettings,
       ...incoming,
       pointPackages: incoming?.pointPackages && incoming.pointPackages.length ? incoming.pointPackages : defaultSettings.pointPackages,
+      teacherCreditPackages: incoming?.teacherCreditPackages && incoming.teacherCreditPackages.length ? incoming.teacherCreditPackages : defaultSettings.teacherCreditPackages,
       aiWizardCost: typeof incoming?.aiWizardCost === 'number' ? incoming.aiWizardCost : defaultSettings.aiWizardCost,
       aiExplainCost: typeof incoming?.aiExplainCost === 'number' ? incoming.aiExplainCost : defaultSettings.aiExplainCost,
       joker5050Cost: typeof incoming?.joker5050Cost === 'number' ? incoming.joker5050Cost : defaultSettings.joker5050Cost,
@@ -141,6 +144,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const loadedTransactions = localStorage.getItem('hc_transactions');
     const loadedSessions = localStorage.getItem('hc_sessions');
     const loadedPointPurchases = localStorage.getItem('hc_point_purchases');
+    const loadedAiLogs = localStorage.getItem('hc_ai_logs');
 
     if (loadedUsers) {
         try {
@@ -188,13 +192,29 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
         setPrizeExams(INITIAL_PRIZE_EXAMS);
     }
-    if (loadedTransactions) setTransactions(JSON.parse(loadedTransactions));
+    if (loadedTransactions) {
+        try {
+            setTransactions(JSON.parse(loadedTransactions));
+        } catch (e) {
+            console.error('Failed to parse transactions', e);
+            setTransactions(INITIAL_TRANSACTIONS);
+        }
+    } else {
+        setTransactions(INITIAL_TRANSACTIONS);
+    }
     if (loadedSessions) setExamSessions(JSON.parse(loadedSessions));
     if (loadedPointPurchases) {
         try {
             setPointPurchases(JSON.parse(loadedPointPurchases));
         } catch (e) {
             console.error('Failed to parse point purchases', e);
+        }
+    }
+    if (loadedAiLogs) {
+        try {
+            setAiUsageLogs(JSON.parse(loadedAiLogs));
+        } catch (e) {
+            console.error('Failed to parse AI logs', e);
         }
     }
     
@@ -231,6 +251,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('hc_transactions', JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem('hc_sessions', JSON.stringify(examSessions)); }, [examSessions]);
   useEffect(() => { localStorage.setItem('hc_point_purchases', JSON.stringify(pointPurchases)); }, [pointPurchases]);
+  useEffect(() => { localStorage.setItem('hc_ai_logs', JSON.stringify(aiUsageLogs)); }, [aiUsageLogs]);
   
   useEffect(() => {
     if (user) localStorage.setItem('hc_current_user', JSON.stringify(user));
@@ -536,6 +557,47 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     addNotification(user.id, t('points_added_title'), t('points_added_body').replace('{points}', `${pkg.points}`), 'success');
     showAlert(t('points_added_title'), 'success');
     return true;
+  };
+
+  const purchaseAiCredits = (packageId: string): boolean => {
+    if (!user) {
+        showAlert(t('login_title'), 'error');
+        return false;
+    }
+    if (user.role !== UserRole.TEACHER && user.role !== UserRole.ADMIN) {
+        showAlert(t('teacher_only_feature'), 'error');
+        return false;
+    }
+    const pkg = systemSettings.teacherCreditPackages?.find(p => p.id === packageId);
+    if (!pkg) {
+        showAlert(t('package_not_found'), 'error');
+        return false;
+    }
+    updateUser({
+        ...user,
+        points: user.points + pkg.points
+    });
+    const purchase: PointPurchase = {
+        id: `ai-pp-${Date.now()}`,
+        userId: user.id,
+        packageId: pkg.id,
+        points: pkg.points,
+        price: pkg.price,
+        timestamp: new Date().toISOString()
+    };
+    setPointPurchases(prev => [purchase, ...prev]);
+    showAlert(t('points_added_title'), 'success');
+    addNotification(user.id, t('points_added_title'), t('ai_credits_added_body').replace('{points}', `${pkg.points}`), 'success');
+    return true;
+  };
+
+  const logAiUsage = (entry: Omit<AiUsageLog, 'id' | 'timestamp'> & { note?: string }) => {
+    const log: AiUsageLog = {
+        id: `ai-usage-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        ...entry
+    };
+    setAiUsageLogs(prev => [log, ...prev]);
   };
 
   const toggleEquip = (itemType: string) => {
@@ -1160,11 +1222,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StoreContext.Provider value={{
-      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, prizeExams, transactions, examSessions, pointPurchases,
+      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, prizeExams, transactions, examSessions, pointPurchases, aiUsageLogs,
       login, logout, register, updateUser, banUser, deleteUser, changeRole, resetPassword, sendPasswordResetEmail,
       addExam, updateExam, deleteExam, purchaseExam, purchaseItem, toggleEquip, startExamSession, saveResult, addPost, deletePost, toggleLike, toggleDislike, addComment, reportPost, dismissReport, sendMessage, markMessageRead, updateSystemSettings,
       addTopic, removeTopic, addSchool, removeSchool, markNotificationRead, addSubject, removeSubject, toggleFollow,
-      addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage,
+      addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage, purchaseAiCredits, logAiUsage,
       addPrizeExam, drawPrizeWinner, payEntryFee,
       updatePrizeExamMeta,
       alert, showAlert, setLanguage, t

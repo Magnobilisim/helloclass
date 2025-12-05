@@ -75,6 +75,13 @@ export interface Question {
   explanationImage?: string;
 }
 
+export interface ExamCurriculumPath {
+  subjectId: string;
+  topicName: string;
+  grade?: number;
+  level?: string;
+}
+
 export interface Exam {
   id: string;
   title: string;
@@ -95,6 +102,8 @@ export interface Exam {
   createdAt?: string; // Audit
   updatedAt?: string; // Audit
   isDeleted?: boolean; // Soft Delete
+  topicKey?: string;
+  curriculumPath?: ExamCurriculumPath;
 }
 
 export interface ExamResult {
@@ -213,6 +222,7 @@ export interface SystemSettings {
   aiWizardCost: number;
   aiExplainCost: number;
   joker5050Cost: number;
+  teacherCreditPackages: PointPackage[];
   socialLinks?: {
     youtube?: string;
     instagram?: string;
@@ -250,6 +260,19 @@ export interface TopicMetadata {
   name: string;
   grade?: number;
   level?: string;
+}
+
+export interface AiUsageLog {
+  id: string;
+  userId: string;
+  examId?: string;
+  questionIndex?: number;
+  cost: number;
+  creditsAfter: number;
+  topic?: string;
+  subjectId?: string;
+  timestamp: string;
+  note?: string;
 }
 
 export interface SubjectDef {
@@ -311,6 +334,7 @@ export interface StoreContextType {
   transactions: Transaction[]; 
   examSessions: Record<string, ExamSession>; 
   pointPurchases: PointPurchase[];
+  aiUsageLogs: AiUsageLog[];
   
   // Auth
   login: (email: string, role: UserRole) => boolean;
@@ -360,6 +384,8 @@ export interface StoreContextType {
   deleteExamImage: (examId: string, questionId: string, type: 'question' | 'option' | 'explanation', optionIndex?: number) => void;
   watchAdForPoints: () => void;
   purchasePointPackage: (packageId: string) => boolean;
+  purchaseAiCredits: (packageId: string) => boolean;
+  logAiUsage: (entry: Omit<AiUsageLog, 'id' | 'timestamp'> & { note?: string }) => void;
   
   // Prize Exam Features
   addPrizeExam: (exam: PrizeExam) => void;

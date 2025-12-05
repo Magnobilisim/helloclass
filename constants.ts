@@ -1,5 +1,5 @@
 
-import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata, PrizeExam } from './types';
+import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata, PrizeExam, Transaction } from './types';
 
 // Genişletilmiş Türkiye Okul Listesi (Örneklem)
 export const INITIAL_SCHOOLS: School[] = [
@@ -76,6 +76,12 @@ export const DEFAULT_POINT_PACKAGES: PointPackage[] = [
   { id: 'pkg-100', name: 'Bronz Paket', points: 100, price: 19, description: 'Hızlı başlangıç için ideal.' },
   { id: 'pkg-300', name: 'Gümüş Paket', points: 300, price: 49, description: 'Daha fazla pratik için.' },
   { id: 'pkg-600', name: 'Altın Paket', points: 600, price: 89, description: 'En popüler paket.' }
+];
+
+export const TEACHER_CREDIT_PACKAGES: PointPackage[] = [
+  { id: 'teach-150', name: 'AI Starter', points: 150, price: 35, description: 'Deneme sınavları için.' },
+  { id: 'teach-400', name: 'AI Pro', points: 400, price: 79, description: 'Sınıf içi ihtiyaçlar için ideal.' },
+  { id: 'teach-900', name: 'AI Studio', points: 900, price: 159, description: 'Kurumsal öğretmen paketimiz.' }
 ];
 
 export const INITIAL_USERS: User[] = [
@@ -263,6 +269,33 @@ export const INITIAL_PRIZE_EXAMS: PrizeExam[] = [
     finalistQuizLink: 'https://meet.helloclass.com/fen-super-ligi',
     drawDate: '2025-11-30T18:00:00.000Z',
     participants: ['finalist-1', 'finalist-2', 'finalist-3', 'student1', 'student2']
+  }
+];
+
+export const INITIAL_TRANSACTIONS: Transaction[] = [
+  {
+    id: 'txn-seed-1',
+    examId: 'exam1',
+    teacherId: 'teacher1',
+    studentId: 'student1',
+    amount: 0,
+    timestamp: '2025-11-01T10:00:00.000Z'
+  },
+  {
+    id: 'txn-seed-2',
+    examId: 'exam2',
+    teacherId: 'teacher1',
+    studentId: 'student1',
+    amount: 50,
+    timestamp: '2025-11-02T14:30:00.000Z'
+  },
+  {
+    id: 'txn-seed-3',
+    examId: 'exam2',
+    teacherId: 'teacher1',
+    studentId: 'student2',
+    amount: 50,
+    timestamp: '2025-11-04T09:15:00.000Z'
   }
 ];
 

@@ -2,15 +2,25 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Question, Exam, UserRole } from '../../types';
+import { Question, Exam, UserRole, TopicMetadata } from '../../types';
 import { generateExamQuestions } from '../../services/aiService';
 import { Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, X, Check, Loader2, Bot } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../../utils/imageUtils';
 import { uploadMedia } from '../../services/mediaService';
 
+const buildTopicKey = (subjectId: string, topic: TopicMetadata) => {
+  if (!topic) return '';
+  const suffix = typeof topic.grade === 'number'
+    ? `grade-${topic.grade}`
+    : topic.level
+      ? `level-${topic.level}`
+      : 'general';
+  return `${subjectId}::${topic.name.toLowerCase()}::${suffix}`;
+};
+
 export const CreateExam = () => {
-  const { user, addExam, updateExam: updateExamInStore, exams, approvedTopics, availableSubjects, t, showAlert, language, systemSettings, updateUser } = useStore();
+  const { user, addExam, updateExam: updateExamInStore, exams, approvedTopics, availableSubjects, t, showAlert, language, systemSettings, updateUser, logAiUsage } = useStore();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -32,6 +42,7 @@ export const CreateExam = () => {
     { id: 'q1', text: '', options: ['', '', '', ''], correctIndex: 0, explanation: '' }
   ]);
   const [aiGeneratingIndex, setAiGeneratingIndex] = useState<number | null>(null);
+  const [selectedTopicKey, setSelectedTopicKey] = useState<string>('');
 
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -68,6 +79,21 @@ export const CreateExam = () => {
   });
 
   useEffect(() => {
+      if (filteredTopics.length === 0) {
+          setSelectedTopicKey('');
+          return;
+      }
+      const existing = filteredTopics.find(t => buildTopicKey(subjectId, t) === selectedTopicKey);
+      if (existing) {
+          setTopic(existing.name);
+          return;
+      }
+      const firstTopic = filteredTopics[0];
+      setSelectedTopicKey(buildTopicKey(subjectId, firstTopic));
+      setTopic(firstTopic.name);
+  }, [filteredTopics, subjectId]);
+
+  useEffect(() => {
     if (!id) return;
     const examToEdit = exams.find(e => e.id === id);
     if (examToEdit && (examToEdit.creatorId === user?.id || user?.role === UserRole.ADMIN)) {
@@ -86,6 +112,14 @@ export const CreateExam = () => {
         
         if(examToEdit.classLevel) setClassLevel(examToEdit.classLevel);
         if(examToEdit.englishLevel) setEnglishLevel(examToEdit.englishLevel);
+        if (examToEdit.topicKey) {
+            setSelectedTopicKey(examToEdit.topicKey);
+        } else if (examToEdit.topic) {
+            const match = (approvedTopics[examToEdit.subjectId] || []).find(t => t.name === examToEdit.topic);
+            if (match) {
+                setSelectedTopicKey(buildTopicKey(examToEdit.subjectId, match));
+            }
+        }
         
         setOriginalCreatorId(examToEdit.creatorId);
         setOriginalCreatorName(examToEdit.creatorName);
@@ -190,7 +224,18 @@ export const CreateExam = () => {
         }
         applyAIQuestion(qIndex, generated[0]);
         if (cost > 0) {
-            updateUser({ ...user, points: user.points - cost });
+            const remaining = (user.points || 0) - cost;
+            updateUser({ ...user, points: remaining });
+            logAiUsage({
+                userId: user.id,
+                examId: id || `draft-${Date.now()}`,
+                questionIndex: qIndex,
+                cost,
+                creditsAfter: remaining,
+                topic: topic || subjName,
+                subjectId: subjectId,
+                note: 'ai_wizard_question'
+            });
             showAlert(t('ai_wizard_payment_success').replace('{points}', `${cost}`), 'success');
         } else {
             showAlert(t('ai_generate_question_success'), 'success');
@@ -263,10 +308,13 @@ export const CreateExam = () => {
     
     const selectedSubjectDef = availableSubjects.find(s => s.id === subjectId);
     
+    const topicMeta = filteredTopics.find(t => buildTopicKey(subjectId, t) === selectedTopicKey);
+    const resolvedTopic = topicMeta ? topicMeta.name : topic;
+
     const examData: Exam = {
         id: id || `exam-${Date.now()}`,
         title,
-        topic,
+        topic: resolvedTopic,
         creatorId: id ? originalCreatorId : user.id,
         creatorName: id ? originalCreatorName : user.name,
         subjectId, 
@@ -279,6 +327,13 @@ export const CreateExam = () => {
         questions,
         classLevel: (selectedSubjectDef?.name !== 'English' && selectedSubjectDef?.name !== 'İngilizce') ? classLevel : undefined,
         englishLevel: (selectedSubjectDef?.name === 'English' || selectedSubjectDef?.name === 'İngilizce') ? englishLevel : undefined,
+        topicKey: topicMeta ? buildTopicKey(subjectId, topicMeta) : undefined,
+        curriculumPath: topicMeta ? {
+            subjectId,
+            topicName: topicMeta.name,
+            grade: topicMeta.grade,
+            level: topicMeta.level
+        } : undefined,
     };
 
     if (id) updateExamInStore(examData); else addExam(examData);
@@ -316,8 +371,31 @@ export const CreateExam = () => {
                     </div>
                     <div>
                         <label className={labelClass}>{t('topic')}</label>
-                        <input value={topic} onChange={e => setTopic(e.target.value)} list="topics-list" className={inputClass} placeholder={t('enter_topic')} />
-                        <datalist id="topics-list">{filteredTopics.map((t, i) => <option key={i} value={t.name} />)}</datalist>
+                        {filteredTopics.length > 0 ? (
+                            <select
+                                value={selectedTopicKey}
+                                onChange={e => {
+                                    const key = e.target.value;
+                                    setSelectedTopicKey(key);
+                                    const meta = filteredTopics.find(t => buildTopicKey(subjectId, t) === key);
+                                    if (meta) setTopic(meta.name);
+                                }}
+                                className={inputClass}
+                            >
+                                {filteredTopics.map((topicMeta, idx) => (
+                                    <option key={`${topicMeta.name}-${idx}`} value={buildTopicKey(subjectId, topicMeta)}>
+                                        {topicMeta.name} {topicMeta.grade ? `• ${topicMeta.grade}. ${t('grade')}` : topicMeta.level ? `• ${topicMeta.level}` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                value={topic}
+                                onChange={e => setTopic(e.target.value)}
+                                className={inputClass}
+                                placeholder={t('enter_topic')}
+                            />
+                        )}
                     </div>
                     
                     <div className="col-span-2 grid grid-cols-3 gap-4">
