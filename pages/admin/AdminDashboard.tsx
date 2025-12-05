@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { UserRole, ShopItem, PrizeExam, ManualAd, ManualAdPlacement } from '../../types';
 import { ShieldAlert, CheckCircle, Ban, Search, Users, BookOpen, AlertTriangle, DollarSign, Trash2, Edit2, PieChart, Bookmark, Plus, LucideIcon, X, School as SchoolIcon, Layers, Megaphone, Radio, Image as ImageIcon, Coins, CreditCard, ShoppingBag, History, ChevronDown, Check, Eye, Gift, Trophy, Upload, Calendar, Star, Sparkles, Receipt, ArrowRight, Loader2, FileText, Image, AlertOctagon, Link as LinkIcon } from 'lucide-react';
+import { getTrackedAdEvents, StoredAdTrackingEvent } from '../../services/adTrackingService';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { uploadMedia } from '../../services/mediaService';
 
@@ -102,6 +103,7 @@ export const AdminDashboard = () => {
   });
   const [adForm, setAdForm] = useState<Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'>>(emptyAdForm());
   const [editingAdId, setEditingAdId] = useState<string | null>(null);
+  const [adEvents, setAdEvents] = useState<StoredAdTrackingEvent[]>([]);
 
   // Derived Values
   const totalUsers = users.length;
@@ -131,6 +133,10 @@ export const AdminDashboard = () => {
           setTopicGrade(validGradesForTopic[0]);
       }
   }, [validGradesForTopic, topicGrade]);
+
+  useEffect(() => {
+      setAdEvents(getTrackedAdEvents());
+  }, []);
 
   // Handlers
   const handleTabChange = (tab: string) => {
@@ -292,6 +298,36 @@ export const AdminDashboard = () => {
 
   const toggleAdStatus = (ad: ManualAd) => {
       updateManualAd({ ...ad, isActive: !ad.isActive });
+  };
+
+  const adMetrics = useMemo(() => {
+      const map = new Map<string, {
+          ad: ManualAd | undefined;
+          impressions: number;
+          clicks: number;
+          locations: Record<string, number>;
+          lastTimestamp?: string;
+      }>();
+      manualAds.forEach(ad => {
+          map.set(ad.id, { ad, impressions: 0, clicks: 0, locations: {} });
+      });
+      adEvents.forEach(evt => {
+          if (!map.has(evt.adId)) {
+              map.set(evt.adId, { ad: manualAds.find(a => a.id === evt.adId), impressions: 0, clicks: 0, locations: {} });
+          }
+          const entry = map.get(evt.adId)!;
+          if (evt.type === 'impression') entry.impressions += 1;
+          if (evt.type === 'click') entry.clicks += 1;
+          if (evt.locationHint) {
+              entry.locations[evt.locationHint] = (entry.locations[evt.locationHint] || 0) + 1;
+          }
+          entry.lastTimestamp = evt.timestamp;
+      });
+      return Array.from(map.values()).filter(entry => entry.ad);
+  }, [adEvents, manualAds]);
+
+  const handleRefreshAdStats = () => {
+      setAdEvents(getTrackedAdEvents());
   };
 
   const openQuizModal = (exam: PrizeExam) => {
@@ -567,6 +603,59 @@ export const AdminDashboard = () => {
                           </div>
                       </div>
                   ))}
+              </div>
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div>
+                          <h4 className="font-bold text-lg text-gray-900">{t('ad_stats')}</h4>
+                          <p className="text-sm text-gray-500">{t('ad_stats_desc')}</p>
+                      </div>
+                      <button onClick={handleRefreshAdStats} className="px-4 py-2 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50">
+                          {t('refresh')}
+                      </button>
+                  </div>
+                  {adMetrics.length === 0 ? (
+                      <div className="text-sm text-gray-400 text-center py-6">{t('ad_no_stats')}</div>
+                  ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {adMetrics.map(metric => (
+                              <div key={`metric-${metric.ad?.id}`} className="border border-gray-100 rounded-2xl p-4 flex flex-col gap-3">
+                                  <div className="flex items-center justify-between">
+                                      <div>
+                                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('ad_title')}</p>
+                                          <p className="font-bold text-gray-900">{metric.ad?.title || metric.ad?.id}</p>
+                                      </div>
+                                      <div className="text-right">
+                                          <p className="text-[10px] font-bold uppercase text-gray-400">{t('ad_last_event')}</p>
+                                          <p className="text-xs text-gray-500">{metric.lastTimestamp ? new Date(metric.lastTimestamp).toLocaleString() : '-'}</p>
+                                      </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                      <div className="bg-gray-50 rounded-xl p-3 text-center">
+                                          <p className="text-xs font-bold text-gray-500 uppercase">{t('impressions')}</p>
+                                          <p className="text-2xl font-black text-gray-900">{metric.impressions}</p>
+                                      </div>
+                                      <div className="bg-gray-50 rounded-xl p-3 text-center">
+                                          <p className="text-xs font-bold text-gray-500 uppercase">{t('clicks')}</p>
+                                          <p className="text-2xl font-black text-gray-900">{metric.clicks}</p>
+                                      </div>
+                                  </div>
+                                  {Object.keys(metric.locations).length > 0 && (
+                                      <div>
+                                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{t('ad_location_stats')}</p>
+                                          <div className="flex flex-wrap gap-2">
+                                              {Object.entries(metric.locations).map(([location, count]) => (
+                                                  <span key={location} className="px-2 py-1 text-xs font-bold rounded-lg bg-gray-100 text-gray-700">
+                                                      {location} · {count}
+                                                  </span>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+                              </div>
+                          ))}
+                      </div>
+                  )}
               </div>
           </div>
       )}

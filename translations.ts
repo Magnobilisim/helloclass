@@ -14,6 +14,7 @@ export const TRANSLATIONS = {
     messages: 'Mesajlar',
     logout: 'Çıkış Yap',
     ads: 'Reklamlar',
+    refresh: 'Yenile',
     welcome: 'Hoşgeldin',
     points: 'Puan',
     watch: 'İzle',
@@ -256,6 +257,13 @@ export const TRANSLATIONS = {
     ad_deleted: 'Reklam silindi',
     ad_title_required: 'Lütfen bir reklam başlığı yazın.',
     ad_delete_confirm: 'Bu reklamı silmek istediğinizden emin misiniz?',
+    ad_stats: 'Reklam İstatistikleri',
+    ad_stats_desc: 'Bu veriler tarayıcıdaki mock kayıtlardan okunur.',
+    ad_no_stats: 'Henüz kayıt bulunmuyor.',
+    ad_last_event: 'Son Etkinlik',
+    ad_location_stats: 'Şehir / Okul',
+    impressions: 'Gösterim',
+    clicks: 'Tıklama',
 
     // Shop & Items
     shop_subtitle: 'Puanlarını harika ödüller için harca!',
@@ -611,6 +619,7 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     messages: 'Messages',
     logout: 'Logout',
     ads: 'Ads',
+    refresh: 'Refresh',
     welcome: 'Welcome',
     points: 'Points',
     watch: 'Watch',
@@ -852,6 +861,13 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     ad_deleted: 'Ad deleted',
     ad_title_required: 'Please enter an ad title.',
     ad_delete_confirm: 'Are you sure you want to delete this ad?',
+    ad_stats: 'Ad Analytics',
+    ad_stats_desc: 'Mock data collected locally for preview purposes.',
+    ad_no_stats: 'No events recorded yet.',
+    ad_last_event: 'Last Event',
+    ad_location_stats: 'City / School',
+    impressions: 'Impressions',
+    clicks: 'Clicks',
 
     // Shop
     shop_subtitle: 'Spend your hard-earned points on cool rewards!',

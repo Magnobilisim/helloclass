@@ -1,6 +1,6 @@
 import { ManualAdPlacement, UserRole } from '../types';
 
-type AdEventType = 'impression' | 'click';
+export type AdEventType = 'impression' | 'click';
 
 export interface AdTrackingEvent {
   adId: string;
@@ -12,25 +12,44 @@ export interface AdTrackingEvent {
   type: AdEventType;
 }
 
+export interface StoredAdTrackingEvent extends AdTrackingEvent {
+  timestamp: string;
+}
+
 const STORAGE_KEY = 'hc_manual_ad_events';
 
 const isBrowser = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 
+const readEventHistory = (): StoredAdTrackingEvent[] => {
+  if (!isBrowser) return [];
+  try {
+      const historyRaw = localStorage.getItem(STORAGE_KEY);
+      return historyRaw ? JSON.parse(historyRaw) : [];
+  } catch (error) {
+      console.warn('Failed to parse ad tracking events', error);
+      return [];
+  }
+};
+
+const writeEventHistory = (events: StoredAdTrackingEvent[]) => {
+  if (!isBrowser) return;
+  try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  } catch (error) {
+      console.warn('Failed to persist ad tracking event', error);
+  }
+};
+
 export const trackAdEvent = async (event: AdTrackingEvent) => {
-  const payload = {
+  const payload: StoredAdTrackingEvent = {
       ...event,
       timestamp: new Date().toISOString()
   };
 
   if (isBrowser) {
-      try {
-          const historyRaw = localStorage.getItem(STORAGE_KEY);
-          const history = historyRaw ? JSON.parse(historyRaw) : [];
-          history.push(payload);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-100)));
-      } catch (error) {
-          console.warn('Failed to persist ad tracking event', error);
-      }
+      const history = readEventHistory();
+      history.push(payload);
+      writeEventHistory(history.slice(-200));
   }
 
   if (typeof console !== 'undefined') {
@@ -38,4 +57,8 @@ export const trackAdEvent = async (event: AdTrackingEvent) => {
   }
 
   return payload;
+};
+
+export const getTrackedAdEvents = (): StoredAdTrackingEvent[] => {
+  return readEventHistory();
 };
