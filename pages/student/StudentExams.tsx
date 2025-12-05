@@ -288,6 +288,8 @@ export const StudentExams = () => {
     </div>
   );
 
+};
+
 const ExamAdCard: React.FC<{
   ad: ManualAd;
   label: string;
@@ -330,5 +332,4 @@ const ExamAdCard: React.FC<{
         )}
     </div>
   );
-};
 };
