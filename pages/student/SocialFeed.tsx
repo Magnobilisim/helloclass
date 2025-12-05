@@ -164,6 +164,10 @@ export const SocialFeed = () => {
           }
           items.push({ type: 'post', post });
       });
+      if (!items.some(item => item.type === 'ad')) {
+          const fallbackAd = socialAds[0];
+          items.splice(Math.min(1, items.length), 0, { type: 'ad', ad: fallbackAd, key: `social-feed-ad-fallback-${fallbackAd.id}` });
+      }
       return items;
   }, [filteredPosts, socialAds]);
 

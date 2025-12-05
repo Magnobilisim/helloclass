@@ -85,6 +85,10 @@ export const StudentExams = () => {
           }
           items.push({ type: 'exam', exam });
       });
+      if (!items.some(item => item.type === 'ad')) {
+          const fallbackAd = examAds[0];
+          items.splice(Math.min(1, items.length), 0, { type: 'ad', ad: fallbackAd, key: `exam-feed-ad-fallback-${fallbackAd.id}` });
+      }
       return items;
   }, [filteredExams, examAds]);
 
