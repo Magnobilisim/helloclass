@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { School, Edit2, Save, X } from 'lucide-react';
+import { School, Edit2, Save, X, LogOut } from 'lucide-react';
 
 export const TeacherProfile = () => {
-  const { user, updateUser, schools, t, showAlert } = useStore();
+  const { user, updateUser, schools, t, showAlert, logout } = useStore();
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState('');
   const [branch, setBranch] = useState('');
@@ -109,14 +109,22 @@ export const TeacherProfile = () => {
           </div>
         </div>
 
-        {isEditing && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          {isEditing && (
+            <button
+              onClick={handleSave}
+              className="flex-1 px-6 py-3 rounded-2xl font-bold bg-brand-500 text-white hover:bg-brand-600 transition-colors flex items-center gap-2 justify-center shadow-brand-100 shadow-lg"
+            >
+              <Save size={18} /> {t('save')}
+            </button>
+          )}
           <button
-            onClick={handleSave}
-            className="w-full md:w-auto px-6 py-3 rounded-2xl font-bold bg-brand-500 text-white hover:bg-brand-600 transition-colors flex items-center gap-2 justify-center"
+            onClick={logout}
+            className="flex-1 px-6 py-3 rounded-2xl font-bold bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 transition-colors flex items-center gap-2 justify-center"
           >
-            <Save size={18} /> {t('save')}
+            <LogOut size={18} /> {t('logout')}
           </button>
-        )}
+        </div>
       </section>
     </div>
   );

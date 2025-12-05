@@ -21,6 +21,7 @@ import { TeacherProfile } from './pages/teacher/TeacherProfile';
 import { TeacherShop } from './pages/teacher/TeacherShop';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminSettings } from './pages/admin/AdminSettings';
+import { AdminProfile } from './pages/admin/AdminProfile';
 import { UserRole } from './types';
 import { AlertTriangle, Hammer } from 'lucide-react';
 
@@ -225,6 +226,11 @@ const MainRouter = () => {
           <Route path="/admin/social" element={
             <ProtectedRoute roles={[UserRole.ADMIN]}>
                <SocialFeed />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/profile" element={
+            <ProtectedRoute roles={[UserRole.ADMIN]}>
+               <AdminProfile />
             </ProtectedRoute>
           } />
           <Route path="/admin/ads" element={
