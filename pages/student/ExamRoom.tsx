@@ -381,7 +381,12 @@ export const ExamRoom = () => {
           return;
       }
       setCurrentIndex(prev => Math.max(0, prev - 1));
-      setHiddenOptions([]);
+    setHiddenOptions([]);
+    if (currentIndex < exam.questions.length - 1) {
+        setTimeout(() => {
+            setCurrentIndex(prev => Math.min(exam.questions.length - 1, prev + 1));
+        }, 100);
+    }
   };
 
   const handleNext = () => {
@@ -734,13 +739,15 @@ export const ExamRoom = () => {
                 </div>
 
                 <div className="mt-8 flex flex-col md:flex-row gap-3">
-                    <button
-                        onClick={handlePrevious}
-                        disabled={currentIndex === 0 || isFinished}
-                        className="flex-1 flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        <ChevronLeft size={18} /> {t('previous_question')}
-                    </button>
+                    {currentIndex > 0 && (
+                        <button
+                            onClick={handlePrevious}
+                            disabled={isFinished}
+                            className="flex-1 flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            <ChevronLeft size={18} /> {t('previous_question')}
+                        </button>
+                    )}
                     <button
                         onClick={handleNext}
                         disabled={currentIndex === exam.questions.length - 1 || isFinished}
