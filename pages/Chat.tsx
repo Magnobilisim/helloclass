@@ -141,6 +141,9 @@ export const Chat = () => {
             >
               {currentMessages.map(m => {
                 const isMe = m.senderId === user?.id;
+                const sentAt = new Date(m.timestamp);
+                const timeText = sentAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateText = sentAt.toLocaleDateString();
                 return (
                   <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-fade-in`}>
                     <div className={`max-w-[85%] md:max-w-[70%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
@@ -150,7 +153,9 @@ export const Chat = () => {
                     }`}>
                       <p>{m.content}</p>
                       <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isMe ? 'text-brand-100' : 'text-gray-400'}`}>
-                          <span>{new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span>{dateText}</span>
+                          <span>•</span>
+                          <span>{timeText}</span>
                           {isMe && (
                               <span className="opacity-80 font-bold">{m.isRead ? '✓✓' : '✓'}</span>
                           )}
