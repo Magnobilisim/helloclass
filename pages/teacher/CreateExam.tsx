@@ -365,11 +365,28 @@ export const CreateExam = () => {
         <form onSubmit={handleSubmit} className="space-y-8">
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {(selectedSubjectName === 'English' || selectedSubjectName === 'İngilizce') ? (
+                        <div>
+                            <label className={labelClass}>{t('level')}</label>
+                            <select value={englishLevel} onChange={e => setEnglishLevel(e.target.value)} className={inputClass}>
+                                {['A1', 'A2', 'B1', 'B2'].map(l => <option key={l} value={l}>{l}</option>)}
+                            </select>
+                        </div>
+                    ) : (
+                        <div>
+                            <label className={labelClass}>{t('grade')}</label>
+                            <select value={classLevel} onChange={e => setClassLevel(Number(e.target.value))} className={inputClass}>
+                                {Array.from({length: 12}, (_, i) => i + 1).map(l => <option key={l} value={l}>{l}. {t('grade')}</option>)}
+                            </select>
+                        </div>
+                    )}
                     <div>
-                        <label className={labelClass}>{t('title')}</label>
-                        <input value={title} onChange={e => setTitle(e.target.value)} className={inputClass} placeholder={t('enter_title')} />
+                        <label className={labelClass}>{t('subject')}</label>
+                        <select value={subjectId} onChange={e => setSubjectId(e.target.value)} className={inputClass}>
+                            {filteredSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                         <label className={labelClass}>{t('topic')}</label>
                         {filteredTopics.length > 0 ? (
                             <select
@@ -397,29 +414,9 @@ export const CreateExam = () => {
                             />
                         )}
                     </div>
-                    
-                    <div className="col-span-2 grid grid-cols-3 gap-4">
-                        {(selectedSubjectName === 'English' || selectedSubjectName === 'İngilizce') ? (
-                            <div>
-                                <label className={labelClass}>{t('level')}</label>
-                                <select value={englishLevel} onChange={e => setEnglishLevel(e.target.value)} className={inputClass}>
-                                    {['A1', 'A2', 'B1', 'B2'].map(l => <option key={l} value={l}>{l}</option>)}
-                                </select>
-                            </div>
-                        ) : (
-                            <div>
-                                <label className={labelClass}>{t('grade')}</label>
-                                <select value={classLevel} onChange={e => setClassLevel(Number(e.target.value))} className={inputClass}>
-                                    {Array.from({length: 12}, (_, i) => i + 1).map(l => <option key={l} value={l}>{l}. {t('grade')}</option>)}
-                                </select>
-                            </div>
-                        )}
-                        <div className="col-span-2">
-                            <label className={labelClass}>{t('subject')}</label>
-                            <select value={subjectId} onChange={e => setSubjectId(e.target.value)} className={inputClass}>
-                                {filteredSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
+                    <div className="md:col-span-2">
+                        <label className={labelClass}>{t('title')}</label>
+                        <input value={title} onChange={e => setTitle(e.target.value)} className={inputClass} placeholder={t('enter_title')} />
                     </div>
                     
                     <div>
