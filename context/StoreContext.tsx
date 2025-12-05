@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase, AiUsageLog } from '../types';
+import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase, AiUsageLog, PayoutRequest } from '../types';
 import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS, TEACHER_CREDIT_PACKAGES, INITIAL_TRANSACTIONS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
 import { checkContentSafety, generateLearningReport, setSafetyLanguage } from '../services/aiService';
@@ -55,6 +55,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [shopItems, setShopItems] = useState<ShopItem[]>(SHOP_ITEMS);
   const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>([]);
   const [prizeExams, setPrizeExams] = useState<PrizeExam[]>(INITIAL_PRIZE_EXAMS);
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS); 
   const [pointPurchases, setPointPurchases] = useState<PointPurchase[]>([]);
@@ -140,6 +141,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const loadedSubjects = localStorage.getItem('hc_subjects');
     const loadedShop = localStorage.getItem('hc_shop');
     const loadedPayouts = localStorage.getItem('hc_payouts');
+    const loadedPayoutRequests = localStorage.getItem('hc_payout_requests');
     const loadedPrizeExams = localStorage.getItem('hc_prize_exams');
     const loadedTransactions = localStorage.getItem('hc_transactions');
     const loadedSessions = localStorage.getItem('hc_sessions');
@@ -177,6 +179,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (loadedSubjects) setAvailableSubjects(JSON.parse(loadedSubjects));
     if (loadedShop) setShopItems(JSON.parse(loadedShop));
     if (loadedPayouts) setPayouts(JSON.parse(loadedPayouts));
+    if (loadedPayoutRequests) {
+        try {
+            setPayoutRequests(JSON.parse(loadedPayoutRequests));
+        } catch (e) {
+            console.error('Failed to parse payout requests', e);
+        }
+    }
     if (loadedPrizeExams) {
         try {
             const parsedPrize = JSON.parse(loadedPrizeExams);
@@ -247,6 +256,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('hc_subjects', JSON.stringify(availableSubjects)); }, [availableSubjects]);
   useEffect(() => { localStorage.setItem('hc_shop', JSON.stringify(shopItems)); }, [shopItems]);
   useEffect(() => { localStorage.setItem('hc_payouts', JSON.stringify(payouts)); }, [payouts]);
+  useEffect(() => { localStorage.setItem('hc_payout_requests', JSON.stringify(payoutRequests)); }, [payoutRequests]);
   useEffect(() => { localStorage.setItem('hc_prize_exams', JSON.stringify(prizeExams)); }, [prizeExams]);
   useEffect(() => { localStorage.setItem('hc_transactions', JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem('hc_sessions', JSON.stringify(examSessions)); }, [examSessions]);
@@ -598,6 +608,49 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...entry
     };
     setAiUsageLogs(prev => [log, ...prev]);
+  };
+
+  const requestPayout = (amountTL: number, note?: string): boolean => {
+    if (!user) {
+        showAlert(t('login_title'), 'error');
+        return false;
+    }
+    if (user.role !== UserRole.TEACHER) {
+        showAlert(t('teacher_only_feature'), 'error');
+        return false;
+    }
+    if (!amountTL || amountTL <= 0) {
+        showAlert(t('payout_amount_invalid'), 'error');
+        return false;
+    }
+    const newRequest: PayoutRequest = {
+        id: `payout-req-${Date.now()}`,
+        teacherId: user.id,
+        teacherName: user.name,
+        amountTL,
+        note,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    };
+    setPayoutRequests(prev => [newRequest, ...prev]);
+    addNotification(user.id, t('payout_request_received'), t('payout_request_received_body'), 'info');
+    addLog('Payout Requested', `${user.name} ₺${amountTL.toFixed(2)}`, 'info');
+    showAlert(t('payout_request_received'), 'success');
+    return true;
+  };
+
+  const resolvePayoutRequest = (requestId: string, decision: 'approved' | 'rejected', adminNote?: string) => {
+    if (user?.role !== UserRole.ADMIN) return;
+    const targetRequest = payoutRequests.find(r => r.id === requestId);
+    if (!targetRequest) return;
+    setPayoutRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: decision, resolvedAt: new Date().toISOString(), adminId: user.id, adminNote } : r));
+    if (decision === 'approved') {
+        showAlert(t('payout_request_marked_paid'), 'success');
+    } else {
+        addNotification(targetRequest.teacherId, t('payout_request_rejected'), t('payout_request_rejected_body'), 'warning');
+        showAlert(t('payout_request_rejected_short'), 'info');
+    }
+    addLog('Payout Request Updated', `${targetRequest.teacherName} -> ${decision}`, decision === 'approved' ? 'info' : 'warning');
   };
 
   const toggleEquip = (itemType: string) => {
@@ -1222,11 +1275,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StoreContext.Provider value={{
-      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, prizeExams, transactions, examSessions, pointPurchases, aiUsageLogs,
+      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, payoutRequests, prizeExams, transactions, examSessions, pointPurchases, aiUsageLogs,
       login, logout, register, updateUser, banUser, deleteUser, changeRole, resetPassword, sendPasswordResetEmail,
       addExam, updateExam, deleteExam, purchaseExam, purchaseItem, toggleEquip, startExamSession, saveResult, addPost, deletePost, toggleLike, toggleDislike, addComment, reportPost, dismissReport, sendMessage, markMessageRead, updateSystemSettings,
       addTopic, removeTopic, addSchool, removeSchool, markNotificationRead, addSubject, removeSubject, toggleFollow,
-      addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage, purchaseAiCredits, logAiUsage,
+      addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage, purchaseAiCredits, logAiUsage, requestPayout, resolvePayoutRequest,
       addPrizeExam, drawPrizeWinner, payEntryFee,
       updatePrizeExamMeta,
       alert, showAlert, setLanguage, t

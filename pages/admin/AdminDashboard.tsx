@@ -17,7 +17,7 @@ export const AdminDashboard = () => {
   const { 
       users, exams, posts, logs, banUser, deleteUser, changeRole, deletePost, dismissReport, deleteExam, systemSettings, 
       approvedTopics, addTopic, removeTopic, schools, addSchool, removeSchool, availableSubjects, addSubject, removeSubject, 
-      shopItems, addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, payouts, processPayout, deleteExamImage, reportPost,
+      shopItems, addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, payouts, payoutRequests, processPayout, resolvePayoutRequest, deleteExamImage, reportPost,
       prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta,
       user: currentUser, t 
   } = useStore();
@@ -90,6 +90,7 @@ export const AdminDashboard = () => {
   const reportedPosts = posts.filter(p => p.isReported);
   const estimatedRevenuePoints = exams.reduce((acc, curr) => acc + (curr.sales * curr.price * (systemSettings.commissionRate / 100)), 0);
   const estimatedRevenueTL = estimatedRevenuePoints * systemSettings.pointConversionRate;
+  const pendingPayoutRequests = payoutRequests.filter(req => req.status === 'pending');
 
   // Filtered Data
   const filteredUsers = users.filter(u => 
@@ -181,6 +182,18 @@ export const AdminDashboard = () => {
           processPayout(payoutTeacherId, payoutAmount);
           setPayoutTeacherId(null); setPayoutAmount(0);
       }
+  };
+
+  const handleApproveRequest = (requestId: string) => {
+      const req = payoutRequests.find(r => r.id === requestId);
+      if (!req) return;
+      processPayout(req.teacherId, req.amountTL);
+      resolvePayoutRequest(req.id, 'approved');
+  };
+
+  const handleRejectRequest = (requestId: string) => {
+      const note = window.prompt(t('optional_note_placeholder'), '');
+      resolvePayoutRequest(requestId, 'rejected', note || undefined);
   };
 
   const handlePrizeImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -657,6 +670,46 @@ export const AdminDashboard = () => {
       {/* Financials Tab */}
       {activeTab === 'financials' && (
           <div className="space-y-6">
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-lg text-gray-900">{t('pending_payout_requests')}</h3>
+                      <span className="text-xs font-bold text-gray-500 uppercase">{pendingPayoutRequests.length} {t('pending')}</span>
+                  </div>
+                  {pendingPayoutRequests.length === 0 ? (
+                      <div className="border border-dashed border-gray-200 rounded-2xl p-10 text-center text-gray-400">
+                          {t('no_pending_payouts')}
+                      </div>
+                  ) : (
+                      <div className="space-y-3">
+                          {pendingPayoutRequests.map(req => (
+                              <div key={req.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-gray-100 rounded-2xl px-4 py-3">
+                                  <div>
+                                      <p className="text-sm font-bold text-gray-900">{req.teacherName}</p>
+                                      <p className="text-xs text-gray-500">
+                                          ₺{req.amountTL.toFixed(2)} • {new Date(req.createdAt).toLocaleString()}
+                                          {req.note ? ` • ${req.note}` : ''}
+                                      </p>
+                                  </div>
+                                  <div className="flex gap-2">
+                                      <button
+                                          onClick={() => handleRejectRequest(req.id)}
+                                          className="px-4 py-2 rounded-xl border border-red-100 text-red-500 text-xs font-bold hover:bg-red-50"
+                                      >
+                                          {t('reject')}
+                                      </button>
+                                      <button
+                                          onClick={() => handleApproveRequest(req.id)}
+                                          className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600"
+                                      >
+                                          {t('approve')}
+                                      </button>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </div>
+
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                   <h3 className="font-bold text-lg text-gray-900 mb-4">{t('payout_history')}</h3>
                   <div className="overflow-x-auto relative shadow-[inset_0_0_10px_rgba(0,0,0,0.02)] rounded-xl">

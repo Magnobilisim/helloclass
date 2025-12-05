@@ -256,6 +256,19 @@ export interface Payout {
   adminId: string;
 }
 
+export interface PayoutRequest {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  amountTL: number;
+  note?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  resolvedAt?: string;
+  adminId?: string;
+  adminNote?: string;
+}
+
 export interface TopicMetadata {
   name: string;
   grade?: number;
@@ -330,6 +343,7 @@ export interface StoreContextType {
   availableSubjects: SubjectDef[];
   shopItems: ShopItem[];
   payouts: Payout[];
+  payoutRequests: PayoutRequest[];
   prizeExams: PrizeExam[];
   transactions: Transaction[]; 
   examSessions: Record<string, ExamSession>; 
@@ -386,6 +400,8 @@ export interface StoreContextType {
   purchasePointPackage: (packageId: string) => boolean;
   purchaseAiCredits: (packageId: string) => boolean;
   logAiUsage: (entry: Omit<AiUsageLog, 'id' | 'timestamp'> & { note?: string }) => void;
+  requestPayout: (amountTL: number, note?: string) => boolean;
+  resolvePayoutRequest: (requestId: string, decision: 'approved' | 'rejected', adminNote?: string) => void;
   
   // Prize Exam Features
   addPrizeExam: (exam: PrizeExam) => void;
