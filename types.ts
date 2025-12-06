@@ -34,6 +34,7 @@ export interface User {
   id: string;
   name: string;
   username?: string;
+  displayPreference?: 'fullName' | 'username';
   email: string;
   role: UserRole;
   avatar: string;

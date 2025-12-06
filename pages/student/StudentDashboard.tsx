@@ -3,7 +3,7 @@ import React from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Play, TrendingUp, Clock, Bot, Trophy, ArrowRight, CheckCircle, Repeat, ShoppingCart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Exam } from '../../types';
+import type { Exam } from '../../types';
 
 export const StudentDashboard = () => {
   const { user, exams, users, t, availableSubjects, results, purchaseExam } = useStore();
@@ -17,6 +17,15 @@ export const StudentDashboard = () => {
 
   const getLeaderboardPoints = (u: typeof users[number]) =>
     (u.lifetimeExamPoints || 0) + (u.lifetimeAdPoints || 0);
+
+  const getDisplayLabel = (u: typeof users[number]) => {
+    const prefersUsername = (u as Record<string, any>)['displayPreference'] === 'username';
+    if (prefersUsername && u.username) {
+        return `@${u.username}`;
+    }
+    const firstName = u.name?.split(' ')[0];
+    return firstName || u.name;
+  };
 
   const topUsers = [...users]
     .filter(u => u.role === 'STUDENT')
@@ -67,7 +76,7 @@ export const StudentDashboard = () => {
              <div key={u.id} className={`flex flex-col items-center ${isFirst ? 'order-2 scale-110 z-10' : isSecond ? 'order-1' : 'order-3'}`}>
                 <div className="relative group"><img src={u.avatar} className={`w-14 h-14 rounded-full border-4 shadow-md z-10 relative transition-transform group-hover:scale-110 ${isFirst ? 'border-yellow-400' : 'border-white'}`} />{isFirst && <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-3xl animate-bounce">👑</div>}</div>
                 <div className={`w-24 rounded-t-2xl flex flex-col justify-end items-center pb-3 text-white font-bold shadow-lg mt-3 relative ${isFirst ? 'h-32 bg-yellow-400' : isSecond ? 'h-24 bg-gray-300' : 'h-20 bg-orange-300'}`}><span className="text-lg">{i === 1 ? '1' : i === 0 ? '2' : '3'}</span><div className="bg-black/10 px-2 py-0.5 rounded text-xs mt-1">{leaderboardPoints} pts</div></div>
-                <span className="text-sm font-bold text-gray-600 mt-2 max-w-[100px] truncate">{u.name.split(' ')[0]}</span>
+                <span className="text-sm font-bold text-gray-600 mt-2 max-w-[120px] truncate">{getDisplayLabel(u)}</span>
              </div>
            )})}
         </div>
@@ -77,7 +86,7 @@ export const StudentDashboard = () => {
                 <div key={u.id} className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
                     <div className={`font-black text-lg w-6 text-center ${index === 0 ? 'text-yellow-500' : index === 1 ? 'text-gray-400' : 'text-orange-400'}`}>{index + 1}</div>
                     <img src={u.avatar} className="w-10 h-10 rounded-full bg-gray-50" />
-                    <div className="flex-1 min-w-0"><h4 className="font-bold text-gray-800 truncate">{u.name}</h4></div>
+                    <div className="flex-1 min-w-0"><h4 className="font-bold text-gray-800 truncate">{getDisplayLabel(u)}</h4></div>
                     <div className="font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded-lg text-sm whitespace-nowrap">{getLeaderboardPoints(u)} pts</div>
                 </div>
             ))}

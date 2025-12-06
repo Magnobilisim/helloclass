@@ -103,6 +103,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'teacher1',
     name: 'Mr. John Keating',
+    displayPreference: 'fullName',
     email: 'teacher@helloclass.com',
     role: UserRole.TEACHER,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=teacher1',
@@ -122,6 +123,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'student1',
     name: 'Alice Wonder',
+    displayPreference: 'username',
     email: 'student@helloclass.com',
     role: UserRole.STUDENT,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=student1',
@@ -144,6 +146,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'student2',
     name: 'Bob Builder',
+    displayPreference: 'fullName',
     email: 'bob@helloclass.com',
     role: UserRole.STUDENT,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob',

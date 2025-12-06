@@ -839,7 +839,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tags?: string[], 
       schoolId?: string, 
       imageUrl?: string,
-      displayMode: 'username' | 'fullName' = 'fullName'
+      displayMode?: 'username' | 'fullName'
   ): Promise<{success: boolean, reason?: string}> => {
     if (!user) return { success: false, reason: 'Auth error' };
     if (content.length > 280) {
@@ -854,7 +854,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return { success: false, reason: localizedReason };
     }
 
-    const useUsername = displayMode === 'username' && !!user.username;
+    const preferredDisplay = displayMode || user.displayPreference || 'fullName';
+    const useUsername = preferredDisplay === 'username' && !!user.username;
     const newPost: Post = {
       id: `post-${Date.now()}`,
       authorId: user.id,
@@ -1056,6 +1057,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const updatedUser = { 
           ...user, 
           username: cleaned, 
+          displayPreference: user.displayPreference || 'username',
           points: Math.max(0, (user.points || 0) - cost), 
           updatedAt: new Date().toISOString()
       };
