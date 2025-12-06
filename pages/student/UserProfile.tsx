@@ -7,7 +7,7 @@ import { StudentResults } from './StudentResults';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export const UserProfile = () => {
-  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow, exams, shopItems, systemSettings, createUsername } = useStore();
+  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow, exams, shopItems, systemSettings, createUsername, formatDisplayName } = useStore();
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -616,7 +616,7 @@ export const UserProfile = () => {
                                     >
                                         <img src={u.avatar} className="w-12 h-12 rounded-full border border-gray-200 object-cover shrink-0" />
                                         <div className="min-w-0">
-                                            <div className="font-bold text-gray-900 text-sm truncate">{u.name}</div>
+                                            <div className="font-bold text-gray-900 text-sm truncate">{formatDisplayName(u, { withAt: true })}</div>
                                             <div className="text-xs text-gray-500 font-bold bg-gray-100 px-1.5 py-0.5 rounded w-fit">{u.role}</div>
                                         </div>
                                     </div>

@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { Exam } from '../../types';
 
 export const StudentDashboard = () => {
-  const { user, exams, users, t, availableSubjects, results, purchaseExam } = useStore();
+  const { user, exams, users, t, availableSubjects, results, purchaseExam, formatDisplayName } = useStore();
   const navigate = useNavigate();
 
   const availableExams = exams.filter(e => e.isPublished);
@@ -18,14 +18,8 @@ export const StudentDashboard = () => {
   const getLeaderboardPoints = (u: typeof users[number]) =>
     (u.lifetimeExamPoints || 0) + (u.lifetimeAdPoints || 0);
 
-  const getDisplayLabel = (u: typeof users[number]) => {
-    const prefersUsername = (u as Record<string, any>)['displayPreference'] === 'username';
-    if (prefersUsername && u.username) {
-        return `@${u.username}`;
-    }
-    const firstName = u.name?.split(' ')[0];
-    return firstName || u.name;
-  };
+  const getDisplayLabel = (u: typeof users[number]) =>
+    formatDisplayName(u, { fallback: 'firstName', withAt: true });
 
   const topUsers = [...users]
     .filter(u => u.role === 'STUDENT')

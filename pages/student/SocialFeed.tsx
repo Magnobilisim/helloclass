@@ -319,15 +319,22 @@ export const SocialFeed = () => {
                 {expandedComments.has(post.id) && (
                     <div className="mt-4 pt-4 border-t border-gray-50 bg-gray-50/50 rounded-xl p-3">
                         <div className="space-y-3 mb-4">
-                            {post.comments.map(c => (
-                                <div key={c.id} className="flex gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">{c.authorName.charAt(0)}</div>
-                                    <div className="bg-white p-2 rounded-r-xl rounded-bl-xl border border-gray-100 shadow-sm text-sm">
-                                        <Link to={`/student/profile/${c.authorId}`} className="font-bold text-gray-800 text-xs block">{c.authorName}</Link>
-                                        <p className="text-gray-700">{c.text}</p>
+                            {post.comments.map(c => {
+                                const displayName = c.displayAs === 'username'
+                                    ? `@${c.authorDisplayName || c.authorUsername || c.authorName}`
+                                    : (c.authorDisplayName || c.authorName);
+                                return (
+                                    <div key={c.id} className="flex gap-2">
+                                        <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">
+                                            {displayName?.charAt(0)}
+                                        </div>
+                                        <div className="bg-white p-2 rounded-r-xl rounded-bl-xl border border-gray-100 shadow-sm text-sm">
+                                            <Link to={`/student/profile/${c.authorId}`} className="font-bold text-gray-800 text-xs block">{displayName}</Link>
+                                            <p className="text-gray-700">{c.text}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                         <div className="flex gap-2"><input type="text" placeholder={t('write_comment')} value={commentText[post.id] || ''} onChange={(e) => setCommentText(prev => ({...prev, [post.id]: e.target.value}))} onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(post.id)} className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none text-gray-900" /><button onClick={() => handleCommentSubmit(post.id)} className="text-brand-600"><Send size={16} /></button></div>
                     </div>

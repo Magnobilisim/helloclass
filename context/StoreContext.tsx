@@ -297,6 +297,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (TRANSLATIONS[language] && TRANSLATIONS[language][key as TranslationKeys]) || key;
   };
 
+  const shouldUseUsername = (target?: User | null) => {
+      if (!target) return false;
+      if (!target.username) return false;
+      return (target.displayPreference || 'fullName') === 'username';
+  };
+
+  const resolveIdentity = (target?: User | null) => {
+      if (!target) return { displayAs: 'fullName' as const, displayName: target?.name || '' };
+      if (shouldUseUsername(target)) {
+          return { displayAs: 'username' as const, displayName: target.username! };
+      }
+      return { displayAs: 'fullName' as const, displayName: target.name };
+  };
+
+  const formatDisplayName = (
+      target?: User | null,
+      options?: { fallback?: 'firstName' | 'fullName'; withAt?: boolean }
+  ) => {
+      if (!target) return '';
+      if (shouldUseUsername(target)) {
+          const handle = target.username!;
+          return options?.withAt === false ? handle : `@${handle}`;
+      }
+      if (options?.fallback === 'firstName') {
+          const name = target.name || '';
+          const [first] = name.split(' ');
+          return first || name;
+      }
+      return target.name || '';
+  };
+
   const getSafetyFeedback = (aiReason?: string) => {
     if (language === 'tr') {
         return t('safety_warning_detail');
@@ -854,15 +885,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return { success: false, reason: localizedReason };
     }
 
-    const preferredDisplay = displayMode || user.displayPreference || 'fullName';
-    const useUsername = preferredDisplay === 'username' && !!user.username;
+    const baseIdentity = resolveIdentity(user);
+    const requestedDisplay = displayMode === 'username' && !user.username ? 'fullName' : displayMode;
+    const finalDisplayAs = requestedDisplay ? (requestedDisplay === 'username' && user.username ? 'username' : 'fullName') : baseIdentity.displayAs;
+    const useUsername = finalDisplayAs === 'username' && !!user.username;
+    const finalDisplayName = useUsername ? (user.username || baseIdentity.displayName) : user.name;
     const newPost: Post = {
       id: `post-${Date.now()}`,
       authorId: user.id,
       authorName: user.name,
       authorUsername: user.username,
-      authorDisplayName: useUsername ? user.username : user.name,
-      displayAs: useUsername ? 'username' : 'fullName',
+      authorDisplayName: finalDisplayName,
+      displayAs: finalDisplayAs,
       authorAvatar: user.avatar,
       content,
       imageUrl, 
@@ -904,10 +938,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return;
       }
 
+      const identity = resolveIdentity(user);
       const newComment: Comment = {
           id: `c-${Date.now()}`,
           authorId: user.id,
           authorName: user.name,
+          authorUsername: user.username,
+          authorDisplayName: identity.displayName,
+          displayAs: identity.displayAs,
           authorAvatar: user.avatar,
           text: text.trim(),
           timestamp: new Date().toISOString(),
@@ -1453,6 +1491,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addPrizeExam, drawPrizeWinner, payEntryFee,
       updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics, addManualAd, updateManualAd, deleteManualAd, socialTopics, addSocialTopic, removeSocialTopic,
       createUsername,
+      formatDisplayName,
       alert, showAlert, setLanguage, t
     }}>
       {children}

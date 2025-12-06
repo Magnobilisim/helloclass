@@ -179,6 +179,9 @@ export interface Comment {
   id: string;
   authorId: string;
   authorName: string;
+  authorUsername?: string;
+  authorDisplayName?: string;
+  displayAs?: 'username' | 'fullName';
   authorAvatar?: string;
   text: string;
   timestamp: string;
@@ -429,6 +432,7 @@ export interface StoreContextType {
   requestPayout: (amountTL: number, note?: string) => boolean;
   resolvePayoutRequest: (requestId: string, decision: 'approved' | 'rejected', adminNote?: string) => void;
   createUsername: (username: string) => boolean;
+  formatDisplayName: (user?: User | null, options?: { fallback?: 'firstName' | 'fullName'; withAt?: boolean }) => string;
   
   // Prize Exam Features
   addPrizeExam: (exam: PrizeExam) => void;
