@@ -1,144 +1,3 @@
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 space-y-4">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
-                          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                              <UploadCloud size={18} className="text-brand-500" /> {t('import_excel')}
-                          </h3>
-                          <p className="text-sm text-gray-500">{t('excel_hint') || 'Manage schools/subjects/topics via Excel templates.'}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={handleExcelDownload}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50"
-                          >
-                            <Download size={16} /> {t('download_template')}
-                          </button>
-                          <button
-                            onClick={() => fileUploadRef.current?.click()}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gray-900 text-white hover:bg-gray-800"
-                          >
-                            <Upload size={16} /> {t('upload_excel')}
-                          </button>
-                          <input ref={fileUploadRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcelUpload} />
-                      </div>
-                  </div>
-                  <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-4 text-sm text-gray-600">
-                      <p className="font-bold text-gray-800">{t('excel_guidelines_title') || 'İpucu'}</p>
-                      <ul className="list-disc ml-5 mt-2 space-y-1">
-                          <li>{t('excel_guideline_schools') || '“Schools” sayfasında okul bilgilerini doldurun.'}</li>
-                          <li>{t('excel_guideline_subjects') || '“Subjects” sayfasında ders isimlerini ve sınıf seviyelerini belirleyin.'}</li>
-                          <li>{t('excel_guideline_topics') || '“Topics” sayfasında konu isimlerini ilgili derse bağlayın.'}</li>
-                      </ul>
-                  </div>
-              </div>
-  const handleExcelDownload = () => {
-      const schoolSheet = schools.map(s => ({
-          id: s.id,
-          name: s.name,
-          city: s.city || '',
-          district: s.updatedAt || '',
-          status: s.isDeleted ? 'inactive' : 'active'
-      }));
-      const subjectSheet = availableSubjects.map(sub => ({
-          id: sub.id,
-          name: sub.name,
-          grades: sub.grades.join(','),
-          status: 'active'
-      }));
-      const topicRows: Array<{ subject_id: string; name: string; grade?: number; level?: string }> = [];
-      Object.entries(approvedTopics).forEach(([subId, topics]) => {
-          topics.forEach(topic => {
-              topicRows.push({
-                  subject_id: subId,
-                  name: topic.name,
-                  grade: topic.grade,
-                  level: topic.level
-              });
-          });
-      });
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(schoolSheet || []), 'Schools');
-      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(subjectSheet || []), 'Subjects');
-      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(topicRows || []), 'Topics');
-      XLSX.writeFile(workbook, 'helloclass-hierarchy.xlsx');
-  };
-
-  const handleExcelUpload = (evt: React.ChangeEvent<HTMLInputElement>) => {
-      const file = evt.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const schoolsSheet = workbook.Sheets['Schools'];
-          const subjectsSheet = workbook.Sheets['Subjects'];
-          const topicsSheet = workbook.Sheets['Topics'];
-
-          if (schoolsSheet) {
-              const rows: any[] = XLSX.utils.sheet_to_json(schoolsSheet);
-              setSchools(prev => {
-                  const updated = [...prev];
-                  rows.forEach(row => {
-                      const existing = updated.find(s => s.id === row.id);
-                      if (existing) {
-                          existing.name = row.name || existing.name;
-                          existing.city = row.city || existing.city;
-                      } else {
-                          updated.push({
-                              id: row.id || `sch-${Date.now()}-${Math.random()}`,
-                              name: row.name,
-                              city: row.city || '',
-                              createdAt: new Date().toISOString()
-                          });
-                      }
-                  });
-                  return updated;
-              });
-          }
-
-          if (subjectsSheet) {
-              const rows: any[] = XLSX.utils.sheet_to_json(subjectsSheet);
-              setAvailableSubjects(prev => {
-                  const updated = [...prev];
-                  rows.forEach(row => {
-                      const existing = updated.find(s => s.id === row.id);
-                      const grades = typeof row.grades === 'string' ? row.grades.split(',').map((g: string) => Number(g.trim())).filter(Boolean) : row.grades;
-                      if (existing) {
-                          existing.name = row.name || existing.name;
-                          existing.grades = Array.isArray(grades) ? grades : existing.grades;
-                      } else {
-                          updated.push({
-                              id: row.id || `sub-${Date.now()}-${Math.random()}`,
-                              name: row.name,
-                              grades: grades || []
-                          });
-                      }
-                  });
-                  return updated;
-              });
-          }
-
-          if (topicsSheet) {
-              const rows: any[] = XLSX.utils.sheet_to_json(topicsSheet);
-              setApprovedTopics(prev => {
-                  const updated = { ...prev };
-                  rows.forEach(row => {
-                      if (!row.subject_id || !row.name) return;
-                      const list = updated[row.subject_id] || [];
-                      if (!list.some(topic => topic.name.toLowerCase() === row.name.toLowerCase())) {
-                          list.push({ name: row.name, grade: row.grade ? Number(row.grade) : undefined, level: row.level });
-                      }
-                      updated[row.subject_id] = list;
-                  });
-                  return updated;
-              });
-          }
-
-          showAlert(t('excel_import_success') || 'Excel imported', 'success');
-      };
-      reader.readAsArrayBuffer(file);
-      evt.target.value = '';
-  };
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
@@ -161,7 +20,7 @@ export const AdminDashboard = () => {
       users, exams, posts, logs, banUser, deleteUser, changeRole, deletePost, dismissReport, deleteExam, systemSettings, 
       approvedTopics, addTopic, removeTopic, schools, addSchool, removeSchool, availableSubjects, addSubject, removeSubject, 
       shopItems, addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, payouts, payoutRequests, processPayout, resolvePayoutRequest, deleteExamImage, reportPost,
-      prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta,
+      prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics,
       manualAds, addManualAd, updateManualAd, deleteManualAd,
       user: currentUser, t, showAlert
   } = useStore();
@@ -443,6 +302,87 @@ export const AdminDashboard = () => {
       updateManualAd({ ...ad, isActive: !ad.isActive });
   };
 
+  const handleExcelDownload = () => {
+      const schoolSheet = schools.map(s => ({
+          id: s.id,
+          name: s.name,
+          city: s.city || '',
+          district: s.updatedAt || '',
+          status: s.isDeleted ? 'inactive' : 'active'
+      }));
+      const subjectSheet = availableSubjects.map(sub => ({
+          id: sub.id,
+          name: sub.name,
+          grades: sub.grades.join(','),
+          status: 'active'
+      }));
+      const topicRows: Array<{ subject_id: string; name: string; grade?: number; level?: string }> = [];
+      Object.entries(approvedTopics).forEach(([subId, topics]) => {
+          topics.forEach(topic => {
+              topicRows.push({
+                  subject_id: subId,
+                  name: topic.name,
+                  grade: topic.grade,
+                  level: topic.level
+              });
+          });
+      });
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(schoolSheet || []), 'Schools');
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(subjectSheet || []), 'Subjects');
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(topicRows || []), 'Topics');
+      XLSX.writeFile(workbook, 'helloclass-hierarchy.xlsx');
+  };
+
+  const handleExcelUpload = (evt: React.ChangeEvent<HTMLInputElement>) => {
+      const file = evt.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const schoolsSheet = workbook.Sheets['Schools'];
+          const subjectsSheet = workbook.Sheets['Subjects'];
+          const topicsSheet = workbook.Sheets['Topics'];
+
+          if (schoolsSheet) {
+              const rows: any[] = XLSX.utils.sheet_to_json(schoolsSheet);
+              const entries = rows.map(row => ({
+                  id: row.id,
+                  name: row.name,
+                  city: row.city
+              })).filter(entry => entry.name);
+              if (entries.length) bulkImportSchools(entries);
+          }
+
+          if (subjectsSheet) {
+              const rows: any[] = XLSX.utils.sheet_to_json(subjectsSheet);
+              const entries = rows.map(row => ({
+                  id: row.id,
+                  name: row.name,
+                  grades: typeof row.grades === 'string'
+                      ? row.grades.split(',').map((g: string) => Number(g.trim())).filter(Boolean)
+                      : Array.isArray(row.grades) ? row.grades : undefined
+              })).filter(entry => entry.name);
+              if (entries.length) bulkImportSubjects(entries);
+          }
+
+          if (topicsSheet) {
+              const rows: any[] = XLSX.utils.sheet_to_json(topicsSheet);
+              const entries = rows.map(row => ({
+                  subjectId: row.subject_id || row.subjectId,
+                  name: row.name,
+                  grade: row.grade ? Number(row.grade) : undefined,
+                  level: row.level
+              })).filter(entry => entry.subjectId && entry.name);
+              if (entries.length) bulkImportTopics(entries);
+          }
+
+          showAlert(t('excel_import_success') || 'Excel imported', 'success');
+      };
+      reader.readAsArrayBuffer(file);
+      evt.target.value = '';
+  };
   const adMetrics = useMemo(() => {
       const map = new Map<string, {
           ad: ManualAd | undefined;
@@ -1037,6 +977,39 @@ export const AdminDashboard = () => {
       {/* Definitions Tab */}
       {activeTab === 'definitions' && (
           <div className="space-y-8 animate-fade-in">
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                              <UploadCloud size={18} className="text-brand-500" /> {t('import_excel')}
+                          </h3>
+                          <p className="text-sm text-gray-500">{t('excel_hint')}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={handleExcelDownload}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50"
+                          >
+                            <Download size={16} /> {t('download_template')}
+                          </button>
+                          <button
+                            onClick={() => fileUploadRef.current?.click()}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gray-900 text-white hover:bg-gray-800"
+                          >
+                            <Upload size={16} /> {t('upload_excel')}
+                          </button>
+                          <input ref={fileUploadRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcelUpload} />
+                      </div>
+                  </div>
+                  <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-4 text-sm text-gray-600">
+                      <p className="font-bold text-gray-800">{t('excel_guidelines_title')}</p>
+                      <ul className="list-disc ml-5 mt-2 space-y-1">
+                          <li>{t('excel_guideline_schools')}</li>
+                          <li>{t('excel_guideline_subjects')}</li>
+                          <li>{t('excel_guideline_topics')}</li>
+                      </ul>
+                  </div>
+              </div>
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                   <h3 className="font-bold text-lg text-gray-900 mb-6">{t('system_subjects')}</h3>
                   <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">

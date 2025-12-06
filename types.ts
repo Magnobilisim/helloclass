@@ -425,6 +425,9 @@ export interface StoreContextType {
   drawPrizeWinner: (prizeExamId: string) => void;
   payEntryFee: (prizeExamId: string, amount: number) => boolean;
   updatePrizeExamMeta: (prizeExamId: string, data: Partial<PrizeExam>) => void;
+  bulkImportSchools: (schools: Array<{ id?: string; name: string; city?: string }>) => void;
+  bulkImportSubjects: (subjects: Array<{ id?: string; name: string; grades?: number[] }>) => void;
+  bulkImportTopics: (topics: Array<{ subjectId: string; name: string; grade?: number; level?: string }>) => void;
   addManualAd: (ad: Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateManualAd: (ad: ManualAd) => void;
   deleteManualAd: (id: string) => void;

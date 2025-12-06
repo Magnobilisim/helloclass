@@ -1001,6 +1001,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showAlert('School removed', 'info');
   };
 
+  const bulkImportSchools = (entries: Array<{ id?: string; name: string; city?: string }>) => {
+      setSchools(prev => {
+          const updated = [...prev];
+          entries.forEach(entry => {
+              if (!entry.name) return;
+              const target = entry.id ? updated.find(s => s.id === entry.id) : updated.find(s => s.name.toLowerCase() === entry.name.toLowerCase());
+              if (target) {
+                  target.name = entry.name || target.name;
+                  target.city = entry.city || target.city;
+              } else {
+                  updated.push({
+                      id: entry.id || `sch-${Date.now()}-${Math.random()}`,
+                      name: entry.name,
+                      city: entry.city || '',
+                      createdAt: new Date().toISOString()
+                  });
+              }
+          });
+          return updated;
+      });
+  };
+
   const markNotificationRead = (id: string) => {
       setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
   };
@@ -1020,6 +1042,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (user?.role !== UserRole.ADMIN) return;
       setAvailableSubjects(availableSubjects.filter(s => s.id !== id));
       showAlert('Subject removed', 'info');
+  };
+
+  const bulkImportSubjects = (entries: Array<{ id?: string; name: string; grades?: number[] }>) => {
+      setAvailableSubjects(prev => {
+          const updated = [...prev];
+          entries.forEach(entry => {
+              if (!entry.name) return;
+              const target = entry.id ? updated.find(s => s.id === entry.id) : updated.find(s => s.name.toLowerCase() === entry.name.toLowerCase());
+              const grades = entry.grades && entry.grades.length ? entry.grades : target?.grades;
+              if (target) {
+                  target.name = entry.name || target.name;
+                  target.grades = grades || target.grades;
+              } else {
+                  updated.push({
+                      id: entry.id || `sub-${Date.now()}-${Math.random()}`,
+                      name: entry.name,
+                      grades: grades || []
+                  });
+              }
+          });
+          return updated;
+      });
   };
 
   const toggleFollow = (targetUserId: string) => {
@@ -1177,6 +1221,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setPrizeExams(prev => prev.map(pe => pe.id === prizeExamId ? { ...pe, ...data } : pe));
   };
 
+  const bulkImportTopics = (entries: Array<{ subjectId: string; name: string; grade?: number; level?: string }>) => {
+      setApprovedTopics(prev => {
+          const updated = { ...prev };
+          entries.forEach(entry => {
+              if (!entry.subjectId || !entry.name) return;
+              const list = updated[entry.subjectId] ? [...updated[entry.subjectId]] : [];
+              if (!list.some(topic => topic.name.toLowerCase() === entry.name.toLowerCase() && topic.grade === entry.grade && topic.level === entry.level)) {
+                  list.push({ name: entry.name, grade: entry.grade, level: entry.level });
+              }
+              updated[entry.subjectId] = list;
+          });
+          return updated;
+      });
+  };
+
   const drawPrizeWinner = (prizeExamId: string) => {
       if (user?.role !== UserRole.ADMIN) return;
       
@@ -1327,7 +1386,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addTopic, removeTopic, addSchool, removeSchool, markNotificationRead, addSubject, removeSubject, toggleFollow,
       addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage, purchaseAiCredits, logAiUsage, requestPayout, resolvePayoutRequest,
       addPrizeExam, drawPrizeWinner, payEntryFee,
-      updatePrizeExamMeta, addManualAd, updateManualAd, deleteManualAd,
+      updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics, addManualAd, updateManualAd, deleteManualAd,
       alert, showAlert, setLanguage, t
     }}>
       {children}
