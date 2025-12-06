@@ -180,6 +180,12 @@ export const ExamRoom = () => {
     const newAnswers = [...userAnswers];
     newAnswers[currentIndex] = index;
     setUserAnswers(newAnswers);
+    if (currentIndex < exam.questions.length - 1) {
+        setTimeout(() => {
+            setCurrentIndex(prev => Math.min(exam.questions.length - 1, prev + 1));
+            setHiddenOptions([]);
+        }, 150);
+    }
   };
 
   const finishExam = (finalAnswers?: number[]) => {
@@ -381,12 +387,7 @@ export const ExamRoom = () => {
           return;
       }
       setCurrentIndex(prev => Math.max(0, prev - 1));
-    setHiddenOptions([]);
-    if (currentIndex < exam.questions.length - 1) {
-        setTimeout(() => {
-            setCurrentIndex(prev => Math.min(exam.questions.length - 1, prev + 1));
-        }, 100);
-    }
+      setHiddenOptions([]);
   };
 
   const handleNext = () => {
