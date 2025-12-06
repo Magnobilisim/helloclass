@@ -4,6 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Save, FileText, Gift, Plus, Trash2, Youtube, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 
+type SocialLinksConfig = {
+  youtube: string;
+  instagram: string;
+  x: string;
+  linkedin: string;
+};
+
+const buildSocialLinks = (links?: Partial<SocialLinksConfig>): SocialLinksConfig => ({
+  youtube: links?.youtube || '',
+  instagram: links?.instagram || '',
+  x: links?.x || '',
+  linkedin: links?.linkedin || '',
+});
+
 export const AdminSettings = () => {
   const { systemSettings, updateSystemSettings, t } = useStore();
   const [commission, setCommission] = useState(20);
@@ -21,7 +35,7 @@ export const AdminSettings = () => {
   const [aiWizardCost, setAiWizardCost] = useState(systemSettings.aiWizardCost || 0);
   const [aiExplainCost, setAiExplainCost] = useState(systemSettings.aiExplainCost || 0);
   const [usernameCost, setUsernameCost] = useState(systemSettings.usernameCost ?? 0);
-  const [socialLinks, setSocialLinks] = useState(systemSettings.socialLinks || { youtube: '', instagram: '', x: '', linkedin: '' });
+  const [socialLinks, setSocialLinks] = useState<SocialLinksConfig>(buildSocialLinks(systemSettings.socialLinks));
 
   useEffect(() => {
     if (systemSettings) {
@@ -36,7 +50,7 @@ export const AdminSettings = () => {
         setAiWizardCost(systemSettings.aiWizardCost ?? 0);
         setAiExplainCost(systemSettings.aiExplainCost ?? 0);
         setUsernameCost(systemSettings.usernameCost ?? 0);
-        setSocialLinks(systemSettings.socialLinks || { youtube: '', instagram: '', x: '', linkedin: '' });
+        setSocialLinks(buildSocialLinks(systemSettings.socialLinks));
     }
   }, [systemSettings]);
 
@@ -60,7 +74,7 @@ export const AdminSettings = () => {
       setPackages(prev => prev.filter(pkg => pkg.id !== id));
   };
 
-  const normalizeSocialLink = (key: keyof typeof socialLinks, value?: string) => {
+  const normalizeSocialLink = (key: keyof SocialLinksConfig, value?: string) => {
       if (!value) return '';
       const trimmed = value.trim();
       if (!trimmed) return '';

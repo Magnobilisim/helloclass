@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { UserRole, ShopItem, PrizeExam, ManualAd, ManualAdPlacement } from '../../types';
+import { UserRole, ShopItem, PrizeExam, ManualAd, ManualAdPlacement, TopicMetadata } from '../../types';
 import { ShieldAlert, CheckCircle, Ban, Search, Users, BookOpen, AlertTriangle, DollarSign, Trash2, Edit2, PieChart, Bookmark, Plus, LucideIcon, X, School as SchoolIcon, Layers, Megaphone, Radio, Image as ImageIcon, Coins, CreditCard, ShoppingBag, History, ChevronDown, Check, Eye, Gift, Trophy, Upload, Calendar, Star, Sparkles, Receipt, ArrowRight, Loader2, FileText, Image, AlertOctagon, Link as LinkIcon, Download, UploadCloud } from 'lucide-react';
 import { getTrackedAdEvents, StoredAdTrackingEvent } from '../../services/adTrackingService';
 import * as XLSX from 'xlsx';
@@ -317,7 +317,8 @@ export const AdminDashboard = () => {
           status: 'active'
       }));
       const topicRows: Array<{ subject_id: string; name: string; grade?: number; level?: string }> = [];
-      Object.entries(approvedTopics).forEach(([subId, topics]) => {
+      const topicEntries = Object.entries(approvedTopics) as Array<[string, TopicMetadata[]]>;
+      topicEntries.forEach(([subId, topics]) => {
           topics.forEach(topic => {
               topicRows.push({
                   subject_id: subId,

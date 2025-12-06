@@ -1362,9 +1362,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const prizeExam = prizeExams.find(pe => pe.id === prizeExamId);
       if (!prizeExam) return;
 
-      const candidates = results.filter(r => 
+      const candidates = results.filter((r): r is ExamResult => 
           r.examId === prizeExam.examId && 
-          prizeExam.participants?.includes(r.studentId)
+          !!prizeExam.participants?.includes(r.studentId)
       );
       
       if (candidates.length === 0) {
@@ -1406,18 +1406,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           showAlert(t('prize_winner_declared').replace('{name}', winnerUser.name), 'success');
       } else {
           const finalistsCount = Math.min(3, topScorers.length);
-          const selected = pickRandomSubset(topScorers, finalistsCount);
-          const finalists = selected.map(result => {
+          const selected = pickRandomSubset<ExamResult>(topScorers, finalistsCount);
+          const finalists: PrizeFinalist[] = selected.reduce<PrizeFinalist[]>((acc, result) => {
               const finalistUser = users.find(u => u.id === result.studentId);
-              if (!finalistUser) return null;
+              if (!finalistUser) return acc;
               const schoolName = finalistUser.schoolId ? schools.find(s => s.id === finalistUser.schoolId)?.name : undefined;
-              return {
+              acc.push({
                   userId: finalistUser.id,
                   name: finalistUser.name,
                   schoolName,
                   classLevel: finalistUser.classLevel
-              };
-          }).filter((f): f is PrizeFinalist => !!f);
+              });
+              return acc;
+          }, []);
 
           if (!finalists.length) {
               showAlert('Unable to determine finalists.', 'error');
