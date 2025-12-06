@@ -10,7 +10,7 @@ import { uploadMedia } from '../../services/mediaService';
 import { useAdTracking } from '../../hooks/useAdTracking';
 
 export const SocialFeed = () => {
-  const { user, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert, manualAds, socialTopics } = useStore();
+  const { user, users: allUsers, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert, manualAds, socialTopics, formatDisplayName } = useStore();
   const navigate = useNavigate();
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | ''>('');
@@ -161,6 +161,12 @@ export const SocialFeed = () => {
   const userRole = user?.role;
   const locationHint = user?.schoolId;
   const profileRoute = userRole === UserRole.TEACHER ? '/teacher/profile' : userRole === UserRole.ADMIN ? '/admin/profile' : '/student/profile';
+  const resolveAuthorName = (authorId: string, fallbackName: string, fallbackUsername?: string) => {
+      const liveUser = allUsers.find(u => u.id === authorId);
+      if (liveUser) return formatDisplayName(liveUser, { withAt: true });
+      if (fallbackUsername) return `@${fallbackUsername}`;
+      return fallbackName;
+  };
 
   const feedWithAds = React.useMemo(() => {
       if (!socialAds.length) {
@@ -274,9 +280,7 @@ export const SocialFeed = () => {
              const schoolName = post.schoolId ? schools.find(s => s.id === post.schoolId)?.name : 'Global';
              const isMe = user?.id === post.authorId;
              const isFollowing = user?.following?.includes(post.authorId);
-             const displayName = post.displayAs === 'username'
-                 ? `@${post.authorDisplayName || post.authorUsername || post.authorName}`
-                 : (post.authorDisplayName || post.authorName);
+             const displayName = resolveAuthorName(post.authorId, post.authorName, post.authorUsername);
 
              return (
              <div key={post.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
@@ -320,10 +324,8 @@ export const SocialFeed = () => {
                     <div className="mt-4 pt-4 border-t border-gray-50 bg-gray-50/50 rounded-xl p-3">
                         <div className="space-y-3 mb-4">
                             {post.comments.map(c => {
-                                const baseName = c.displayAs === 'username'
-                                    ? `@${c.authorDisplayName || c.authorUsername || c.authorName}`
-                                    : (c.authorDisplayName || c.authorName);
-                                const initial = baseName?.replace(/^@/, '').charAt(0)?.toUpperCase() || 'U';
+                                const baseName = resolveAuthorName(c.authorId, c.authorName, c.authorUsername);
+                                const initial = baseName.replace(/^@/, '').charAt(0)?.toUpperCase() || 'U';
                                 return (
                                     <div key={c.id} className="flex gap-2">
                                         <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">

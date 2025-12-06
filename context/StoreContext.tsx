@@ -1090,10 +1090,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const createUsername = (username: string) => {
       if (!user) return false;
-      if (user.username) {
-          showAlert(t('username_exists') || 'Username already set', 'info');
-          return false;
-      }
       const cleaned = username.trim().toLowerCase();
       const usernameRegex = /^[a-z0-9._]{3,20}$/;
       if (!cleaned || !usernameRegex.test(cleaned)) {
@@ -1109,15 +1105,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           promptPointsTopUp();
           return false;
       }
+      const alreadyHad = Boolean(user.username);
       const updatedUser = { 
           ...user, 
           username: cleaned, 
-          displayPreference: user.displayPreference || 'username',
+          displayPreference: alreadyHad ? user.displayPreference : 'username',
           points: Math.max(0, (user.points || 0) - cost), 
           updatedAt: new Date().toISOString()
       };
       updateUser(updatedUser);
-      showAlert(t('username_created') || 'Username created', 'success');
+      showAlert(
+          t(alreadyHad ? 'username_updated' : 'username_created') || (alreadyHad ? 'Username updated' : 'Username created'),
+          'success'
+      );
       return true;
   };
 

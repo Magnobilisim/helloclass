@@ -22,7 +22,7 @@ export const AdminDashboard = () => {
       shopItems, addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, payouts, payoutRequests, processPayout, resolvePayoutRequest, deleteExamImage, reportPost,
       prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics,
       manualAds, addManualAd, updateManualAd, deleteManualAd, socialTopics, addSocialTopic, removeSocialTopic,
-      user: currentUser, t, showAlert
+      user: currentUser, t, showAlert, formatDisplayName
   } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -125,6 +125,13 @@ export const AdminDashboard = () => {
     e.title.toLowerCase().includes(examSearch.toLowerCase()) ||
     e.creatorName.toLowerCase().includes(examSearch.toLowerCase())
   );
+
+  const resolveUserDisplay = (userId: string, fallbackName: string, fallbackUsername?: string) => {
+      const match = users.find(u => u.id === userId);
+      if (match) return formatDisplayName(match, { withAt: true });
+      if (fallbackUsername) return `@${fallbackUsername}`;
+      return fallbackName;
+  };
 
   // Logic for Valid Grades based on Selected Subject
   const currentSubjectDef = availableSubjects.find(s => s.id === selectedSubjectIdForTopic);
@@ -522,7 +529,9 @@ export const AdminDashboard = () => {
                   </div>
               ) : (
                   <div className="grid gap-4">
-                      {reportedPosts.map(post => (
+                      {reportedPosts.map(post => {
+                          const authorDisplay = resolveUserDisplay(post.authorId, post.authorName, post.authorUsername);
+                          return (
                           <div key={post.id} className="bg-white p-6 rounded-3xl border border-red-100 shadow-sm flex flex-col md:flex-row gap-6">
                               <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
@@ -534,12 +543,10 @@ export const AdminDashboard = () => {
                                       <span>
                                         Author:{' '}
                                         <span className="font-bold text-gray-800">
-                                          {post.displayAs === 'username'
-                                            ? `@${post.authorDisplayName || post.authorUsername || post.authorName}`
-                                            : post.authorName}
+                                          {authorDisplay}
                                         </span>
                                       </span>
-                                      {post.displayAs === 'username' && (
+                                      {post.authorName && authorDisplay.startsWith('@') && (
                                         <span className="text-xs text-gray-400">({post.authorName})</span>
                                       )}
                                   </div>
@@ -549,7 +556,7 @@ export const AdminDashboard = () => {
                                   <button onClick={() => handleConfirmReport(post.id, 'dismiss')} className="bg-gray-100 text-gray-600 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors">Ignore</button>
                               </div>
                           </div>
-                      ))}
+                      );})}
                   </div>
               )}
           </div>

@@ -244,29 +244,26 @@ export const UserProfile = () => {
                 </div>
         </div>
 
-        {isOwnProfile && (
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mt-6 space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                    <div className="flex-1">
-                        <p className="text-xs font-bold text-gray-400 uppercase mb-2">{t('username')}</p>
-                        {profileUser.username ? (
-                            <>
-                                <div className="inline-flex items-center gap-2 text-3xl font-black text-gray-900">
-                                    <AtSign size={24} className="text-brand-500" />
-                                    <span>@{profileUser.username}</span>
-                                </div>
-                                <p className="text-sm text-gray-500 mt-2">{t('username_cannot_edit')}</p>
-                            </>
-                        ) : (
-                            <>
-                                <h3 className="text-xl font-black text-gray-900">{t('create_username')}</h3>
-                                <p className="text-sm text-gray-500 mt-1">{t('username_hint')}</p>
-                            </>
-                        )}
-                    </div>
-                    {!profileUser.username && (
-                        <div className="w-full md:w-auto flex flex-col gap-3">
-                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3">
+        <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mt-6 space-y-6">
+            <div className="flex flex-col gap-2">
+                <p className="text-xs font-bold text-gray-400 uppercase">{t('username')}</p>
+                <div className="inline-flex items-center gap-2 text-2xl font-black text-gray-900">
+                    <AtSign size={22} className="text-brand-500" />
+                    <span>{profileUser.username ? `@${profileUser.username}` : (t('username_placeholder') || 'kullaniciadi')}</span>
+                </div>
+                <p className="text-sm text-gray-500">
+                    {isOwnProfile ? t('username_hint') : t('username_cannot_edit')}
+                </p>
+            </div>
+
+            {isOwnProfile && (
+                <div className="space-y-4">
+                    <div className="flex flex-col md:flex-row md:items-end gap-4">
+                        <div className="flex-1">
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                                {t('create_username')}
+                            </label>
+                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus-within:border-brand-500 focus-within:bg-white transition-colors">
                                 <AtSign size={18} className="text-gray-400" />
                                 <input
                                     value={usernameInput}
@@ -276,27 +273,45 @@ export const UserProfile = () => {
                                     placeholder={t('username_placeholder') || 'kullaniciadi'}
                                 />
                             </div>
-                            <p className="text-xs text-gray-500">{(t('username_preview_label') || 'Önizleme: @{username}').replace('{username}', sanitizedUsername || 'helloclass')}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {(t('username_preview_label') || 'Önizleme: @{username}').replace('{username}', sanitizedUsername || 'helloclass')}
+                            </p>
                             {sanitizedUsername && (
                                 <p className={`text-xs font-bold ${usernameIsAvailable ? 'text-emerald-600' : 'text-red-500'}`}>
                                     {usernameIsAvailable ? t('username_available') : t('username_taken')}
                                 </p>
                             )}
-                            <button
-                                onClick={handleUsernameSubmit}
-                                disabled={!usernameIsAvailable}
-                                className={`px-6 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
-                                    usernameIsAvailable ? 'bg-brand-500 text-white hover:bg-brand-600' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                }`}
-                            >
-                                {t('create_username')} · {usernameCost} {t('points')}
-                            </button>
-                            <p className="text-xs text-gray-400">{t('username_cost_hint').replace('{points}', String(usernameCost))}</p>
                         </div>
-                    )}
+                        <div className="md:w-48 bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs text-gray-600 font-semibold">
+                            <p>{t('username_cost_hint').replace('{points}', String(usernameCost))}</p>
+                            <p className="text-[10px] text-gray-400 mt-2">{t('points')}: {currentUser.points}</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <button
+                            onClick={handleUsernameSubmit}
+                            disabled={!usernameIsAvailable || sanitizedUsername === (profileUser.username || '')}
+                            className={`px-6 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
+                                usernameIsAvailable && sanitizedUsername !== (profileUser.username || '')
+                                    ? 'bg-brand-500 text-white hover:bg-brand-600'
+                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                            {(profileUser.username ? t('username_update_btn') : t('create_username'))} · {usernameCost} {t('points')}
+                        </button>
+                        {profileUser.username && (
+                            <span className="text-xs text-gray-500 flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2 font-bold">
+                                {t('current_username')} <span className="text-gray-900">@{profileUser.username}</span>
+                            </span>
+                        )}
+                    </div>
                 </div>
+            )}
+        </section>
 
-                <div className="pt-6 border-t border-gray-100">
+        {isOwnProfile && (
+            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mt-6">
+                <div className="pt-2">
                     <p className="text-xs font-bold text-gray-400 uppercase mb-2">{t('display_preference_title')}</p>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
