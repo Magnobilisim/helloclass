@@ -264,6 +264,12 @@ export const TRANSLATIONS = {
     ad_location_stats: 'Şehir / Okul',
     impressions: 'Gösterim',
     clicks: 'Tıklama',
+    upload_excel: 'Excel Yükle',
+    excel_guidelines_title: 'Hızlı notlar',
+    excel_guideline_schools: '“Schools” sayfasında okul bilgilerini güncelleyin.',
+    excel_guideline_subjects: '“Subjects” sayfasında ders isimlerini ve sınıf seviyelerini girin.',
+    excel_guideline_topics: '“Topics” sayfasında konuları ilgili derslerle eşleyin.',
+    excel_import_success: 'Excel verileri güncellendi.',
 
     // Shop & Items
     shop_subtitle: 'Puanlarını harika ödüller için harca!',
@@ -868,6 +874,12 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     ad_location_stats: 'City / School',
     impressions: 'Impressions',
     clicks: 'Clicks',
+    upload_excel: 'Upload Excel',
+    excel_guidelines_title: 'Quick notes',
+    excel_guideline_schools: 'Use the “Schools” sheet to manage school information.',
+    excel_guideline_subjects: 'Fill the “Subjects” sheet with subject names and grades.',
+    excel_guideline_topics: 'Map topics to subjects via the “Topics” sheet.',
+    excel_import_success: 'Excel data imported successfully.',
 
     // Shop
     shop_subtitle: 'Spend your hard-earned points on cool rewards!',
