@@ -33,6 +33,7 @@ export interface Notification {
 export interface User {
   id: string;
   name: string;
+  username?: string;
   email: string;
   role: UserRole;
   avatar: string;
@@ -154,6 +155,9 @@ export interface Post {
   id: string;
   authorId: string;
   authorName: string;
+  authorUsername?: string;
+  authorDisplayName?: string;
+  displayAs?: 'username' | 'fullName';
   authorAvatar: string;
   content: string;
   imageUrl?: string;
@@ -222,6 +226,7 @@ export interface SystemSettings {
   aiWizardCost: number;
   aiExplainCost: number;
   joker5050Cost: number;
+  usernameCost?: number;
   teacherCreditPackages: PointPackage[];
   socialLinks?: {
     youtube?: string;
@@ -388,7 +393,7 @@ export interface StoreContextType {
   toggleEquip: (itemType: string) => void;
   startExamSession: (examId: string) => void; 
   saveResult: (examId: string, answers: number[]) => void; 
-  addPost: (content: string, tags?: string[], schoolId?: string, imageUrl?: string) => Promise<{success: boolean, reason?: string}>;
+  addPost: (content: string, tags?: string[], schoolId?: string, imageUrl?: string, displayMode?: 'username' | 'fullName') => Promise<{success: boolean, reason?: string}>;
   deletePost: (postId: string) => void;
   toggleLike: (postId: string) => void;
   toggleDislike: (postId: string) => void;
@@ -422,6 +427,7 @@ export interface StoreContextType {
   logAiUsage: (entry: Omit<AiUsageLog, 'id' | 'timestamp'> & { note?: string }) => void;
   requestPayout: (amountTL: number, note?: string) => boolean;
   resolvePayoutRequest: (requestId: string, decision: 'approved' | 'rejected', adminNote?: string) => void;
+  createUsername: (username: string) => boolean;
   
   // Prize Exam Features
   addPrizeExam: (exam: PrizeExam) => void;

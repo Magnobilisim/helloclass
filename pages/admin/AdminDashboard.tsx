@@ -529,8 +529,18 @@ export const AdminDashboard = () => {
                                       <span className="text-gray-400 text-xs">ID: {post.id}</span>
                                   </div>
                                   <p className="text-gray-900 font-medium mb-2 bg-gray-50 p-3 rounded-xl">{post.content}</p>
-                                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                                      <span>Author: <span className="font-bold text-gray-800">{post.authorName}</span></span>
+                                  <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+                                      <span>
+                                        Author:{' '}
+                                        <span className="font-bold text-gray-800">
+                                          {post.displayAs === 'username'
+                                            ? `@${post.authorDisplayName || post.authorUsername || post.authorName}`
+                                            : post.authorName}
+                                        </span>
+                                      </span>
+                                      {post.displayAs === 'username' && (
+                                        <span className="text-xs text-gray-400">({post.authorName})</span>
+                                      )}
                                   </div>
                               </div>
                               <div className="flex flex-col justify-center gap-2 md:w-32">

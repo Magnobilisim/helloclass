@@ -81,6 +81,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       aiWizardCost: 200,
       aiExplainCost: 25,
       joker5050Cost: 30,
+      usernameCost: 150,
       teacherCreditPackages: TEACHER_CREDIT_PACKAGES,
       socialLinks: {
         youtube: '',
@@ -833,7 +834,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     })();
   };
 
-  const addPost = async (content: string, tags?: string[], schoolId?: string, imageUrl?: string): Promise<{success: boolean, reason?: string}> => {
+  const addPost = async (
+      content: string, 
+      tags?: string[], 
+      schoolId?: string, 
+      imageUrl?: string,
+      displayMode: 'username' | 'fullName' = 'fullName'
+  ): Promise<{success: boolean, reason?: string}> => {
     if (!user) return { success: false, reason: 'Auth error' };
     if (content.length > 280) {
         showAlert('Post too long', 'error');
@@ -847,10 +854,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return { success: false, reason: localizedReason };
     }
 
+    const useUsername = displayMode === 'username' && !!user.username;
     const newPost: Post = {
       id: `post-${Date.now()}`,
       authorId: user.id,
       authorName: user.name,
+      authorUsername: user.username,
+      authorDisplayName: useUsername ? user.username : user.name,
+      displayAs: useUsername ? 'username' : 'fullName',
       authorAvatar: user.avatar,
       content,
       imageUrl, 
@@ -1019,6 +1030,38 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const removeSocialTopic = (id: string) => {
       if (user?.role !== UserRole.ADMIN) return;
       setSocialTopics(prev => prev.filter(topic => topic.id !== id));
+  };
+
+  const createUsername = (username: string) => {
+      if (!user) return false;
+      if (user.username) {
+          showAlert(t('username_exists') || 'Username already set', 'info');
+          return false;
+      }
+      const cleaned = username.trim().toLowerCase();
+      const usernameRegex = /^[a-z0-9._]{3,20}$/;
+      if (!cleaned || !usernameRegex.test(cleaned)) {
+          showAlert(t('username_invalid') || 'Invalid username', 'error');
+          return false;
+      }
+      if (users.some(u => u.username?.toLowerCase() === cleaned)) {
+          showAlert(t('username_taken') || 'Username already taken', 'error');
+          return false;
+      }
+      const cost = systemSettings.usernameCost ?? 0;
+      if ((user.points || 0) < cost) {
+          showAlert(t('not_enough_points'), 'error');
+          return false;
+      }
+      const updatedUser = { 
+          ...user, 
+          username: cleaned, 
+          points: Math.max(0, (user.points || 0) - cost), 
+          updatedAt: new Date().toISOString()
+      };
+      updateUser(updatedUser);
+      showAlert(t('username_created') || 'Username created', 'success');
+      return true;
   };
 
   const bulkImportSchools = (entries: Array<{ id?: string; name: string; city?: string }>) => {
@@ -1407,6 +1450,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage, purchaseAiCredits, logAiUsage, requestPayout, resolvePayoutRequest,
       addPrizeExam, drawPrizeWinner, payEntryFee,
       updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics, addManualAd, updateManualAd, deleteManualAd, socialTopics, addSocialTopic, removeSocialTopic,
+      createUsername,
       alert, showAlert, setLanguage, t
     }}>
       {children}

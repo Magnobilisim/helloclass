@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { ThumbsUp, ThumbsDown, MessageSquare, Send, AlertTriangle, Filter, Loader2, X, Globe, ShieldAlert, UserPlus, UserCheck, Image as ImageIcon, Check, Crop, ZoomIn, ZoomOut, RotateCw, Layout, Grid } from 'lucide-react';
 import { ManualAd, ReportReason, UserRole } from '../../types';
@@ -17,6 +17,7 @@ export const SocialFeed = () => {
   const [selectedGeneralTopic, setSelectedGeneralTopic] = useState<string>('');
   const [targetSchoolId, setTargetSchoolId] = useState<string>(''); 
   const [isPosting, setIsPosting] = useState(false);
+  const [postIdentity, setPostIdentity] = useState<'fullName' | 'username'>('fullName');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [filterSchoolId, setFilterSchoolId] = useState<string>(''); 
@@ -44,6 +45,14 @@ export const SocialFeed = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isCropping, setIsCropping] = useState(false);
 
+  const hasUsername = Boolean(user?.username);
+
+  useEffect(() => {
+      if (!hasUsername) {
+          setPostIdentity('fullName');
+      }
+  }, [hasUsername]);
+
   const handlePost = async () => {
     if (!newPostContent.trim() && !postImagePreview) return;
     setIsPosting(true);
@@ -63,7 +72,8 @@ export const SocialFeed = () => {
     const tags: string[] = [];
     if (selectedTag) tags.push(selectedTag);
     if (selectedGeneralTopic) tags.push(`general:${selectedGeneralTopic}`);
-    const result = await addPost(newPostContent, tags.length ? tags : undefined, targetSchoolId || undefined, finalImageUrl);
+    const identityMode: 'username' | 'fullName' = hasUsername && postIdentity === 'username' ? 'username' : 'fullName';
+    const result = await addPost(newPostContent, tags.length ? tags : undefined, targetSchoolId || undefined, finalImageUrl, identityMode);
     
     setIsPosting(false);
     if (result.success) { setNewPostContent(''); setSelectedTag(''); setSelectedGeneralTopic(''); setTargetSchoolId(''); setPostImagePreview(null); } 
@@ -137,7 +147,7 @@ export const SocialFeed = () => {
       if (value === 'MY_SCHOOL') {
           if (!user?.schoolId) {
               if (window.confirm("You haven't selected a school yet. Go to profile to update?")) {
-                  navigate('/student/profile');
+                  navigate(profileRoute);
               }
               return;
           }
@@ -160,6 +170,7 @@ export const SocialFeed = () => {
   const socialAds = React.useMemo(() => manualAds.filter(ad => ad.isActive && (ad.placement === 'social' || ad.placement === 'both')), [manualAds]);
   const userRole = user?.role;
   const locationHint = user?.schoolId;
+  const profileRoute = userRole === UserRole.TEACHER ? '/teacher/profile' : userRole === UserRole.ADMIN ? '/admin/profile' : '/student/profile';
 
   const feedWithAds = React.useMemo(() => {
       if (!socialAds.length) {
@@ -252,6 +263,42 @@ export const SocialFeed = () => {
               </div>
               <button onClick={handlePost} disabled={isPosting || (!newPostContent.trim() && !postImagePreview)} className="w-full md:w-auto bg-brand-500 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">{isPosting ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />} {t('post_btn')}</button>
           </div>
+          <div className="mt-3 flex flex-col gap-3">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                  <div className="text-xs font-bold text-gray-500 flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span>{t('post_identity_label')}</span>
+                      <span className="text-gray-400 font-normal">{t('post_identity_hint')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                      <div className="inline-flex bg-gray-100 rounded-full p-1">
+                          <button
+                              type="button"
+                              onClick={() => setPostIdentity('fullName')}
+                              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${postIdentity === 'fullName' ? 'bg-white shadow text-brand-600' : 'text-gray-500'}`}
+                          >
+                              {t('post_identity_fullname')}
+                          </button>
+                          <button
+                              type="button"
+                              onClick={() => hasUsername && setPostIdentity('username')}
+                              disabled={!hasUsername}
+                              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${postIdentity === 'username' ? 'bg-white shadow text-brand-600' : 'text-gray-400'} ${!hasUsername ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                              {t('post_identity_username')}
+                          </button>
+                      </div>
+                      {!hasUsername && (
+                          <button
+                              type="button"
+                              onClick={() => navigate(profileRoute)}
+                              className="text-xs font-bold text-brand-600 underline"
+                          >
+                              {t('username_required_notice')}
+                          </button>
+                      )}
+                  </div>
+              </div>
+          </div>
        </div>
 
        {/* Feed */}
@@ -273,6 +320,9 @@ export const SocialFeed = () => {
              const schoolName = post.schoolId ? schools.find(s => s.id === post.schoolId)?.name : 'Global';
              const isMe = user?.id === post.authorId;
              const isFollowing = user?.following?.includes(post.authorId);
+             const displayName = post.displayAs === 'username'
+                 ? `@${post.authorDisplayName || post.authorUsername || post.authorName}`
+                 : (post.authorDisplayName || post.authorName);
 
              return (
              <div key={post.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
@@ -281,7 +331,7 @@ export const SocialFeed = () => {
                         <Link to={`/student/profile/${post.authorId}`}><img src={post.authorAvatar} className="w-10 h-10 rounded-full border border-gray-100" /></Link>
                         <div>
                             <div className="flex items-center gap-2">
-                                <Link to={`/student/profile/${post.authorId}`} className="font-bold text-gray-800 text-sm">{post.authorName}</Link>
+                                <Link to={`/student/profile/${post.authorId}`} className="font-bold text-gray-800 text-sm">{displayName}</Link>
                                 {!isMe && <button onClick={() => toggleFollow(post.authorId)} className="text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-lg font-bold">{isFollowing ? t('following') : t('follow')}</button>}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
