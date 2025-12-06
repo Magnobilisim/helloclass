@@ -188,7 +188,7 @@ export const StudentExams = () => {
          )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-16 md:pb-0">
         {examsWithAds.map(item => {
           if (item.type === 'ad') {
               return (

@@ -246,8 +246,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </div>
 
       {/* Bottom Nav (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-between items-center gap-1">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.08)]">
+        <div className="grid grid-cols-5 gap-1">
           {getMobileLinks().map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
@@ -258,7 +258,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 to={link.to} 
                 className={`flex flex-col items-center gap-1 px-2 py-1 rounded-2xl text-[11px] font-semibold transition-all ${isActive ? 'text-brand-600' : 'text-gray-400'}`}
               >
-                <Icon size={isSocial ? 30 : 22} strokeWidth={isActive ? 2.6 : 2} />
+                <Icon size={isSocial ? 30 : 22} strokeWidth={isActive ? 2.6 : 2} className="touch-manipulation" />
                 <span className="truncate max-w-[70px]">{link.label}</span>
               </Link>
             );

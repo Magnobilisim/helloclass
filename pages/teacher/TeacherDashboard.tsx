@@ -58,7 +58,7 @@ export const TeacherDashboard = () => {
     <div className="space-y-8 animate-fade-in relative pb-10">
       <div className="flex justify-between items-center"><h2 className="text-3xl font-bold text-gray-900">{t('teacher_dashboard')}</h2><button onClick={() => navigate('/teacher/create')} className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg active:scale-95 transform"><Plus size={20} /> {t('create_exam')}</button></div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard icon={DollarSign} label={t('net_earnings')} value={`₺${netIncomeTL.toFixed(2)}`} color="bg-emerald-500" />
         <StatCard icon={BookOpen} label={t('total_exams')} value={myExams.length} color="bg-blue-500" />
         <StatCard icon={Users} label={t('total_sales')} value={totalSales} color="bg-violet-500" />
