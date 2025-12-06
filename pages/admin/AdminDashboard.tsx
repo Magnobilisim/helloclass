@@ -21,7 +21,7 @@ export const AdminDashboard = () => {
       approvedTopics, addTopic, removeTopic, schools, addSchool, removeSchool, availableSubjects, addSubject, removeSubject, 
       shopItems, addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, payouts, payoutRequests, processPayout, resolvePayoutRequest, deleteExamImage, reportPost,
       prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics,
-      manualAds, addManualAd, updateManualAd, deleteManualAd,
+      manualAds, addManualAd, updateManualAd, deleteManualAd, socialTopics, addSocialTopic, removeSocialTopic,
       user: currentUser, t, showAlert
   } = useStore();
   const location = useLocation();
@@ -1036,6 +1036,31 @@ export const AdminDashboard = () => {
 
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                   <h3 className="font-bold text-lg text-gray-900 mb-6">{t('approved_topics')}</h3>
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-lg text-gray-900">{t('social_topics')}</h3>
+                      <button
+                        onClick={() => {
+                            const name = window.prompt(t('social_topics_prompt') || 'Add social topic');
+                            if (name) addSocialTopic(name);
+                        }}
+                        className="px-4 py-2 rounded-xl text-sm font-bold bg-brand-500 text-white hover:bg-brand-600 transition-colors"
+                      >
+                        {t('add')}
+                      </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                      {socialTopics.map(topic => (
+                          <span key={topic.id} className="px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold text-gray-700 flex items-center gap-2">
+                              {topic.name}
+                              <button onClick={() => removeSocialTopic(topic.id)} className="text-gray-400 hover:text-red-500">
+                                  <X size={14} />
+                              </button>
+                          </span>
+                      ))}
+                      {socialTopics.length === 0 && <p className="text-sm text-gray-400">{t('no_social_topics')}</p>}
+                  </div>
+              </div>
                   <div className="flex flex-wrap gap-4 mb-6">
                       <select value={selectedSubjectIdForTopic} onChange={e => setSelectedSubjectIdForTopic(e.target.value)} className="p-3 bg-gray-50 rounded-xl font-bold border border-gray-300 text-gray-800 focus:outline-none focus:border-brand-500">
                           {availableSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}

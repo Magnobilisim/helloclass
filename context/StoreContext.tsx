@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase, AiUsageLog, PayoutRequest, ManualAd } from '../types';
-import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS, TEACHER_CREDIT_PACKAGES, INITIAL_TRANSACTIONS, INITIAL_MANUAL_ADS } from '../constants';
+import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS, TEACHER_CREDIT_PACKAGES, INITIAL_TRANSACTIONS, INITIAL_MANUAL_ADS, INITIAL_SOCIAL_TOPICS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
 import { checkContentSafety, generateLearningReport, setSafetyLanguage } from '../services/aiService';
 
@@ -52,6 +52,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [schools, setSchools] = useState<School[]>(INITIAL_SCHOOLS);
+  const [socialTopics, setSocialTopics] = useState<{ id: string; name: string }[]>(INITIAL_SOCIAL_TOPICS);
   const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [shopItems, setShopItems] = useState<ShopItem[]>(SHOP_ITEMS);
   const [payouts, setPayouts] = useState<Payout[]>([]);
@@ -177,6 +178,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setSystemSettings(defaultSettings);
     }
     if (loadedSchools) setSchools(JSON.parse(loadedSchools));
+    const loadedSocialTopics = localStorage.getItem('hc_social_topics');
+    if (loadedSocialTopics) setSocialTopics(JSON.parse(loadedSocialTopics));
     if (loadedNotifs) setNotifications(JSON.parse(loadedNotifs));
     if (loadedSubjects) setAvailableSubjects(JSON.parse(loadedSubjects));
     if (loadedShop) setShopItems(JSON.parse(loadedShop));
@@ -265,6 +268,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('hc_settings', JSON.stringify(systemSettings)); }, [systemSettings]);
   useEffect(() => { localStorage.setItem('hc_topics', JSON.stringify(approvedTopics)); }, [approvedTopics]);
   useEffect(() => { localStorage.setItem('hc_schools', JSON.stringify(schools)); }, [schools]);
+  useEffect(() => { localStorage.setItem('hc_social_topics', JSON.stringify(socialTopics)); }, [socialTopics]);
   useEffect(() => { localStorage.setItem('hc_notifs', JSON.stringify(notifications)); }, [notifications]);
   useEffect(() => { localStorage.setItem('hc_subjects', JSON.stringify(availableSubjects)); }, [availableSubjects]);
   useEffect(() => { localStorage.setItem('hc_shop', JSON.stringify(shopItems)); }, [shopItems]);
@@ -1001,6 +1005,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showAlert('School removed', 'info');
   };
 
+  const addSocialTopic = (name: string) => {
+      if (user?.role !== UserRole.ADMIN || !name.trim()) return;
+      setSocialTopics(prev => [...prev, { id: `soc-${Date.now()}`, name: name.trim() }]);
+  };
+
+  const removeSocialTopic = (id: string) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      setSocialTopics(prev => prev.filter(topic => topic.id !== id));
+  };
+
   const bulkImportSchools = (entries: Array<{ id?: string; name: string; city?: string }>) => {
       setSchools(prev => {
           const updated = [...prev];
@@ -1386,7 +1400,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addTopic, removeTopic, addSchool, removeSchool, markNotificationRead, addSubject, removeSubject, toggleFollow,
       addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage, purchaseAiCredits, logAiUsage, requestPayout, resolvePayoutRequest,
       addPrizeExam, drawPrizeWinner, payEntryFee,
-      updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics, addManualAd, updateManualAd, deleteManualAd,
+      updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics, addManualAd, updateManualAd, deleteManualAd, socialTopics, addSocialTopic, removeSocialTopic,
       alert, showAlert, setLanguage, t
     }}>
       {children}

@@ -355,6 +355,7 @@ export interface StoreContextType {
   logs: ActivityLog[];
   approvedTopics: Record<string, TopicMetadata[]>; // Key is Subject ID now
   schools: School[];
+  socialTopics: { id: string; name: string }[];
   notifications: Notification[];
   availableSubjects: SubjectDef[];
   shopItems: ShopItem[];
@@ -401,6 +402,8 @@ export interface StoreContextType {
   removeTopic: (subjectId: string, topic: string) => void;
   addSchool: (name: string) => void;
   removeSchool: (id: string) => void;
+  addSocialTopic: (name: string) => void;
+  removeSocialTopic: (id: string) => void;
   markNotificationRead: (id: string) => void;
   addSubject: (name: string, grades: number[]) => void;
   removeSubject: (id: string) => void;

@@ -479,6 +479,12 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
   }
 ];
 
+export const INITIAL_SOCIAL_TOPICS = [
+  { id: 'soc-announcement', name: 'Duyurular' },
+  { id: 'soc-study', name: 'Çalışma Grupları' },
+  { id: 'soc-events', name: 'Etkinlikler' },
+];
+
 export const INITIAL_MANUAL_ADS: ManualAd[] = [
   {
     id: 'ad-mentor-labs',
