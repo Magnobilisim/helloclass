@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Award, Calendar, CheckCircle, XCircle, AlertCircle, ArrowRight, Star, Bookmark, Play } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 
 interface StudentResultsProps {
     studentId?: string;
