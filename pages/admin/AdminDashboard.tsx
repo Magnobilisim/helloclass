@@ -938,7 +938,14 @@ export const AdminDashboard = () => {
                           <tbody className="divide-y divide-gray-100">
                               {filteredUsers.map(u => (
                                   <tr key={u.id}>
-                                      <td className="p-4 pl-6 font-bold text-gray-800">{u.name}</td>
+                                      <td className="p-4 pl-6">
+                                          <div className="flex flex-col">
+                                              <span className="font-bold text-gray-800">{u.name}</span>
+                                              <span className="text-xs text-gray-500 font-mono">
+                                                  {u.username ? `@${u.username}` : t('no_username') || 'No username'}
+                                              </span>
+                                          </div>
+                                      </td>
                                       <td className="p-4"><span className="bg-gray-100 border border-gray-200 px-2 py-1 rounded text-xs font-bold text-gray-700">{u.role}</span></td>
                                       <td className="p-4 flex gap-2">
                                           {currentUser?.id !== u.id && u.role !== UserRole.ADMIN && (
