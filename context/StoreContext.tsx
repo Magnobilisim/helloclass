@@ -67,7 +67,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const buildSessionKey = (studentId: string, examId: string) => `${studentId}_${examId}`;
   const generateReferralCode = () => `HC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   
-  const [alert, setAlert] = useState<{ message: string; type: AlertType } | null>(null);
+  const [alert, setAlert] = useState<{ message: string; type: AlertType; actionLabel?: string; actionTo?: string } | null>(null);
   const [language, setLanguage] = useState<Language>('tr');
   const defaultSettings: SystemSettings = { 
       commissionRate: 20, 
@@ -335,9 +335,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return aiReason || t('safety_warning_desc');
   };
 
-  const showAlert = (message: string, type: AlertType) => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 3000);
+  const showAlert = (
+      message: string,
+      type: AlertType,
+      options?: { actionLabel?: string; actionTo?: string; duration?: number }
+  ) => {
+    setAlert({ message, type, actionLabel: options?.actionLabel, actionTo: options?.actionTo });
+    setTimeout(() => setAlert(null), options?.duration ?? 3000);
+  };
+  const getShopRoute = () => {
+      if (user?.role === UserRole.TEACHER) return '/teacher/shop';
+      return '/student/shop';
+  };
+  const promptPointsTopUp = () => {
+      showAlert(t('not_enough_points'), 'error', { actionLabel: t('go_to_shop_cta'), actionTo: getShopRoute() });
   };
 
   const addNotification = (userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error', link?: string) => {
@@ -528,7 +539,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return false;
       }
       if (user.points < exam.price) {
-          showAlert(t('not_enough_points'), 'error');
+          promptPointsTopUp();
           return false;
       }
       const updatedUser = {
@@ -579,7 +590,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showAlert(t('purchase_success'), 'success');
       return true;
     }
-    showAlert(t('not_enough_points'), 'error');
+    promptPointsTopUp();
     return false;
   };
 
@@ -1071,6 +1082,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSocialTopics(prev => prev.filter(topic => topic.id !== id));
   };
 
+  const isUsernameAvailable = (username: string, excludeUserId?: string) => {
+      const cleaned = username.trim().toLowerCase();
+      if (!cleaned || cleaned.length < 3) return false;
+      return !users.some(u => u.id !== excludeUserId && u.username?.toLowerCase() === cleaned);
+  };
+
   const createUsername = (username: string) => {
       if (!user) return false;
       if (user.username) {
@@ -1083,13 +1100,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           showAlert(t('username_invalid') || 'Invalid username', 'error');
           return false;
       }
-      if (users.some(u => u.username?.toLowerCase() === cleaned)) {
+      if (!isUsernameAvailable(cleaned, user.id)) {
           showAlert(t('username_taken') || 'Username already taken', 'error');
           return false;
       }
       const cost = systemSettings.usernameCost ?? 0;
       if ((user.points || 0) < cost) {
-          showAlert(t('not_enough_points'), 'error');
+          promptPointsTopUp();
           return false;
       }
       const updatedUser = { 
@@ -1492,6 +1509,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics, addManualAd, updateManualAd, deleteManualAd, socialTopics, addSocialTopic, removeSocialTopic,
       createUsername,
       formatDisplayName,
+      isUsernameAvailable,
       alert, showAlert, setLanguage, t
     }}>
       {children}

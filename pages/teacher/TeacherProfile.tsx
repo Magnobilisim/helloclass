@@ -3,7 +3,7 @@ import { useStore } from '../../context/StoreContext';
 import { School, Edit2, Save, X, LogOut, AtSign } from 'lucide-react';
 
 export const TeacherProfile = () => {
-  const { user, updateUser, schools, t, showAlert, logout, systemSettings, createUsername } = useStore();
+  const { user, updateUser, schools, t, showAlert, logout, systemSettings, createUsername, isUsernameAvailable } = useStore();
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState('');
   const [branch, setBranch] = useState('');
@@ -38,6 +38,8 @@ export const TeacherProfile = () => {
   const currentSchool = schools.find((s) => s.id === user.schoolId);
   const usernameCost = systemSettings.usernameCost ?? 0;
   const sanitizedUsername = usernameInput.trim().toLowerCase();
+  const usernameMeetsLength = sanitizedUsername.length >= 3;
+  const usernameAvailable = usernameMeetsLength && isUsernameAvailable(sanitizedUsername, user?.id);
 
   const handleUsernameChange = (value: string) => {
       const allowed = value.replace(/[^a-zA-Z0-9._]/g, '');
@@ -45,10 +47,14 @@ export const TeacherProfile = () => {
   };
 
   const handleUsernameSubmit = () => {
-      if (!sanitizedUsername) {
-          showAlert(t('username_invalid'), 'error');
-          return;
-      }
+    if (!sanitizedUsername) {
+      showAlert(t('username_invalid'), 'error');
+      return;
+    }
+    if (!usernameAvailable) {
+      showAlert(t('username_taken'), 'error');
+      return;
+    }
     const success = createUsername(sanitizedUsername);
     if (success) {
         setDisplayPreference('username');
@@ -138,11 +144,16 @@ export const TeacherProfile = () => {
                   sanitizedUsername || 'helloclass'
                 )}
               </p>
+              {sanitizedUsername && (
+                <p className={`text-xs font-bold ${usernameAvailable ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {usernameAvailable ? t('username_available') : t('username_taken')}
+                </p>
+              )}
               <button
                 onClick={handleUsernameSubmit}
-                disabled={!sanitizedUsername}
+                disabled={!usernameAvailable}
                 className={`px-6 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
-                  sanitizedUsername ? 'bg-brand-500 text-white hover:bg-brand-600' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  usernameAvailable ? 'bg-brand-500 text-white hover:bg-brand-600' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 }`}
               >
                 {t('create_username')} · {usernameCost} {t('points')}

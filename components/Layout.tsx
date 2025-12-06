@@ -151,7 +151,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         }`}>
           {(alert.type === 'error' || alert.type === 'warning') && <AlertTriangle size={20} />}
           {alert.type === 'success' && <Star size={20} />}
-          {alert.message}
+          <span className="flex-1 text-sm">{alert.message}</span>
+          {alert.actionLabel && alert.actionTo && (
+            <Link
+              to={alert.actionTo}
+              className="bg-white/90 text-gray-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wide shadow-sm hover:bg-white"
+            >
+              {alert.actionLabel}
+            </Link>
+          )}
         </div>
       )}
 

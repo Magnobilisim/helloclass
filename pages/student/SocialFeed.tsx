@@ -320,16 +320,17 @@ export const SocialFeed = () => {
                     <div className="mt-4 pt-4 border-t border-gray-50 bg-gray-50/50 rounded-xl p-3">
                         <div className="space-y-3 mb-4">
                             {post.comments.map(c => {
-                                const displayName = c.displayAs === 'username'
+                                const baseName = c.displayAs === 'username'
                                     ? `@${c.authorDisplayName || c.authorUsername || c.authorName}`
                                     : (c.authorDisplayName || c.authorName);
+                                const initial = baseName?.replace(/^@/, '').charAt(0)?.toUpperCase() || 'U';
                                 return (
                                     <div key={c.id} className="flex gap-2">
                                         <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">
-                                            {displayName?.charAt(0)}
+                                            {initial}
                                         </div>
                                         <div className="bg-white p-2 rounded-r-xl rounded-bl-xl border border-gray-100 shadow-sm text-sm">
-                                            <Link to={`/student/profile/${c.authorId}`} className="font-bold text-gray-800 text-xs block">{displayName}</Link>
+                                            <Link to={`/student/profile/${c.authorId}`} className="font-bold text-gray-800 text-xs block">{baseName}</Link>
                                             <p className="text-gray-700">{c.text}</p>
                                         </div>
                                     </div>

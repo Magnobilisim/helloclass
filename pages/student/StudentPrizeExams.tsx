@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 export const StudentPrizeExams = () => {
   const { user, prizeExams, exams, results, t, showAlert, updateUser, payEntryFee } = useStore();
   const navigate = useNavigate();
+  const shopRoute = '/student/shop';
+  const promptShopRedirect = () => showAlert(t('not_enough_points'), 'error', { actionLabel: t('go_to_shop_cta'), actionTo: shopRoute });
   const [timeLeft, setTimeLeft] = useState<{days: number, hours: number, minutes: number, seconds: number} | null>(null);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
 
@@ -117,10 +119,10 @@ export const StudentPrizeExams = () => {
                   if (payEntryFee(activeContest.id, activeContest.entryFee)) {
                       navigate(`/student/exam/${activeContest.examId}`);
                   } else {
-                      showAlert(t('not_enough_points'), 'error');
+                      promptShopRedirect();
                   }
               } else {
-                  showAlert(t('not_enough_points'), 'error');
+                  promptShopRedirect();
               }
           } else {
               navigate(`/student/exam/${activeContest.examId}`);

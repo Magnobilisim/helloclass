@@ -433,6 +433,7 @@ export interface StoreContextType {
   resolvePayoutRequest: (requestId: string, decision: 'approved' | 'rejected', adminNote?: string) => void;
   createUsername: (username: string) => boolean;
   formatDisplayName: (user?: User | null, options?: { fallback?: 'firstName' | 'fullName'; withAt?: boolean }) => string;
+  isUsernameAvailable: (username: string, excludeUserId?: string) => boolean;
   
   // Prize Exam Features
   addPrizeExam: (exam: PrizeExam) => void;
@@ -447,8 +448,8 @@ export interface StoreContextType {
   deleteManualAd: (id: string) => void;
 
   // Utils
-  alert: { message: string; type: AlertType } | null;
-  showAlert: (message: string, type: AlertType) => void;
+  alert: { message: string; type: AlertType; actionLabel?: string; actionTo?: string } | null;
+  showAlert: (message: string, type: AlertType, options?: { actionLabel?: string; actionTo?: string; duration?: number }) => void;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string; 
 }
