@@ -247,10 +247,11 @@ const learningReportSchema = {
       },
       focusAreas: {
         type: "array",
+        minItems: 0,
         items: { type: "string" },
       },
     },
-    required: ["summary", "outcomes"],
+    required: ["summary", "outcomes", "focusAreas"],
   },
 };
 
