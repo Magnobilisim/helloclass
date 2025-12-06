@@ -1,30 +1,31 @@
 
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Layout } from './components/Layout';
 import { UserRole } from './types';
 import { AlertTriangle, Hammer } from 'lucide-react';
+import { lazyWithPreload } from './utils/lazyWithPreload';
 
-const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
-const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
-const StudentExams = lazy(() => import('./pages/student/StudentExams').then(m => ({ default: m.StudentExams })));
-const StudentShop = lazy(() => import('./pages/student/StudentShop').then(m => ({ default: m.StudentShop })));
-const StudentResults = lazy(() => import('./pages/student/StudentResults').then(m => ({ default: m.StudentResults })));
-const ExamRoom = lazy(() => import('./pages/student/ExamRoom').then(m => ({ default: m.ExamRoom })));
-const SocialFeed = lazy(() => import('./pages/student/SocialFeed').then(m => ({ default: m.SocialFeed })));
-const UserProfile = lazy(() => import('./pages/student/UserProfile').then(m => ({ default: m.UserProfile })));
-const Notifications = lazy(() => import('./pages/student/Notifications').then(m => ({ default: m.Notifications })));
-const StudentPrizeExams = lazy(() => import('./pages/student/StudentPrizeExams').then(m => ({ default: m.StudentPrizeExams })));
-const Chat = lazy(() => import('./pages/Chat').then(m => ({ default: m.Chat })));
-const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
-const CreateExam = lazy(() => import('./pages/teacher/CreateExam').then(m => ({ default: m.CreateExam })));
-const TeacherProfile = lazy(() => import('./pages/teacher/TeacherProfile').then(m => ({ default: m.TeacherProfile })));
-const TeacherShop = lazy(() => import('./pages/teacher/TeacherShop').then(m => ({ default: m.TeacherShop })));
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
-const AdminSettings = lazy(() => import('./pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
-const AdminProfile = lazy(() => import('./pages/admin/AdminProfile').then(m => ({ default: m.AdminProfile })));
+const Auth = lazyWithPreload(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
+const StudentDashboard = lazyWithPreload(() => import('./pages/student/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
+const StudentExams = lazyWithPreload(() => import('./pages/student/StudentExams').then(m => ({ default: m.StudentExams })));
+const StudentShop = lazyWithPreload(() => import('./pages/student/StudentShop').then(m => ({ default: m.StudentShop })));
+const StudentResults = lazyWithPreload(() => import('./pages/student/StudentResults').then(m => ({ default: m.StudentResults })));
+const ExamRoom = lazyWithPreload(() => import('./pages/student/ExamRoom').then(m => ({ default: m.ExamRoom })));
+const SocialFeed = lazyWithPreload(() => import('./pages/student/SocialFeed').then(m => ({ default: m.SocialFeed })));
+const UserProfile = lazyWithPreload(() => import('./pages/student/UserProfile').then(m => ({ default: m.UserProfile })));
+const Notifications = lazyWithPreload(() => import('./pages/student/Notifications').then(m => ({ default: m.Notifications })));
+const StudentPrizeExams = lazyWithPreload(() => import('./pages/student/StudentPrizeExams').then(m => ({ default: m.StudentPrizeExams })));
+const Chat = lazyWithPreload(() => import('./pages/Chat').then(m => ({ default: m.Chat })));
+const TeacherDashboard = lazyWithPreload(() => import('./pages/teacher/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
+const CreateExam = lazyWithPreload(() => import('./pages/teacher/CreateExam').then(m => ({ default: m.CreateExam })));
+const TeacherProfile = lazyWithPreload(() => import('./pages/teacher/TeacherProfile').then(m => ({ default: m.TeacherProfile })));
+const TeacherShop = lazyWithPreload(() => import('./pages/teacher/TeacherShop').then(m => ({ default: m.TeacherShop })));
+const AdminDashboard = lazyWithPreload(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const AdminSettings = lazyWithPreload(() => import('./pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
+const AdminProfile = lazyWithPreload(() => import('./pages/admin/AdminProfile').then(m => ({ default: m.AdminProfile })));
 
 const MaintenanceScreen = () => (
     <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-50 text-center p-8">
@@ -65,6 +66,25 @@ const MainRouter = () => {
   // If maintenance is on and no user is logged in (or user is not admin trying to login), show maintenance
   // However, we need to allow access to /auth to let admins login.
   // The login function in StoreContext already prevents non-admins from logging in during maintenance.
+
+  React.useEffect(() => {
+    if (!user) return;
+    if (user.role === UserRole.STUDENT) {
+      StudentDashboard.preload();
+      StudentExams.preload();
+      ExamRoom.preload();
+      Chat.preload();
+    } else if (user.role === UserRole.TEACHER) {
+      TeacherDashboard.preload();
+      CreateExam.preload();
+      TeacherShop.preload();
+      Chat.preload();
+    } else if (user.role === UserRole.ADMIN) {
+      AdminDashboard.preload();
+      AdminSettings.preload();
+      Chat.preload();
+    }
+  }, [user]);
 
   return (
     <HashRouter>
