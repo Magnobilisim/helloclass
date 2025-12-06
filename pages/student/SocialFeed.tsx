@@ -10,16 +10,18 @@ import { uploadMedia } from '../../services/mediaService';
 import { useAdTracking } from '../../hooks/useAdTracking';
 
 export const SocialFeed = () => {
-  const { user, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert, manualAds } = useStore();
+  const { user, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert, manualAds, socialTopics } = useStore();
   const navigate = useNavigate();
   const [newPostContent, setNewPostContent] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string | ''>(''); // This will hold subject ID
+  const [selectedTag, setSelectedTag] = useState<string | ''>('');
+  const [selectedGeneralTopic, setSelectedGeneralTopic] = useState<string>('');
   const [targetSchoolId, setTargetSchoolId] = useState<string>(''); 
   const [isPosting, setIsPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [filterSchoolId, setFilterSchoolId] = useState<string>(''); 
   const [filterSubjectId, setFilterSubjectId] = useState<string | 'All'>('All');
+  const [filterGeneralTopic, setFilterGeneralTopic] = useState<'All' | string>('All');
 
   // Reporting State
   const [reportModalPostId, setReportModalPostId] = useState<string | null>(null);
@@ -58,10 +60,13 @@ export const SocialFeed = () => {
         }
     }
 
-    const result = await addPost(newPostContent, selectedTag ? [selectedTag] : undefined, targetSchoolId || undefined, finalImageUrl);
+    const tags: string[] = [];
+    if (selectedTag) tags.push(selectedTag);
+    if (selectedGeneralTopic) tags.push(`general:${selectedGeneralTopic}`);
+    const result = await addPost(newPostContent, tags.length ? tags : undefined, targetSchoolId || undefined, finalImageUrl);
     
     setIsPosting(false);
-    if (result.success) { setNewPostContent(''); setSelectedTag(''); setTargetSchoolId(''); setPostImagePreview(null); } 
+    if (result.success) { setNewPostContent(''); setSelectedTag(''); setSelectedGeneralTopic(''); setTargetSchoolId(''); setPostImagePreview(null); } 
     else if (result.reason) { setSafetyViolation(result.reason); }
   };
 
@@ -145,6 +150,10 @@ export const SocialFeed = () => {
   const filteredPosts = posts.filter(p => {
       if (filterSchoolId && p.schoolId !== filterSchoolId) return false;
       if (filterSubjectId !== 'All' && !p.tags?.includes(filterSubjectId)) return false;
+      if (filterGeneralTopic !== 'All') {
+          const topicTag = `general:${filterGeneralTopic}`;
+          if (!p.tags?.includes(topicTag)) return false;
+      }
       return true;
   });
 
@@ -206,6 +215,10 @@ export const SocialFeed = () => {
                      <option value="All">{t('all')}</option>
                      {availableSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                  </select>
+                 <select value={filterGeneralTopic} onChange={(e) => setFilterGeneralTopic(e.target.value as 'All' | string)} className="p-2 rounded-xl text-xs font-bold border border-gray-200 outline-none bg-white text-gray-700">
+                     <option value="All">{t('all')} {t('topic')}</option>
+                     {socialTopics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
+                 </select>
             </div>
        </div>
 
@@ -225,6 +238,10 @@ export const SocialFeed = () => {
                  <select value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)} className="flex-1 md:flex-none text-xs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 outline-none text-gray-700 font-medium">
                      <option value="">{t('topic')}...</option>
                      {availableSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                 </select>
+                 <select value={selectedGeneralTopic} onChange={(e) => setSelectedGeneralTopic(e.target.value)} className="flex-1 md:flex-none text-xs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 outline-none text-gray-700 font-medium">
+                     <option value="">{t('social_topic_placeholder')}</option>
+                     {socialTopics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
                  </select>
                  <select value={targetSchoolId} onChange={(e) => setTargetSchoolId(e.target.value)} className="flex-1 md:flex-none text-xs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 outline-none text-gray-700 font-medium max-w-[150px] truncate">
                      <option value="">{t('global')}</option>
@@ -271,6 +288,11 @@ export const SocialFeed = () => {
                                 <span>{new Date(post.timestamp).toLocaleDateString()}</span>
                                 <span className="bg-blue-50 text-blue-500 px-1.5 rounded font-bold"><Globe size={10} className="inline mr-1" /> {schoolName}</span>
                                 {post.tags?.map(tagId => {
+                                    if (tagId.startsWith('general:')) {
+                                        const topicId = tagId.replace('general:', '');
+                                        const topicName = socialTopics.find(st => st.id === topicId)?.name || topicId;
+                                        return <span key={tagId} className="bg-amber-50 text-amber-600 px-1.5 rounded font-bold text-[10px]">{topicName}</span>;
+                                    }
                                     const tagName = availableSubjects.find(s => s.id === tagId)?.name || tagId;
                                     return <span key={tagId} className="bg-gray-100 text-gray-600 px-1.5 rounded">{tagName}</span>;
                                 })}

@@ -271,6 +271,10 @@ export const TRANSLATIONS = {
     excel_guideline_subjects: '“Subjects” sayfasında ders isimlerini ve sınıf seviyelerini girin.',
     excel_guideline_topics: '“Topics” sayfasında konuları ilgili derslerle eşleyin.',
     excel_import_success: 'Excel verileri güncellendi.',
+    social_topics: 'Sosyal Konular',
+    social_topics_prompt: 'Yeni sosyal konu ekle',
+    no_social_topics: 'Henüz sosyal konu eklenmedi.',
+    social_topic_placeholder: 'Genel konu...',
 
     // Shop & Items
     shop_subtitle: 'Puanlarını harika ödüller için harca!',
@@ -882,6 +886,10 @@ Bu sözleşme, HelloClass platformunda içerik üreticisi (Öğretmen) olarak ye
     excel_guideline_subjects: 'Fill the “Subjects” sheet with subject names and grades.',
     excel_guideline_topics: 'Map topics to subjects via the “Topics” sheet.',
     excel_import_success: 'Excel data imported successfully.',
+    social_topics: 'Community Topics',
+    social_topics_prompt: 'Add community topic',
+    no_social_topics: 'No community topics yet.',
+    social_topic_placeholder: 'Community topic...',
 
     // Shop
     shop_subtitle: 'Spend your hard-earned points on cool rewards!',

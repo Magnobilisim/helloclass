@@ -179,7 +179,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     if (loadedSchools) setSchools(JSON.parse(loadedSchools));
     const loadedSocialTopics = localStorage.getItem('hc_social_topics');
-    if (loadedSocialTopics) setSocialTopics(JSON.parse(loadedSocialTopics));
+    if (loadedSocialTopics) {
+        try {
+            setSocialTopics(JSON.parse(loadedSocialTopics));
+        } catch {
+            setSocialTopics(INITIAL_SOCIAL_TOPICS);
+        }
+    }
     if (loadedNotifs) setNotifications(JSON.parse(loadedNotifs));
     if (loadedSubjects) setAvailableSubjects(JSON.parse(loadedSubjects));
     if (loadedShop) setShopItems(JSON.parse(loadedShop));
