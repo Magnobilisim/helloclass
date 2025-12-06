@@ -4,6 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Save, FileText, Gift, Plus, Trash2, Youtube, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 
+type SocialLinksConfig = {
+  youtube: string;
+  instagram: string;
+  x: string;
+  linkedin: string;
+};
+
+const buildSocialLinks = (links?: Partial<SocialLinksConfig>): SocialLinksConfig => ({
+  youtube: links?.youtube || '',
+  instagram: links?.instagram || '',
+  x: links?.x || '',
+  linkedin: links?.linkedin || '',
+});
+
 export const AdminSettings = () => {
   const { systemSettings, updateSystemSettings, t } = useStore();
   const [commission, setCommission] = useState(20);
@@ -20,7 +34,8 @@ export const AdminSettings = () => {
   const [packageDesc, setPackageDesc] = useState('');
   const [aiWizardCost, setAiWizardCost] = useState(systemSettings.aiWizardCost || 0);
   const [aiExplainCost, setAiExplainCost] = useState(systemSettings.aiExplainCost || 0);
-  const [socialLinks, setSocialLinks] = useState(systemSettings.socialLinks || { youtube: '', instagram: '', x: '', linkedin: '' });
+  const [usernameCost, setUsernameCost] = useState(systemSettings.usernameCost ?? 0);
+  const [socialLinks, setSocialLinks] = useState<SocialLinksConfig>(buildSocialLinks(systemSettings.socialLinks));
 
   useEffect(() => {
     if (systemSettings) {
@@ -34,7 +49,8 @@ export const AdminSettings = () => {
         setPackages(systemSettings.pointPackages || []);
         setAiWizardCost(systemSettings.aiWizardCost ?? 0);
         setAiExplainCost(systemSettings.aiExplainCost ?? 0);
-        setSocialLinks(systemSettings.socialLinks || { youtube: '', instagram: '', x: '', linkedin: '' });
+        setUsernameCost(systemSettings.usernameCost ?? 0);
+        setSocialLinks(buildSocialLinks(systemSettings.socialLinks));
     }
   }, [systemSettings]);
 
@@ -58,7 +74,7 @@ export const AdminSettings = () => {
       setPackages(prev => prev.filter(pkg => pkg.id !== id));
   };
 
-  const normalizeSocialLink = (key: keyof typeof socialLinks, value?: string) => {
+  const normalizeSocialLink = (key: keyof SocialLinksConfig, value?: string) => {
       if (!value) return '';
       const trimmed = value.trim();
       if (!trimmed) return '';
@@ -93,6 +109,7 @@ export const AdminSettings = () => {
           pointPackages: packages,
           aiWizardCost,
           aiExplainCost,
+          usernameCost,
           socialLinks: normalizedLinks
       });
   };
@@ -180,6 +197,17 @@ export const AdminSettings = () => {
                       className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900"
                    />
                    <p className="text-xs text-gray-400 mt-1">{t('ai_explain_cost_hint')}</p>
+                </div>
+                <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-2">{t('username_cost')}</label>
+                   <input
+                      type="number"
+                      min={0}
+                      value={usernameCost}
+                      onChange={e => setUsernameCost(Math.max(0, Number(e.target.value)))}
+                      className="w-full bg-white border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-500 text-gray-900"
+                   />
+                   <p className="text-xs text-gray-400 mt-1">{t('username_cost_hint').replace('{points}', String(usernameCost || 0))}</p>
                 </div>
 
                 <div>

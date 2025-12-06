@@ -2,23 +2,26 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { ThumbsUp, ThumbsDown, MessageSquare, Send, AlertTriangle, Filter, Loader2, X, Globe, ShieldAlert, UserPlus, UserCheck, Image as ImageIcon, Check, Crop, ZoomIn, ZoomOut, RotateCw, Layout, Grid } from 'lucide-react';
-import { ReportReason } from '../../types';
+import { ManualAd, ReportReason, UserRole } from '../../types';
 import { Link, useNavigate } from 'react-router-dom';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../../utils/imageUtils';
 import { uploadMedia } from '../../services/mediaService';
+import { useAdTracking } from '../../hooks/useAdTracking';
 
 export const SocialFeed = () => {
-  const { user, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert } = useStore();
+  const { user, users: allUsers, posts, addPost, toggleLike, toggleDislike, addComment, reportPost, availableSubjects, schools, toggleFollow, t, showAlert, manualAds, socialTopics, formatDisplayName } = useStore();
   const navigate = useNavigate();
   const [newPostContent, setNewPostContent] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string | ''>(''); // This will hold subject ID
+  const [selectedTag, setSelectedTag] = useState<string | ''>('');
+  const [selectedGeneralTopic, setSelectedGeneralTopic] = useState<string>('');
   const [targetSchoolId, setTargetSchoolId] = useState<string>(''); 
   const [isPosting, setIsPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [filterSchoolId, setFilterSchoolId] = useState<string>(''); 
   const [filterSubjectId, setFilterSubjectId] = useState<string | 'All'>('All');
+  const [filterGeneralTopic, setFilterGeneralTopic] = useState<'All' | string>('All');
 
   // Reporting State
   const [reportModalPostId, setReportModalPostId] = useState<string | null>(null);
@@ -57,10 +60,13 @@ export const SocialFeed = () => {
         }
     }
 
-    const result = await addPost(newPostContent, selectedTag ? [selectedTag] : undefined, targetSchoolId || undefined, finalImageUrl);
+    const tags: string[] = [];
+    if (selectedTag) tags.push(selectedTag);
+    if (selectedGeneralTopic) tags.push(`general:${selectedGeneralTopic}`);
+    const result = await addPost(newPostContent, tags.length ? tags : undefined, targetSchoolId || undefined, finalImageUrl);
     
     setIsPosting(false);
-    if (result.success) { setNewPostContent(''); setSelectedTag(''); setTargetSchoolId(''); setPostImagePreview(null); } 
+    if (result.success) { setNewPostContent(''); setSelectedTag(''); setSelectedGeneralTopic(''); setTargetSchoolId(''); setPostImagePreview(null); } 
     else if (result.reason) { setSafetyViolation(result.reason); }
   };
 
@@ -131,7 +137,7 @@ export const SocialFeed = () => {
       if (value === 'MY_SCHOOL') {
           if (!user?.schoolId) {
               if (window.confirm("You haven't selected a school yet. Go to profile to update?")) {
-                  navigate('/student/profile');
+                  navigate(profileRoute);
               }
               return;
           }
@@ -144,8 +150,45 @@ export const SocialFeed = () => {
   const filteredPosts = posts.filter(p => {
       if (filterSchoolId && p.schoolId !== filterSchoolId) return false;
       if (filterSubjectId !== 'All' && !p.tags?.includes(filterSubjectId)) return false;
+      if (filterGeneralTopic !== 'All') {
+          const topicTag = `general:${filterGeneralTopic}`;
+          if (!p.tags?.includes(topicTag)) return false;
+      }
       return true;
   });
+
+  const socialAds = React.useMemo(() => manualAds.filter(ad => ad.isActive && (ad.placement === 'social' || ad.placement === 'both')), [manualAds]);
+  const userRole = user?.role;
+  const locationHint = user?.schoolId;
+  const profileRoute = userRole === UserRole.TEACHER ? '/teacher/profile' : userRole === UserRole.ADMIN ? '/admin/profile' : '/student/profile';
+  const resolveAuthorName = (authorId: string, fallbackName: string, fallbackUsername?: string) => {
+      const liveUser = allUsers.find(u => u.id === authorId);
+      if (liveUser) return formatDisplayName(liveUser, { withAt: true });
+      if (fallbackUsername) return `@${fallbackUsername}`;
+      return fallbackName;
+  };
+
+  const feedWithAds = React.useMemo(() => {
+      if (!socialAds.length) {
+          return filteredPosts.map(post => ({ type: 'post' as const, post }));
+      }
+      const items: Array<{ type: 'post'; post: typeof filteredPosts[number] } | { type: 'ad'; ad: typeof socialAds[number]; key: string }> = [];
+      const FREQUENCY = 5;
+      let adIndex = 0;
+      filteredPosts.forEach((post, index) => {
+          if (index > 0 && index % FREQUENCY === 0) {
+              const ad = socialAds[adIndex % socialAds.length];
+              items.push({ type: 'ad', ad, key: `social-feed-ad-${index}-${ad.id}-${adIndex}` });
+              adIndex++;
+          }
+          items.push({ type: 'post', post });
+      });
+      if (!items.some(item => item.type === 'ad')) {
+          const fallbackAd = socialAds[0];
+          items.splice(Math.min(1, items.length), 0, { type: 'ad', ad: fallbackAd, key: `social-feed-ad-fallback-${fallbackAd.id}` });
+      }
+      return items;
+  }, [filteredPosts, socialAds]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-20 relative">
@@ -179,6 +222,10 @@ export const SocialFeed = () => {
                      <option value="All">{t('all')}</option>
                      {availableSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                  </select>
+                 <select value={filterGeneralTopic} onChange={(e) => setFilterGeneralTopic(e.target.value as 'All' | string)} className="p-2 rounded-xl text-xs font-bold border border-gray-200 outline-none bg-white text-gray-700">
+                     <option value="All">{t('all')} {t('topic')}</option>
+                     {socialTopics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
+                 </select>
             </div>
        </div>
 
@@ -199,6 +246,10 @@ export const SocialFeed = () => {
                      <option value="">{t('topic')}...</option>
                      {availableSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                  </select>
+                 <select value={selectedGeneralTopic} onChange={(e) => setSelectedGeneralTopic(e.target.value)} className="flex-1 md:flex-none text-xs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 outline-none text-gray-700 font-medium">
+                     <option value="">{t('social_topic_placeholder')}</option>
+                     {socialTopics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
+                 </select>
                  <select value={targetSchoolId} onChange={(e) => setTargetSchoolId(e.target.value)} className="flex-1 md:flex-none text-xs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 outline-none text-gray-700 font-medium max-w-[150px] truncate">
                      <option value="">{t('global')}</option>
                      {user?.schoolId && <option value={user.schoolId}>{t('my_school')}</option>}
@@ -211,11 +262,25 @@ export const SocialFeed = () => {
        </div>
 
        {/* Feed */}
-       <div className="space-y-4">
-          {filteredPosts.length > 0 ? filteredPosts.map(post => {
+      <div className="space-y-4">
+         {feedWithAds.length > 0 ? feedWithAds.map(item => {
+            if (item.type === 'ad') {
+                return (
+                    <SocialAdCard
+                      key={item.key}
+                      ad={item.ad}
+                      label={t('ads')}
+                      userId={user?.id}
+                      userRole={userRole}
+                      locationHint={locationHint}
+                    />
+                );
+            }
+            const post = item.post;
              const schoolName = post.schoolId ? schools.find(s => s.id === post.schoolId)?.name : 'Global';
              const isMe = user?.id === post.authorId;
              const isFollowing = user?.following?.includes(post.authorId);
+             const displayName = resolveAuthorName(post.authorId, post.authorName, post.authorUsername);
 
              return (
              <div key={post.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
@@ -224,13 +289,18 @@ export const SocialFeed = () => {
                         <Link to={`/student/profile/${post.authorId}`}><img src={post.authorAvatar} className="w-10 h-10 rounded-full border border-gray-100" /></Link>
                         <div>
                             <div className="flex items-center gap-2">
-                                <Link to={`/student/profile/${post.authorId}`} className="font-bold text-gray-800 text-sm">{post.authorName}</Link>
+                                <Link to={`/student/profile/${post.authorId}`} className="font-bold text-gray-800 text-sm">{displayName}</Link>
                                 {!isMe && <button onClick={() => toggleFollow(post.authorId)} className="text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-lg font-bold">{isFollowing ? t('following') : t('follow')}</button>}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
                                 <span>{new Date(post.timestamp).toLocaleDateString()}</span>
                                 <span className="bg-blue-50 text-blue-500 px-1.5 rounded font-bold"><Globe size={10} className="inline mr-1" /> {schoolName}</span>
                                 {post.tags?.map(tagId => {
+                                    if (tagId.startsWith('general:')) {
+                                        const topicId = tagId.replace('general:', '');
+                                        const topicName = socialTopics.find(st => st.id === topicId)?.name || topicId;
+                                        return <span key={tagId} className="bg-amber-50 text-amber-600 px-1.5 rounded font-bold text-[10px]">{topicName}</span>;
+                                    }
                                     const tagName = availableSubjects.find(s => s.id === tagId)?.name || tagId;
                                     return <span key={tagId} className="bg-gray-100 text-gray-600 px-1.5 rounded">{tagName}</span>;
                                 })}
@@ -253,21 +323,27 @@ export const SocialFeed = () => {
                 {expandedComments.has(post.id) && (
                     <div className="mt-4 pt-4 border-t border-gray-50 bg-gray-50/50 rounded-xl p-3">
                         <div className="space-y-3 mb-4">
-                            {post.comments.map(c => (
-                                <div key={c.id} className="flex gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">{c.authorName.charAt(0)}</div>
-                                    <div className="bg-white p-2 rounded-r-xl rounded-bl-xl border border-gray-100 shadow-sm text-sm">
-                                        <Link to={`/student/profile/${c.authorId}`} className="font-bold text-gray-800 text-xs block">{c.authorName}</Link>
-                                        <p className="text-gray-700">{c.text}</p>
+                            {post.comments.map(c => {
+                                const baseName = resolveAuthorName(c.authorId, c.authorName, c.authorUsername);
+                                const initial = baseName.replace(/^@/, '').charAt(0)?.toUpperCase() || 'U';
+                                return (
+                                    <div key={c.id} className="flex gap-2">
+                                        <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-600 shrink-0">
+                                            {initial}
+                                        </div>
+                                        <div className="bg-white p-2 rounded-r-xl rounded-bl-xl border border-gray-100 shadow-sm text-sm">
+                                            <Link to={`/student/profile/${c.authorId}`} className="font-bold text-gray-800 text-xs block">{baseName}</Link>
+                                            <p className="text-gray-700">{c.text}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                         <div className="flex gap-2"><input type="text" placeholder={t('write_comment')} value={commentText[post.id] || ''} onChange={(e) => setCommentText(prev => ({...prev, [post.id]: e.target.value}))} onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(post.id)} className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none text-gray-900" /><button onClick={() => handleCommentSubmit(post.id)} className="text-brand-600"><Send size={16} /></button></div>
                     </div>
                 )}
              </div>
-          )}) : <div className="text-center py-10 text-gray-400">No posts found.</div>}
+            )}) : <div className="text-center py-10 text-gray-400">No posts found.</div>}
        </div>
 
        {/* Safety Modal */}
@@ -311,6 +387,50 @@ export const SocialFeed = () => {
                 </div>
             </div>
        )}
+    </div>
+  );
+};
+
+const SocialAdCard: React.FC<{
+  ad: ManualAd;
+  label: string;
+  userId?: string;
+  userRole?: UserRole;
+  locationHint?: string;
+}> = ({ ad, label, userId, userRole, locationHint }) => {
+  const { adRef, logAdClick } = useAdTracking({
+      adId: ad.id,
+      placement: ad.placement,
+      context: 'social',
+      userId,
+      userRole,
+      locationHint
+  });
+
+  return (
+    <div ref={adRef} className="bg-white p-5 rounded-3xl border border-amber-100 shadow-sm flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-widest text-amber-500">{label}</span>
+            {ad.highlightLabel && <span className="text-[10px] font-black text-amber-400 uppercase">{ad.highlightLabel}</span>}
+        </div>
+        <h4 className="text-lg font-black text-gray-900">{ad.title}</h4>
+        {ad.description && <p className="text-sm text-gray-600">{ad.description}</p>}
+        {ad.imageUrl && (
+            <div className="rounded-2xl overflow-hidden border border-gray-100">
+                <img src={ad.imageUrl} className="w-full h-44 object-cover" />
+            </div>
+        )}
+        {ad.ctaText && ad.ctaUrl && (
+            <a
+              href={ad.ctaUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={logAdClick}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold bg-amber-500 text-white hover:bg-amber-600"
+            >
+                {ad.ctaText}
+            </a>
+        )}
     </div>
   );
 };

@@ -33,6 +33,8 @@ export interface Notification {
 export interface User {
   id: string;
   name: string;
+  username?: string;
+  displayPreference?: 'fullName' | 'username';
   email: string;
   role: UserRole;
   avatar: string;
@@ -154,6 +156,9 @@ export interface Post {
   id: string;
   authorId: string;
   authorName: string;
+  authorUsername?: string;
+  authorDisplayName?: string;
+  displayAs?: 'username' | 'fullName';
   authorAvatar: string;
   content: string;
   imageUrl?: string;
@@ -174,6 +179,9 @@ export interface Comment {
   id: string;
   authorId: string;
   authorName: string;
+  authorUsername?: string;
+  authorDisplayName?: string;
+  displayAs?: 'username' | 'fullName';
   authorAvatar?: string;
   text: string;
   timestamp: string;
@@ -222,6 +230,7 @@ export interface SystemSettings {
   aiWizardCost: number;
   aiExplainCost: number;
   joker5050Cost: number;
+  usernameCost?: number;
   teacherCreditPackages: PointPackage[];
   socialLinks?: {
     youtube?: string;
@@ -324,6 +333,22 @@ export interface PrizeExam {
   finalistQuizLink?: string;
 }
 
+export type ManualAdPlacement = 'exam' | 'social' | 'both';
+
+export interface ManualAd {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  placement: ManualAdPlacement;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  highlightLabel?: string;
+}
+
 export type AlertType = 'success' | 'error' | 'info' | 'warning';
 
 export interface StoreContextType {
@@ -339,6 +364,7 @@ export interface StoreContextType {
   logs: ActivityLog[];
   approvedTopics: Record<string, TopicMetadata[]>; // Key is Subject ID now
   schools: School[];
+  socialTopics: { id: string; name: string }[];
   notifications: Notification[];
   availableSubjects: SubjectDef[];
   shopItems: ShopItem[];
@@ -349,6 +375,7 @@ export interface StoreContextType {
   examSessions: Record<string, ExamSession>; 
   pointPurchases: PointPurchase[];
   aiUsageLogs: AiUsageLog[];
+  manualAds: ManualAd[];
   
   // Auth
   login: (email: string, role: UserRole) => boolean;
@@ -370,7 +397,7 @@ export interface StoreContextType {
   toggleEquip: (itemType: string) => void;
   startExamSession: (examId: string) => void; 
   saveResult: (examId: string, answers: number[]) => void; 
-  addPost: (content: string, tags?: string[], schoolId?: string, imageUrl?: string) => Promise<{success: boolean, reason?: string}>;
+  addPost: (content: string, tags?: string[], schoolId?: string, imageUrl?: string, displayMode?: 'username' | 'fullName') => Promise<{success: boolean, reason?: string}>;
   deletePost: (postId: string) => void;
   toggleLike: (postId: string) => void;
   toggleDislike: (postId: string) => void;
@@ -384,6 +411,8 @@ export interface StoreContextType {
   removeTopic: (subjectId: string, topic: string) => void;
   addSchool: (name: string) => void;
   removeSchool: (id: string) => void;
+  addSocialTopic: (name: string) => void;
+  removeSocialTopic: (id: string) => void;
   markNotificationRead: (id: string) => void;
   addSubject: (name: string, grades: number[]) => void;
   removeSubject: (id: string) => void;
@@ -402,16 +431,25 @@ export interface StoreContextType {
   logAiUsage: (entry: Omit<AiUsageLog, 'id' | 'timestamp'> & { note?: string }) => void;
   requestPayout: (amountTL: number, note?: string) => boolean;
   resolvePayoutRequest: (requestId: string, decision: 'approved' | 'rejected', adminNote?: string) => void;
+  createUsername: (username: string) => boolean;
+  formatDisplayName: (user?: User | null, options?: { fallback?: 'firstName' | 'fullName'; withAt?: boolean }) => string;
+  isUsernameAvailable: (username: string, excludeUserId?: string) => boolean;
   
   // Prize Exam Features
   addPrizeExam: (exam: PrizeExam) => void;
   drawPrizeWinner: (prizeExamId: string) => void;
   payEntryFee: (prizeExamId: string, amount: number) => boolean;
   updatePrizeExamMeta: (prizeExamId: string, data: Partial<PrizeExam>) => void;
+  bulkImportSchools: (schools: Array<{ id?: string; name: string; city?: string }>) => void;
+  bulkImportSubjects: (subjects: Array<{ id?: string; name: string; grades?: number[] }>) => void;
+  bulkImportTopics: (topics: Array<{ subjectId: string; name: string; grade?: number; level?: string }>) => void;
+  addManualAd: (ad: Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateManualAd: (ad: ManualAd) => void;
+  deleteManualAd: (id: string) => void;
 
   // Utils
-  alert: { message: string; type: AlertType } | null;
-  showAlert: (message: string, type: AlertType) => void;
+  alert: { message: string; type: AlertType; actionLabel?: string; actionTo?: string } | null;
+  showAlert: (message: string, type: AlertType, options?: { actionLabel?: string; actionTo?: string; duration?: number }) => void;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string; 
 }

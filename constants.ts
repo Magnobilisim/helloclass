@@ -1,5 +1,5 @@
 
-import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata, PrizeExam, Transaction } from './types';
+import { User, UserRole, Subject, ShopItem, Exam, Post, Message, School, Notification, PointPackage, TopicMetadata, PrizeExam, Transaction, ManualAd } from './types';
 
 // Genişletilmiş Türkiye Okul Listesi (Örneklem)
 export const INITIAL_SCHOOLS: School[] = [
@@ -103,6 +103,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'teacher1',
     name: 'Mr. John Keating',
+    displayPreference: 'fullName',
     email: 'teacher@helloclass.com',
     role: UserRole.TEACHER,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=teacher1',
@@ -113,6 +114,7 @@ export const INITIAL_USERS: User[] = [
     schoolId: 'ist2',
     branch: 'Matematik',
     bio: 'Mathematics Teacher | Math Enthusiast',
+    username: 'mrkeating',
     referralCode: 'HC-TEACHER1',
     referralCount: 0,
     totalReferralPoints: 0,
@@ -121,6 +123,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'student1',
     name: 'Alice Wonder',
+    displayPreference: 'username',
     email: 'student@helloclass.com',
     role: UserRole.STUDENT,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=student1',
@@ -134,6 +137,7 @@ export const INITIAL_USERS: User[] = [
     bio: 'I love Math and Coding! 🚀',
     followers: ['student2'],
     following: ['teacher1'],
+    username: 'alicewonder',
     referralCode: 'HC-STUDENT1',
     referralCount: 0,
     totalReferralPoints: 0,
@@ -142,6 +146,7 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'student2',
     name: 'Bob Builder',
+    displayPreference: 'fullName',
     email: 'bob@helloclass.com',
     role: UserRole.STUDENT,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob',
@@ -476,5 +481,38 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
     type: 'success',
     isRead: true,
     timestamp: new Date(Date.now() - 3600000).toISOString()
+  }
+];
+
+export const INITIAL_SOCIAL_TOPICS = [
+  { id: 'soc-announcement', name: 'Duyurular' },
+  { id: 'soc-study', name: 'Çalışma Grupları' },
+  { id: 'soc-events', name: 'Etkinlikler' },
+];
+
+export const INITIAL_MANUAL_ADS: ManualAd[] = [
+  {
+    id: 'ad-mentor-labs',
+    title: 'Mentor Labs ile canlı STEM atölyeleri',
+    description: 'Her ay sınırlı kontenjanla canlı kodlama ve robotik seansları. Hemen kayıt ol!',
+    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=60',
+    ctaText: 'Detayları Gör',
+    ctaUrl: 'https://helloclass.com/mentor-labs',
+    placement: 'exam',
+    isActive: true,
+    highlightLabel: 'Sponsorlu',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'ad-study-circle',
+    title: 'StudyCircle Premium Deneme',
+    description: 'Sosyal paylaşımda öne çıkmak ve özel rozet kazanmak için 7 günlük ücretsiz deneyin.',
+    imageUrl: 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=800&q=60',
+    ctaText: 'Hemen Başla',
+    ctaUrl: 'https://helloclass.com/studycircle',
+    placement: 'social',
+    isActive: true,
+    highlightLabel: 'Önerilen',
+    createdAt: new Date().toISOString()
   }
 ];

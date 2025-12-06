@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { UserRole, ShopItem, PrizeExam } from '../../types';
-import { ShieldAlert, CheckCircle, Ban, Search, Users, BookOpen, AlertTriangle, DollarSign, Trash2, Edit2, PieChart, Bookmark, Plus, LucideIcon, X, School as SchoolIcon, Layers, Megaphone, Radio, Image as ImageIcon, Coins, CreditCard, ShoppingBag, History, ChevronDown, Check, Eye, Gift, Trophy, Upload, Calendar, Star, Sparkles, Receipt, ArrowRight, Loader2, FileText, Image, AlertOctagon, Link as LinkIcon } from 'lucide-react';
+import { UserRole, ShopItem, PrizeExam, ManualAd, ManualAdPlacement, TopicMetadata } from '../../types';
+import { ShieldAlert, CheckCircle, Ban, Search, Users, BookOpen, AlertTriangle, DollarSign, Trash2, Edit2, PieChart, Bookmark, Plus, LucideIcon, X, School as SchoolIcon, Layers, Megaphone, Radio, Image as ImageIcon, Coins, CreditCard, ShoppingBag, History, ChevronDown, Check, Eye, Gift, Trophy, Upload, Calendar, Star, Sparkles, Receipt, ArrowRight, Loader2, FileText, Image, AlertOctagon, Link as LinkIcon, Download, UploadCloud } from 'lucide-react';
+import { getTrackedAdEvents, StoredAdTrackingEvent } from '../../services/adTrackingService';
+import * as XLSX from 'xlsx';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { uploadMedia } from '../../services/mediaService';
 
@@ -18,8 +20,9 @@ export const AdminDashboard = () => {
       users, exams, posts, logs, banUser, deleteUser, changeRole, deletePost, dismissReport, deleteExam, systemSettings, 
       approvedTopics, addTopic, removeTopic, schools, addSchool, removeSchool, availableSubjects, addSubject, removeSubject, 
       shopItems, addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, payouts, payoutRequests, processPayout, resolvePayoutRequest, deleteExamImage, reportPost,
-      prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta,
-      user: currentUser, t 
+      prizeExams, addPrizeExam, drawPrizeWinner, results, updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics,
+      manualAds, addManualAd, updateManualAd, deleteManualAd, socialTopics, addSocialTopic, removeSocialTopic,
+      user: currentUser, t, showAlert, formatDisplayName
   } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,6 +37,7 @@ export const AdminDashboard = () => {
     if (location.pathname.includes('/definitions')) return 'definitions';
     if (location.pathname.includes('/shop')) return 'shop';
     if (location.pathname.includes('/media')) return 'media';
+    if (location.pathname.includes('/ads')) return 'ads';
     if (location.pathname.includes('/prize-exams')) return 'prize-exams';
     return 'overview';
   };
@@ -83,6 +87,25 @@ export const AdminDashboard = () => {
   const [viewParticipantsId, setViewParticipantsId] = useState<string | null>(null);
   const [editingQuizInfo, setEditingQuizInfo] = useState<{ id: string; date: string; link: string }>({ id: '', date: '', link: '' });
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const adPlacementOptions: { value: ManualAdPlacement; label: string }[] = [
+      { value: 'exam', label: t('ad_placement_exam') },
+      { value: 'social', label: t('ad_placement_social') },
+      { value: 'both', label: t('ad_placement_both') },
+  ];
+  const emptyAdForm = (): Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'> => ({
+      title: '',
+      description: '',
+      imageUrl: '',
+      ctaText: '',
+      ctaUrl: '',
+      placement: 'exam',
+      isActive: true,
+      highlightLabel: ''
+  });
+  const [adForm, setAdForm] = useState<Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'>>(emptyAdForm());
+  const [editingAdId, setEditingAdId] = useState<string | null>(null);
+  const [adEvents, setAdEvents] = useState<StoredAdTrackingEvent[]>([]);
+  const fileUploadRef = useRef<HTMLInputElement>(null);
 
   // Derived Values
   const totalUsers = users.length;
@@ -103,6 +126,13 @@ export const AdminDashboard = () => {
     e.creatorName.toLowerCase().includes(examSearch.toLowerCase())
   );
 
+  const resolveUserDisplay = (userId: string, fallbackName: string, fallbackUsername?: string) => {
+      const match = users.find(u => u.id === userId);
+      if (match) return formatDisplayName(match, { withAt: true });
+      if (fallbackUsername) return `@${fallbackUsername}`;
+      return fallbackName;
+  };
+
   // Logic for Valid Grades based on Selected Subject
   const currentSubjectDef = availableSubjects.find(s => s.id === selectedSubjectIdForTopic);
   const validGradesForTopic = useMemo(() => currentSubjectDef ? currentSubjectDef.grades : Array.from({length: 12}, (_, i) => i + 1), [currentSubjectDef]);
@@ -112,6 +142,10 @@ export const AdminDashboard = () => {
           setTopicGrade(validGradesForTopic[0]);
       }
   }, [validGradesForTopic, topicGrade]);
+
+  useEffect(() => {
+      setAdEvents(getTrackedAdEvents());
+  }, []);
 
   // Handlers
   const handleTabChange = (tab: string) => {
@@ -228,6 +262,165 @@ export const AdminDashboard = () => {
       }
   };
 
+  const resetAdForm = () => {
+      setAdForm(emptyAdForm());
+      setEditingAdId(null);
+  };
+
+  const handleAdSubmit = () => {
+      if (!adForm.title.trim()) {
+          showAlert(t('ad_title_required'), 'error');
+          return;
+      }
+      if (editingAdId) {
+          const existing = manualAds.find(ad => ad.id === editingAdId);
+          if (!existing) return;
+          updateManualAd({ ...existing, ...adForm });
+      } else {
+          addManualAd(adForm);
+      }
+      resetAdForm();
+  };
+
+  const handleEditAd = (ad: ManualAd) => {
+      setAdForm({
+          title: ad.title,
+          description: ad.description || '',
+          imageUrl: ad.imageUrl || '',
+          ctaText: ad.ctaText || '',
+          ctaUrl: ad.ctaUrl || '',
+          placement: ad.placement,
+          isActive: ad.isActive,
+          highlightLabel: ad.highlightLabel || ''
+      });
+      setEditingAdId(ad.id);
+  };
+
+  const handleDeleteAd = (id: string) => {
+      if (window.confirm(t('ad_delete_confirm') || 'Delete this ad?')) {
+          deleteManualAd(id);
+          if (editingAdId === id) {
+              resetAdForm();
+          }
+      }
+  };
+
+  const toggleAdStatus = (ad: ManualAd) => {
+      updateManualAd({ ...ad, isActive: !ad.isActive });
+  };
+
+  const handleExcelDownload = () => {
+      const schoolSheet = schools.map(s => ({
+          id: s.id,
+          name: s.name,
+          city: s.city || '',
+          district: s.updatedAt || '',
+          status: s.isDeleted ? 'inactive' : 'active'
+      }));
+      const subjectSheet = availableSubjects.map(sub => ({
+          id: sub.id,
+          name: sub.name,
+          grades: sub.grades.join(','),
+          status: 'active'
+      }));
+      const topicRows: Array<{ subject_id: string; name: string; grade?: number; level?: string }> = [];
+      const topicEntries = Object.entries(approvedTopics) as Array<[string, TopicMetadata[]]>;
+      topicEntries.forEach(([subId, topics]) => {
+          topics.forEach(topic => {
+              topicRows.push({
+                  subject_id: subId,
+                  name: topic.name,
+                  grade: topic.grade,
+                  level: topic.level
+              });
+          });
+      });
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(schoolSheet || []), 'Schools');
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(subjectSheet || []), 'Subjects');
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(topicRows || []), 'Topics');
+      XLSX.writeFile(workbook, 'helloclass-hierarchy.xlsx');
+  };
+
+  const handleExcelUpload = (evt: React.ChangeEvent<HTMLInputElement>) => {
+      const file = evt.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const schoolsSheet = workbook.Sheets['Schools'];
+          const subjectsSheet = workbook.Sheets['Subjects'];
+          const topicsSheet = workbook.Sheets['Topics'];
+
+          if (schoolsSheet) {
+              const rows: any[] = XLSX.utils.sheet_to_json(schoolsSheet);
+              const entries = rows.map(row => ({
+                  id: row.id,
+                  name: row.name,
+                  city: row.city
+              })).filter(entry => entry.name);
+              if (entries.length) bulkImportSchools(entries);
+          }
+
+          if (subjectsSheet) {
+              const rows: any[] = XLSX.utils.sheet_to_json(subjectsSheet);
+              const entries = rows.map(row => ({
+                  id: row.id,
+                  name: row.name,
+                  grades: typeof row.grades === 'string'
+                      ? row.grades.split(',').map((g: string) => Number(g.trim())).filter(Boolean)
+                      : Array.isArray(row.grades) ? row.grades : undefined
+              })).filter(entry => entry.name);
+              if (entries.length) bulkImportSubjects(entries);
+          }
+
+          if (topicsSheet) {
+              const rows: any[] = XLSX.utils.sheet_to_json(topicsSheet);
+              const entries = rows.map(row => ({
+                  subjectId: row.subject_id || row.subjectId,
+                  name: row.name,
+                  grade: row.grade ? Number(row.grade) : undefined,
+                  level: row.level
+              })).filter(entry => entry.subjectId && entry.name);
+              if (entries.length) bulkImportTopics(entries);
+          }
+
+          showAlert(t('excel_import_success') || 'Excel imported', 'success');
+      };
+      reader.readAsArrayBuffer(file);
+      evt.target.value = '';
+  };
+  const adMetrics = useMemo(() => {
+      const map = new Map<string, {
+          ad: ManualAd | undefined;
+          impressions: number;
+          clicks: number;
+          locations: Record<string, number>;
+          lastTimestamp?: string;
+      }>();
+      manualAds.forEach(ad => {
+          map.set(ad.id, { ad, impressions: 0, clicks: 0, locations: {} });
+      });
+      adEvents.forEach(evt => {
+          if (!map.has(evt.adId)) {
+              map.set(evt.adId, { ad: manualAds.find(a => a.id === evt.adId), impressions: 0, clicks: 0, locations: {} });
+          }
+          const entry = map.get(evt.adId)!;
+          if (evt.type === 'impression') entry.impressions += 1;
+          if (evt.type === 'click') entry.clicks += 1;
+          if (evt.locationHint) {
+              entry.locations[evt.locationHint] = (entry.locations[evt.locationHint] || 0) + 1;
+          }
+          entry.lastTimestamp = evt.timestamp;
+      });
+      return Array.from(map.values()).filter(entry => entry.ad);
+  }, [adEvents, manualAds]);
+
+  const handleRefreshAdStats = () => {
+      setAdEvents(getTrackedAdEvents());
+  };
+
   const openQuizModal = (exam: PrizeExam) => {
       setEditingQuizInfo({
           id: exam.id,
@@ -270,7 +463,7 @@ export const AdminDashboard = () => {
     </div>
   );
 
-  const tabOptions = ['overview', 'users', 'exams', 'financials', 'shop', 'media', 'definitions', 'reports', 'logs', 'prize-exams'];
+  const tabOptions = ['overview', 'users', 'exams', 'financials', 'shop', 'media', 'ads', 'definitions', 'reports', 'logs', 'prize-exams'];
 
   return (
     <div className="space-y-8 pb-10">
@@ -336,7 +529,9 @@ export const AdminDashboard = () => {
                   </div>
               ) : (
                   <div className="grid gap-4">
-                      {reportedPosts.map(post => (
+                      {reportedPosts.map(post => {
+                          const authorDisplay = resolveUserDisplay(post.authorId, post.authorName, post.authorUsername);
+                          return (
                           <div key={post.id} className="bg-white p-6 rounded-3xl border border-red-100 shadow-sm flex flex-col md:flex-row gap-6">
                               <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
@@ -344,8 +539,16 @@ export const AdminDashboard = () => {
                                       <span className="text-gray-400 text-xs">ID: {post.id}</span>
                                   </div>
                                   <p className="text-gray-900 font-medium mb-2 bg-gray-50 p-3 rounded-xl">{post.content}</p>
-                                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                                      <span>Author: <span className="font-bold text-gray-800">{post.authorName}</span></span>
+                                  <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+                                      <span>
+                                        Author:{' '}
+                                        <span className="font-bold text-gray-800">
+                                          {authorDisplay}
+                                        </span>
+                                      </span>
+                                      {post.authorName && authorDisplay.startsWith('@') && (
+                                        <span className="text-xs text-gray-400">({post.authorName})</span>
+                                      )}
                                   </div>
                               </div>
                               <div className="flex flex-col justify-center gap-2 md:w-32">
@@ -353,7 +556,7 @@ export const AdminDashboard = () => {
                                   <button onClick={() => handleConfirmReport(post.id, 'dismiss')} className="bg-gray-100 text-gray-600 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors">Ignore</button>
                               </div>
                           </div>
-                      ))}
+                      );})}
                   </div>
               )}
           </div>
@@ -378,6 +581,182 @@ export const AdminDashboard = () => {
                           ))}
                       </tbody>
                   </table>
+              </div>
+          </div>
+      )}
+
+      {/* Ads Tab */}
+      {activeTab === 'ads' && (
+          <div className="space-y-6 animate-fade-in">
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-6">
+                      <div>
+                          <h3 className="font-bold text-lg text-gray-900">{t('ad_management')}</h3>
+                          <p className="text-sm text-gray-500">{t('ad_preview')}</p>
+                      </div>
+                      {editingAdId && (
+                          <button onClick={resetAdForm} className="text-sm font-bold text-gray-500 hover:text-gray-800">
+                              {t('cancel')}
+                          </button>
+                      )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                          <div>
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_title')}</label>
+                              <input value={adForm.title} onChange={(e) => setAdForm(prev => ({ ...prev, title: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                          </div>
+                          <div>
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_description')}</label>
+                              <textarea value={adForm.description} onChange={(e) => setAdForm(prev => ({ ...prev, description: e.target.value }))} rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500"></textarea>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_cta_text')}</label>
+                                  <input value={adForm.ctaText} onChange={(e) => setAdForm(prev => ({ ...prev, ctaText: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                              </div>
+                              <div>
+                                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_cta_url')}</label>
+                                  <input value={adForm.ctaUrl} onChange={(e) => setAdForm(prev => ({ ...prev, ctaUrl: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                              </div>
+                          </div>
+                      </div>
+                      <div className="space-y-3">
+                          <div>
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_image_url')}</label>
+                              <input value={adForm.imageUrl} onChange={(e) => setAdForm(prev => ({ ...prev, imageUrl: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                          </div>
+                          <div>
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_highlight_label')}</label>
+                              <input value={adForm.highlightLabel} onChange={(e) => setAdForm(prev => ({ ...prev, highlightLabel: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500" />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_placement')}</label>
+                                  <select value={adForm.placement} onChange={(e) => setAdForm(prev => ({ ...prev, placement: e.target.value as ManualAdPlacement }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 outline-none focus:border-brand-500">
+                                      {adPlacementOptions.map(option => (
+                                          <option key={option.value} value={option.value}>{option.label}</option>
+                                      ))}
+                                  </select>
+                              </div>
+                              <div>
+                                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('ad_status')}</label>
+                                  <button onClick={() => setAdForm(prev => ({ ...prev, isActive: !prev.isActive }))} className={`w-full h-[50px] rounded-xl border font-bold ${adForm.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                                      {adForm.isActive ? t('ad_active') : t('ad_inactive')}
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3 mt-6">
+                      <button onClick={handleAdSubmit} className="px-6 py-3 rounded-2xl font-bold text-white bg-gray-900 hover:bg-gray-800">
+                          {editingAdId ? t('ad_save') : t('ad_create')}
+                      </button>
+                      {editingAdId && (
+                          <button onClick={resetAdForm} className="px-6 py-3 rounded-2xl font-bold text-gray-600 border border-gray-200 hover:bg-gray-50">
+                              {t('cancel')}
+                          </button>
+                      )}
+                  </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {manualAds.length === 0 ? (
+                      <div className="col-span-full bg-gray-50 border border-dashed border-gray-200 rounded-3xl p-10 text-center text-gray-400">
+                          {t('ad_empty')}
+                      </div>
+                  ) : manualAds.map(ad => (
+                      <div key={ad.id} className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                          {ad.imageUrl && (
+                              <div className="h-40 bg-gray-100 overflow-hidden">
+                                  <img src={ad.imageUrl} className="w-full h-full object-cover" />
+                              </div>
+                          )}
+                          <div className="p-5 flex-1 flex flex-col gap-3">
+                              <div className="flex items-center justify-between">
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ad.isActive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                                      {ad.isActive ? t('ad_active') : t('ad_inactive')}
+                                  </span>
+                                  <span className="text-xs font-bold text-gray-400 uppercase">{t('ad_placement')} · {adPlacementOptions.find(p => p.value === ad.placement)?.label}</span>
+                              </div>
+                              <div>
+                                  {ad.highlightLabel && <span className="text-[10px] font-black text-amber-600 uppercase">{ad.highlightLabel}</span>}
+                                  <h4 className="text-lg font-bold text-gray-900">{ad.title}</h4>
+                                  {ad.description && <p className="text-sm text-gray-500 mt-1 line-clamp-3">{ad.description}</p>}
+                              </div>
+                              {ad.ctaText && ad.ctaUrl && (
+                                  <a href={ad.ctaUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold bg-gray-900 text-white hover:bg-gray-800">
+                                      {ad.ctaText}
+                                  </a>
+                              )}
+                          </div>
+                          <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+                              <div className="flex gap-2">
+                                  <button onClick={() => toggleAdStatus(ad)} className="px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50">
+                                      {ad.isActive ? t('ad_inactive') : t('ad_active')}
+                                  </button>
+                                  <button onClick={() => handleEditAd(ad)} className="px-3 py-2 rounded-xl text-xs font-bold border border-blue-200 text-blue-600 hover:bg-blue-50">
+                                      {t('edit')}
+                                  </button>
+                              </div>
+                              <button onClick={() => handleDeleteAd(ad.id)} className="px-3 py-2 rounded-xl text-xs font-bold border border-red-200 text-red-500 hover:bg-red-50">
+                                  {t('delete')}
+                              </button>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div>
+                          <h4 className="font-bold text-lg text-gray-900">{t('ad_stats')}</h4>
+                          <p className="text-sm text-gray-500">{t('ad_stats_desc')}</p>
+                      </div>
+                      <button onClick={handleRefreshAdStats} className="px-4 py-2 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50">
+                          {t('refresh')}
+                      </button>
+                  </div>
+                  {adMetrics.length === 0 ? (
+                      <div className="text-sm text-gray-400 text-center py-6">{t('ad_no_stats')}</div>
+                  ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {adMetrics.map(metric => (
+                              <div key={`metric-${metric.ad?.id}`} className="border border-gray-100 rounded-2xl p-4 flex flex-col gap-3">
+                                  <div className="flex items-center justify-between">
+                                      <div>
+                                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('ad_title')}</p>
+                                          <p className="font-bold text-gray-900">{metric.ad?.title || metric.ad?.id}</p>
+                                      </div>
+                                      <div className="text-right">
+                                          <p className="text-[10px] font-bold uppercase text-gray-400">{t('ad_last_event')}</p>
+                                          <p className="text-xs text-gray-500">{metric.lastTimestamp ? new Date(metric.lastTimestamp).toLocaleString() : '-'}</p>
+                                      </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                      <div className="bg-gray-50 rounded-xl p-3 text-center">
+                                          <p className="text-xs font-bold text-gray-500 uppercase">{t('impressions')}</p>
+                                          <p className="text-2xl font-black text-gray-900">{metric.impressions}</p>
+                                      </div>
+                                      <div className="bg-gray-50 rounded-xl p-3 text-center">
+                                          <p className="text-xs font-bold text-gray-500 uppercase">{t('clicks')}</p>
+                                          <p className="text-2xl font-black text-gray-900">{metric.clicks}</p>
+                                      </div>
+                                  </div>
+                                  {Object.keys(metric.locations).length > 0 && (
+                                      <div>
+                                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{t('ad_location_stats')}</p>
+                                          <div className="flex flex-wrap gap-2">
+                                              {Object.entries(metric.locations).map(([location, count]) => (
+                                                  <span key={location} className="px-2 py-1 text-xs font-bold rounded-lg bg-gray-100 text-gray-700">
+                                                      {location} · {count}
+                                                  </span>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+                              </div>
+                          ))}
+                      </div>
+                  )}
               </div>
           </div>
       )}
@@ -616,6 +995,39 @@ export const AdminDashboard = () => {
       {/* Definitions Tab */}
       {activeTab === 'definitions' && (
           <div className="space-y-8 animate-fade-in">
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                              <UploadCloud size={18} className="text-brand-500" /> {t('import_excel')}
+                          </h3>
+                          <p className="text-sm text-gray-500">{t('excel_hint')}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={handleExcelDownload}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50"
+                          >
+                            <Download size={16} /> {t('download_template')}
+                          </button>
+                          <button
+                            onClick={() => fileUploadRef.current?.click()}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gray-900 text-white hover:bg-gray-800"
+                          >
+                            <Upload size={16} /> {t('upload_excel')}
+                          </button>
+                          <input ref={fileUploadRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcelUpload} />
+                      </div>
+                  </div>
+                  <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-4 text-sm text-gray-600">
+                      <p className="font-bold text-gray-800">{t('excel_guidelines_title')}</p>
+                      <ul className="list-disc ml-5 mt-2 space-y-1">
+                          <li>{t('excel_guideline_schools')}</li>
+                          <li>{t('excel_guideline_subjects')}</li>
+                          <li>{t('excel_guideline_topics')}</li>
+                      </ul>
+                  </div>
+              </div>
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                   <h3 className="font-bold text-lg text-gray-900 mb-6">{t('system_subjects')}</h3>
                   <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
@@ -642,6 +1054,31 @@ export const AdminDashboard = () => {
 
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                   <h3 className="font-bold text-lg text-gray-900 mb-6">{t('approved_topics')}</h3>
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-lg text-gray-900">{t('social_topics')}</h3>
+                      <button
+                        onClick={() => {
+                            const name = window.prompt(t('social_topics_prompt') || 'Add social topic');
+                            if (name) addSocialTopic(name);
+                        }}
+                        className="px-4 py-2 rounded-xl text-sm font-bold bg-brand-500 text-white hover:bg-brand-600 transition-colors"
+                      >
+                        {t('add')}
+                      </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                      {socialTopics.map(topic => (
+                          <span key={topic.id} className="px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold text-gray-700 flex items-center gap-2">
+                              {topic.name}
+                              <button onClick={() => removeSocialTopic(topic.id)} className="text-gray-400 hover:text-red-500">
+                                  <X size={14} />
+                              </button>
+                          </span>
+                      ))}
+                      {socialTopics.length === 0 && <p className="text-sm text-gray-400">{t('no_social_topics')}</p>}
+                  </div>
+              </div>
                   <div className="flex flex-wrap gap-4 mb-6">
                       <select value={selectedSubjectIdForTopic} onChange={e => setSelectedSubjectIdForTopic(e.target.value)} className="p-3 bg-gray-50 rounded-xl font-bold border border-gray-300 text-gray-800 focus:outline-none focus:border-brand-500">
                           {availableSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}

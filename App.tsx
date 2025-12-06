@@ -21,6 +21,7 @@ import { TeacherProfile } from './pages/teacher/TeacherProfile';
 import { TeacherShop } from './pages/teacher/TeacherShop';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminSettings } from './pages/admin/AdminSettings';
+import { AdminProfile } from './pages/admin/AdminProfile';
 import { UserRole } from './types';
 import { AlertTriangle, Hammer } from 'lucide-react';
 
@@ -140,9 +141,24 @@ const MainRouter = () => {
                <CreateExam />
             </ProtectedRoute>
           } />
+          <Route path="/teacher/social" element={
+            <ProtectedRoute roles={[UserRole.TEACHER]}>
+               <SocialFeed />
+            </ProtectedRoute>
+          } />
           <Route path="/teacher/profile" element={
             <ProtectedRoute roles={[UserRole.TEACHER]}>
                <TeacherProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/exams" element={
+            <ProtectedRoute roles={[UserRole.TEACHER]}>
+               <StudentExams />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher/exam/:id" element={
+            <ProtectedRoute roles={[UserRole.TEACHER]}>
+               <ExamRoom />
             </ProtectedRoute>
           } />
           <Route path="/teacher/shop" element={
@@ -203,6 +219,21 @@ const MainRouter = () => {
             </ProtectedRoute>
           } />
           <Route path="/admin/logs" element={
+            <ProtectedRoute roles={[UserRole.ADMIN]}>
+               <AdminDashboard /> 
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/social" element={
+            <ProtectedRoute roles={[UserRole.ADMIN]}>
+               <SocialFeed />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/profile" element={
+            <ProtectedRoute roles={[UserRole.ADMIN]}>
+               <AdminProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/ads" element={
             <ProtectedRoute roles={[UserRole.ADMIN]}>
                <AdminDashboard /> 
             </ProtectedRoute>

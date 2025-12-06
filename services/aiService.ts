@@ -247,10 +247,11 @@ const learningReportSchema = {
       },
       focusAreas: {
         type: "array",
+        minItems: 0,
         items: { type: "string" },
       },
     },
-    required: ["summary", "outcomes"],
+    required: ["summary", "outcomes", "focusAreas"],
   },
 };
 
@@ -810,7 +811,7 @@ export const parseQuestionFromImage = async (
               type: "input_text",
               text: "Extract the question, 4 options, and explanation if visible.",
             },
-            { type: "input_image", image_url: toDataUrl(base64Data) },
+            { type: "input_image", image_url: toDataUrl(base64Data), detail: "auto" },
           ],
         },
       ],

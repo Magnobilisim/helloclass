@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, Sparkles, GraduationCap, Book, Repeat, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, Play, Clock, ShoppingCart, X, CheckCircle, Bot, GraduationCap, Book, Repeat, Eye } from 'lucide-react';
+import { ManualAd, UserRole } from '../../types';
+import { useAdTracking } from '../../hooks/useAdTracking';
 
 export const StudentExams = () => {
-  const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, results, watchAdForPoints } = useStore();
+  const { exams, user, purchaseExam, approvedTopics, availableSubjects, t, results, watchAdForPoints, manualAds } = useStore();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -28,6 +30,11 @@ export const StudentExams = () => {
       if (s.id === 'sub-eng') return true; // Standard English ID
       return s.grades.includes(selectedGrade);
   });
+
+  const isStudent = user?.role === UserRole.STUDENT;
+  const basePath = user?.role === UserRole.TEACHER ? '/teacher' : '/student';
+  const shopPath = isStudent ? '/student/shop' : '/teacher/shop';
+  const locationHint = user?.schoolId;
 
   const publishedExams = exams.filter(e => e.isPublished);
 
@@ -63,6 +70,34 @@ export const StudentExams = () => {
       return new Set(results.filter(r => r.studentId === user.id).map(r => r.examId));
   }, [results, user]);
 
+  const examAds = useMemo(() => manualAds.filter(ad => ad.isActive && (ad.placement === 'exam' || ad.placement === 'both')), [manualAds]);
+
+  const examsWithAds = useMemo(() => {
+      if (examAds.length === 0) {
+          return filteredExams.map(exam => ({ type: 'exam' as const, exam }));
+      }
+      const items: Array<{ type: 'exam'; exam: typeof filteredExams[number] } | { type: 'ad'; ad: typeof examAds[number]; key: string }> = [];
+      let adPointer = 0;
+      const FREQUENCY = 4;
+      filteredExams.forEach((exam, index) => {
+          if (index > 0 && index % FREQUENCY === 0) {
+              const ad = examAds[adPointer % examAds.length];
+              items.push({ type: 'ad', ad, key: `exam-feed-ad-${index}-${ad.id}-${adPointer}` });
+              adPointer += 1;
+          }
+          items.push({ type: 'exam', exam });
+      });
+      if (!items.some(item => item.type === 'ad')) {
+          const fallbackAd = examAds[0];
+          items.splice(Math.min(1, items.length), 0, { type: 'ad', ad: fallbackAd, key: `exam-feed-ad-fallback-${fallbackAd.id}` });
+      }
+      return items;
+  }, [filteredExams, examAds]);
+
+  const goToExam = (examId: string) => {
+    navigate(`${basePath}/exam/${examId}`);
+  };
+
   const handleStartOrBuy = (examId: string, price: number) => {
     const isPurchased = user?.purchasedExamIds?.includes(examId);
     if (!isPurchased && price > 0) {
@@ -79,7 +114,7 @@ export const StudentExams = () => {
   };
   const handleViewDetails = (examId: string) => {
     sessionStorage.removeItem(`exam_time_${examId}`);
-    navigate(`/student/exam/${examId}`);
+    goToExam(examId);
   };
 
   const openStartModal = (examId: string) => {
@@ -88,7 +123,7 @@ export const StudentExams = () => {
     const canEditTime = exam.timeLimit <= 0;
     if (!canEditTime) {
         sessionStorage.removeItem(`exam_time_${examId}`);
-        navigate(`/student/exam/${examId}`);
+        goToExam(examId);
         return;
     }
     setCustomTime(exam.timeLimit || 15);
@@ -98,7 +133,7 @@ export const StudentExams = () => {
   const confirmStart = () => {
       if (selectedExamId && customTime) {
           sessionStorage.setItem(`exam_time_${selectedExamId}`, customTime.toString());
-          navigate(`/student/exam/${selectedExamId}`);
+          goToExam(selectedExamId);
           setSelectedExamId(null);
           setCustomTime(null);
       }
@@ -153,8 +188,21 @@ export const StudentExams = () => {
          )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredExams.map(exam => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-16 md:pb-0">
+        {examsWithAds.map(item => {
+          if (item.type === 'ad') {
+              return (
+                <ExamAdCard
+                  key={item.key}
+                  ad={item.ad}
+                  label={t('ads')}
+                  userId={user?.id}
+                  userRole={user?.role}
+                  locationHint={locationHint}
+                />
+              );
+          }
+          const exam = item.exam;
            const isPurchased = user?.purchasedExamIds?.includes(exam.id);
            const isSolved = solvedExamIds.has(exam.id);
            const isFree = exam.price === 0;
@@ -222,7 +270,7 @@ export const StudentExams = () => {
                           {t('watch_ad_cta')}
                       </button>
                       <button
-                          onClick={() => { setShowPointModal(false); navigate('/student/shop'); }}
+                          onClick={() => { setShowPointModal(false); navigate(shopPath); }}
                           className="w-full bg-gray-900 text-white font-semibold rounded-xl py-3 hover:scale-[1.02] transition-transform"
                       >
                           {t('go_to_shop_cta')}
@@ -237,6 +285,51 @@ export const StudentExams = () => {
               </div>
           </div>
       )}
+    </div>
+  );
+
+};
+
+const ExamAdCard: React.FC<{
+  ad: ManualAd;
+  label: string;
+  userId?: string;
+  userRole?: UserRole;
+  locationHint?: string;
+}> = ({ ad, label, userId, userRole, locationHint }) => {
+  const { adRef, logAdClick } = useAdTracking({
+      adId: ad.id,
+      placement: ad.placement,
+      context: 'exam',
+      userId,
+      userRole,
+      locationHint
+  });
+
+  return (
+    <div ref={adRef} className="bg-gradient-to-br from-gray-900 to-gray-800 text-white p-5 rounded-3xl shadow-lg border border-gray-800 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-300">{label}</span>
+            {ad.highlightLabel && <span className="text-[10px] font-black text-amber-300 uppercase">{ad.highlightLabel}</span>}
+        </div>
+        <h4 className="text-xl font-black leading-tight">{ad.title}</h4>
+        {ad.description && <p className="text-sm text-gray-300">{ad.description}</p>}
+        {ad.imageUrl && (
+            <div className="rounded-2xl overflow-hidden border border-white/10 mt-2">
+                <img src={ad.imageUrl} className="w-full h-40 object-cover" />
+            </div>
+        )}
+        {ad.ctaText && ad.ctaUrl && (
+            <a
+              href={ad.ctaUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={logAdClick}
+              className="mt-auto inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-gray-900 font-bold text-sm hover:opacity-90 transition-opacity"
+            >
+                {ad.ctaText}
+            </a>
+        )}
     </div>
   );
 };

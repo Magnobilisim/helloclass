@@ -2,12 +2,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { User, Exam } from '../../types';
-import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink, Share2, Package } from 'lucide-react';
+import { LogOut, Award, Edit2, X, UserMinus, UserPlus, Bell, UserCheck, ArrowLeft, MessageCircle, BookOpen, ExternalLink, Share2, Package, AtSign } from 'lucide-react';
 import { StudentResults } from './StudentResults';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export const UserProfile = () => {
-  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow, exams, shopItems } = useStore();
+  const { user: currentUser, users, updateUser, schools, logout, t, showAlert, toggleFollow, exams, shopItems, systemSettings, createUsername, formatDisplayName, isUsernameAvailable } = useStore();
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -19,6 +19,8 @@ export const UserProfile = () => {
   const [notifSettings, setNotifSettings] = useState({ email: true, app: true });
   const [showListModal, setShowListModal] = useState<'followers' | 'following' | null>(null);
   const [referralUrl, setReferralUrl] = useState('');
+  const [usernameInput, setUsernameInput] = useState('');
+  const [displayPreference, setDisplayPreference] = useState<'fullName' | 'username'>('fullName');
   const inventoryCounts = useMemo(() => {
       const counts: Record<string, number> = {};
       (profileUser?.inventory || []).forEach(item => {
@@ -59,6 +61,20 @@ export const UserProfile = () => {
           setReferralUrl(`${window.location.origin}/#/auth?ref=${profileUser.referralCode}`);
       }
   }, [profileUser?.referralCode]);
+  
+  useEffect(() => {
+      if (profileUser?.username) {
+          setUsernameInput(profileUser.username);
+      } else {
+          setUsernameInput('');
+      }
+  }, [profileUser?.username]);
+  
+  useEffect(() => {
+      if (profileUser) {
+          setDisplayPreference(profileUser.displayPreference || 'fullName');
+      }
+  }, [profileUser?.displayPreference]);
 
   if (!currentUser || !profileUser) return null;
 
@@ -77,6 +93,42 @@ export const UserProfile = () => {
   };
 
   const currentSchool = schools.find(s => s.id === profileUser.schoolId);
+  const usernameCost = systemSettings.usernameCost ?? 0;
+  const sanitizedUsername = usernameInput.trim().toLowerCase();
+  const usernameMeetsLength = sanitizedUsername.length >= 3;
+  const usernameIsAvailable = usernameMeetsLength && (!profileUser ? false : isUsernameAvailable(sanitizedUsername, profileUser.id));
+
+  const handleUsernameChange = (value: string) => {
+      const allowed = value.replace(/[^a-zA-Z0-9._]/g, '');
+      setUsernameInput(allowed.toLowerCase());
+  };
+
+  const handleUsernameSubmit = () => {
+      if (!sanitizedUsername) {
+          showAlert(t('username_invalid'), 'error');
+          return;
+      }
+      if (!usernameIsAvailable) {
+          showAlert(t('username_taken'), 'error');
+          return;
+      }
+      const success = createUsername(sanitizedUsername);
+      if (success) {
+          setDisplayPreference('username');
+      }
+  };
+
+  const handleDisplayPreferenceChange = (pref: 'fullName' | 'username') => {
+      if (!isOwnProfile || !currentUser) return;
+      if (pref === 'username' && !profileUser.username) {
+          showAlert(t('display_pref_username_needed'), 'error');
+          return;
+      }
+      if (displayPreference === pref) return;
+      setDisplayPreference(pref);
+      updateUser({ ...currentUser, displayPreference: pref });
+      showAlert(t('display_preference_saved'), 'success');
+  };
 
   const getListUsers = () => {
       if (showListModal === 'followers') {
@@ -190,9 +242,110 @@ export const UserProfile = () => {
                          </>
                      )}
                 </div>
+        </div>
+
+        <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mt-6 space-y-6">
+            <div className="flex flex-col gap-2">
+                <p className="text-xs font-bold text-gray-400 uppercase">{t('username')}</p>
+                <div className="inline-flex items-center gap-2 text-2xl font-black text-gray-900">
+                    <AtSign size={22} className="text-brand-500" />
+                    <span>{profileUser.username ? `@${profileUser.username}` : (t('username_placeholder') || 'kullaniciadi')}</span>
+                </div>
+                <p className="text-sm text-gray-500">
+                    {isOwnProfile ? t('username_hint') : t('username_cannot_edit')}
+                </p>
             </div>
 
-            {isEditing && isOwnProfile && (
+            {isOwnProfile && (
+                <div className="space-y-4">
+                    <div className="flex flex-col md:flex-row md:items-end gap-4">
+                        <div className="flex-1">
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                                {t('create_username')}
+                            </label>
+                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus-within:border-brand-500 focus-within:bg-white transition-colors">
+                                <AtSign size={18} className="text-gray-400" />
+                                <input
+                                    value={usernameInput}
+                                    onChange={(e) => handleUsernameChange(e.target.value)}
+                                    maxLength={20}
+                                    className="flex-1 bg-transparent outline-none text-gray-900 font-bold text-lg"
+                                    placeholder={t('username_placeholder') || 'kullaniciadi'}
+                                />
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {(t('username_preview_label') || 'Önizleme: @{username}').replace('{username}', sanitizedUsername || 'helloclass')}
+                            </p>
+                            {sanitizedUsername && (
+                                <p className={`text-xs font-bold ${usernameIsAvailable ? 'text-emerald-600' : 'text-red-500'}`}>
+                                    {usernameIsAvailable ? t('username_available') : t('username_taken')}
+                                </p>
+                            )}
+                        </div>
+                        <div className="md:w-48 bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs text-gray-600 font-semibold">
+                            <p>{t('username_cost_hint').replace('{points}', String(usernameCost))}</p>
+                            <p className="text-[10px] text-gray-400 mt-2">{t('points')}: {currentUser.points}</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <button
+                            onClick={handleUsernameSubmit}
+                            disabled={!usernameIsAvailable || sanitizedUsername === (profileUser.username || '')}
+                            className={`px-6 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
+                                usernameIsAvailable && sanitizedUsername !== (profileUser.username || '')
+                                    ? 'bg-brand-500 text-white hover:bg-brand-600'
+                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                            {(profileUser.username ? t('username_update_btn') : t('create_username'))} · {usernameCost} {t('points')}
+                        </button>
+                        {profileUser.username && (
+                            <span className="text-xs text-gray-500 flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2 font-bold">
+                                {t('current_username')} <span className="text-gray-900">@{profileUser.username}</span>
+                            </span>
+                        )}
+                    </div>
+                </div>
+            )}
+        </section>
+
+        {isOwnProfile && (
+            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mt-6">
+                <div className="pt-2">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-2">{t('display_preference_title')}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h3 className="text-lg font-black text-gray-900">{t('display_preference_question')}</h3>
+                            <p className="text-sm text-gray-500 mt-1">{t('display_preference_hint')}</p>
+                        </div>
+                        <div className="inline-flex bg-gray-100 rounded-full p-1">
+                            <button
+                                type="button"
+                                onClick={() => handleDisplayPreferenceChange('fullName')}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${displayPreference === 'fullName' ? 'bg-white text-brand-600 shadow' : 'text-gray-500'}`}
+                            >
+                                {t('post_identity_fullname')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleDisplayPreferenceChange('username')}
+                                disabled={!profileUser.username}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                                    displayPreference === 'username' ? 'bg-white text-brand-600 shadow' : 'text-gray-400'
+                                } ${!profileUser.username ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {t('post_identity_username')}
+                            </button>
+                        </div>
+                    </div>
+                    {!profileUser.username && (
+                        <p className="text-xs text-red-500 mt-2">{t('display_pref_username_needed')}</p>
+                    )}
+                </div>
+            </section>
+        )}
+
+        {isEditing && isOwnProfile && (
                 <div className="mt-8 pt-8 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in text-left">
                     <div className="space-y-4">
                         <div>
@@ -253,12 +406,20 @@ export const UserProfile = () => {
                                 {schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                         </div>
-                        <button 
-                            onClick={handleSave}
-                            className="mt-4 w-full bg-brand-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-600 transition-colors"
-                        >
-                            {t('save')}
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                            <button 
+                                onClick={handleSave}
+                                className="flex-1 bg-brand-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-600 transition-colors"
+                            >
+                                {t('save')}
+                            </button>
+                            <button 
+                                onClick={logout}
+                                className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-bold border border-red-100 hover:bg-red-100 transition-colors"
+                            >
+                                {t('logout')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -285,7 +446,7 @@ export const UserProfile = () => {
             )}
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
              <div className="bg-white p-6 rounded-3xl border border-gray-100 text-center">
                  <div className="text-2xl font-black text-brand-500">{profileUser.points}</div>
                  <div className="text-xs font-bold text-gray-400 uppercase">{t('points')}</div>
@@ -424,10 +585,10 @@ export const UserProfile = () => {
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2 min-w-0">
                         <label className="text-xs font-bold text-gray-400 uppercase">{t('referral_code_label')}</label>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1">{profileUser.referralCode}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono text-sm text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1 break-all">{profileUser.referralCode}</span>
                             <button 
                                 onClick={() => handleCopy(profileUser.referralCode!)}
                                 className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors"
@@ -436,10 +597,10 @@ export const UserProfile = () => {
                             </button>
                         </div>
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col gap-2 min-w-0">
                         <label className="text-xs font-bold text-gray-400 uppercase">{t('referral_link_label')}</label>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1 truncate">{referralUrl}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono text-xs text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 flex-1 break-all">{referralUrl}</span>
                             <button 
                                 onClick={() => handleCopy(referralUrl)}
                                 className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors"
@@ -481,7 +642,7 @@ export const UserProfile = () => {
                                     >
                                         <img src={u.avatar} className="w-12 h-12 rounded-full border border-gray-200 object-cover shrink-0" />
                                         <div className="min-w-0">
-                                            <div className="font-bold text-gray-900 text-sm truncate">{u.name}</div>
+                                            <div className="font-bold text-gray-900 text-sm truncate">{formatDisplayName(u, { withAt: true })}</div>
                                             <div className="text-xs text-gray-500 font-bold bg-gray-100 px-1.5 py-0.5 rounded w-fit">{u.role}</div>
                                         </div>
                                     </div>

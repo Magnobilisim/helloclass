@@ -1,8 +1,8 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Award, Calendar, CheckCircle, XCircle, AlertCircle, ArrowRight, Star, Bookmark, Play } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 interface StudentResultsProps {
     studentId?: string;
@@ -12,6 +12,8 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
   const { results, user, exams, t, availableSubjects } = useStore();
   const location = useLocation();
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [selectedExamId, setSelectedExamId] = useState<string>('all');
+  const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const highlightTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -21,6 +23,21 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
   const myResults = results
     .filter(r => r.studentId === targetId)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const examFilterOptions = useMemo(() => {
+      const seen = new Map<string, string>();
+      myResults.forEach(res => {
+          const exam = exams.find(e => e.id === res.examId);
+          if (exam) {
+              seen.set(exam.id, exam.title);
+          }
+      });
+      return Array.from(seen.entries()).map(([value, label]) => ({ value, label }));
+  }, [myResults, exams]);
+
+  const filteredResults = selectedExamId === 'all'
+      ? myResults
+      : myResults.filter(res => res.examId === selectedExamId);
+
 
   const isOwnProfile = user?.id === targetId;
 
@@ -71,8 +88,25 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
              {isOwnProfile && <Link to="/student/exams" className="bg-gradient-to-r from-brand-500 to-orange-500 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-brand-200 hover:scale-105 transition-transform flex items-center gap-2"><Play size={20} fill="currentColor" /> {t('go_to_market')}</Link>}
           </div>
       ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-             {myResults.map(res => {
+          <>
+            <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="flex flex-col flex-1 gap-1">
+                    <span className="text-xs font-bold text-gray-400 uppercase">{t('filter_label') || 'Filtrele'}</span>
+                    <p className="text-sm text-gray-600">{t('filter_hint') || 'Sınav sonuçlarını derli toplu görmek için seç.'}</p>
+                </div>
+                <select
+                    value={selectedExamId}
+                    onChange={(e) => setSelectedExamId(e.target.value)}
+                    className="w-full sm:w-64 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:border-brand-500 focus:bg-white transition-colors"
+                >
+                    <option value="all">{t('all_exams') || 'Tüm sınavlar'}</option>
+                    {examFilterOptions.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+             {filteredResults.map(res => {
                 const exam = exams.find(e => e.id === res.examId);
                 const percent = Math.round((res.score / res.totalQuestions) * 100);
                 const isPass = percent >= 50;
@@ -118,21 +152,33 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
                       </div>
                       {showLearningDetails && (learningStatus || learningReport) && (
                           <div className="mt-4 pt-4 border-t border-gray-50 pl-4 space-y-2">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{t('learning_outcomes_title')}</p>
+                              <div className="flex items-center justify-between">
+                                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{t('learning_outcomes_title')}</p>
+                                  {(learningStatus === 'ready' && learningReport) && (
+                                      <button
+                                          onClick={() => setExpandedResultId(prev => prev === res.id ? null : res.id)}
+                                          className="text-xs font-bold text-brand-600 flex items-center gap-1"
+                                      >
+                                          {expandedResultId === res.id ? t('collapse') || 'Kapat' : t('expand') || 'Göster'} <ArrowRight size={12} className={`${expandedResultId === res.id ? 'transform rotate-90' : ''}`} />
+                                      </button>
+                                  )}
+                              </div>
                               {learningStatus === 'pending' && (
                                   <p className="text-xs text-gray-500">{t('learning_outcomes_pending')}</p>
                               )}
                               {learningStatus === 'failed' && (
                                   <p className="text-xs text-red-500">{t('learning_outcomes_error')}</p>
                               )}
-                              {learningStatus === 'ready' && learningReport && (
-                                  <div className="space-y-2">
-                                      <p className="text-sm text-gray-700">{learningReport.summary}</p>
-                                      <ul className="space-y-1.5 text-sm text-gray-800 list-disc pl-4">
-                                          {learningReport.outcomes.map((item, idx) => (
-                                              <li key={`lr-${res.id}-${idx}`}>{item}</li>
-                                          ))}
-                                      </ul>
+                              {learningStatus === 'ready' && learningReport && expandedResultId === res.id && (
+                                  <div className="space-y-2 text-sm text-gray-700">
+                                      <p>{learningReport.summary}</p>
+                                      {learningReport.outcomes.length > 0 && (
+                                          <ul className="space-y-1.5 list-disc pl-4">
+                                              {learningReport.outcomes.map((item, idx) => (
+                                                  <li key={`lr-${res.id}-${idx}`}>{item}</li>
+                                              ))}
+                                          </ul>
+                                      )}
                                       {learningReport.focusAreas.length > 0 && (
                                           <div>
                                               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-2">{t('learning_outcomes_focus_title')}</p>
@@ -145,22 +191,16 @@ export const StudentResults: React.FC<StudentResultsProps> = ({ studentId }) => 
                                       )}
                                   </div>
                               )}
-                          </div>
-                      )}
-                      {!isDeleted && isOwnProfile && (
-                          <div className="mt-4 pt-4 border-t border-gray-100 pl-4 flex justify-end">
-                              <Link
-                                  to={`/student/results?highlight=${res.id}`}
-                                  className="text-xs font-bold text-gray-400 hover:text-brand-600 flex items-center gap-1 transition-colors"
-                              >
-                                  {t('view_learning_outcomes')} <ArrowRight size={12} />
-                              </Link>
+                              {learningStatus === 'ready' && learningReport && expandedResultId !== res.id && (
+                                  <p className="text-xs text-gray-500">{t('learning_outcomes_preview') || 'Kazanımları görmek için aç.'}</p>
+                              )}
                           </div>
                       )}
                    </div>
                 );
              })}
-          </div>
+            </div>
+          </>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase, AiUsageLog, PayoutRequest } from '../types';
-import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS, TEACHER_CREDIT_PACKAGES, INITIAL_TRANSACTIONS } from '../constants';
+import { User, Exam, Post, UserRole, AlertType, ExamResult, ShopItem, Message, Language, ActivityLog, School, Notification, ReportReason, SystemSettings, Comment, Payout, TopicMetadata, StoreContextType, SubjectDef, PrizeExam, PrizeFinalist, Transaction, ExamSession, PointPurchase, AiUsageLog, PayoutRequest, ManualAd } from '../types';
+import { INITIAL_USERS, INITIAL_EXAMS, INITIAL_POSTS, INITIAL_MESSAGES, INITIAL_SCHOOLS, INITIAL_NOTIFICATIONS, SHOP_ITEMS, DEFAULT_POINT_PACKAGES, CURRICULUM_TOPICS, INITIAL_PRIZE_EXAMS, TEACHER_CREDIT_PACKAGES, INITIAL_TRANSACTIONS, INITIAL_MANUAL_ADS, INITIAL_SOCIAL_TOPICS } from '../constants';
 import { TRANSLATIONS, TranslationKeys } from '../translations';
 import { checkContentSafety, generateLearningReport, setSafetyLanguage } from '../services/aiService';
 
@@ -52,6 +52,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [schools, setSchools] = useState<School[]>(INITIAL_SCHOOLS);
+  const [socialTopics, setSocialTopics] = useState<{ id: string; name: string }[]>(INITIAL_SOCIAL_TOPICS);
   const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [shopItems, setShopItems] = useState<ShopItem[]>(SHOP_ITEMS);
   const [payouts, setPayouts] = useState<Payout[]>([]);
@@ -61,11 +62,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [pointPurchases, setPointPurchases] = useState<PointPurchase[]>([]);
   const [examSessions, setExamSessions] = useState<Record<string, ExamSession>>({}); 
   const [aiUsageLogs, setAiUsageLogs] = useState<AiUsageLog[]>([]);
+  const [manualAds, setManualAds] = useState<ManualAd[]>(INITIAL_MANUAL_ADS);
   
   const buildSessionKey = (studentId: string, examId: string) => `${studentId}_${examId}`;
   const generateReferralCode = () => `HC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   
-  const [alert, setAlert] = useState<{ message: string; type: AlertType } | null>(null);
+  const [alert, setAlert] = useState<{ message: string; type: AlertType; actionLabel?: string; actionTo?: string } | null>(null);
   const [language, setLanguage] = useState<Language>('tr');
   const defaultSettings: SystemSettings = { 
       commissionRate: 20, 
@@ -79,6 +81,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       aiWizardCost: 200,
       aiExplainCost: 25,
       joker5050Cost: 30,
+      usernameCost: 150,
       teacherCreditPackages: TEACHER_CREDIT_PACKAGES,
       socialLinks: {
         youtube: '',
@@ -147,6 +150,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const loadedSessions = localStorage.getItem('hc_sessions');
     const loadedPointPurchases = localStorage.getItem('hc_point_purchases');
     const loadedAiLogs = localStorage.getItem('hc_ai_logs');
+    const loadedManualAds = localStorage.getItem('hc_manual_ads');
 
     if (loadedUsers) {
         try {
@@ -175,6 +179,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setSystemSettings(defaultSettings);
     }
     if (loadedSchools) setSchools(JSON.parse(loadedSchools));
+    const loadedSocialTopics = localStorage.getItem('hc_social_topics');
+    if (loadedSocialTopics) {
+        try {
+            setSocialTopics(JSON.parse(loadedSocialTopics));
+        } catch {
+            setSocialTopics(INITIAL_SOCIAL_TOPICS);
+        }
+    }
     if (loadedNotifs) setNotifications(JSON.parse(loadedNotifs));
     if (loadedSubjects) setAvailableSubjects(JSON.parse(loadedSubjects));
     if (loadedShop) setShopItems(JSON.parse(loadedShop));
@@ -226,6 +238,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             console.error('Failed to parse AI logs', e);
         }
     }
+    if (loadedManualAds) {
+        try {
+            const parsedAds: ManualAd[] = JSON.parse(loadedManualAds);
+            if (Array.isArray(parsedAds)) {
+                setManualAds(parsedAds);
+            }
+        } catch (e) {
+            console.error('Failed to parse manual ads', e);
+            setManualAds(INITIAL_MANUAL_ADS);
+        }
+    }
     
     if (loadedTopics) {
         try {
@@ -252,6 +275,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('hc_settings', JSON.stringify(systemSettings)); }, [systemSettings]);
   useEffect(() => { localStorage.setItem('hc_topics', JSON.stringify(approvedTopics)); }, [approvedTopics]);
   useEffect(() => { localStorage.setItem('hc_schools', JSON.stringify(schools)); }, [schools]);
+  useEffect(() => { localStorage.setItem('hc_social_topics', JSON.stringify(socialTopics)); }, [socialTopics]);
   useEffect(() => { localStorage.setItem('hc_notifs', JSON.stringify(notifications)); }, [notifications]);
   useEffect(() => { localStorage.setItem('hc_subjects', JSON.stringify(availableSubjects)); }, [availableSubjects]);
   useEffect(() => { localStorage.setItem('hc_shop', JSON.stringify(shopItems)); }, [shopItems]);
@@ -262,6 +286,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => { localStorage.setItem('hc_sessions', JSON.stringify(examSessions)); }, [examSessions]);
   useEffect(() => { localStorage.setItem('hc_point_purchases', JSON.stringify(pointPurchases)); }, [pointPurchases]);
   useEffect(() => { localStorage.setItem('hc_ai_logs', JSON.stringify(aiUsageLogs)); }, [aiUsageLogs]);
+  useEffect(() => { localStorage.setItem('hc_manual_ads', JSON.stringify(manualAds)); }, [manualAds]);
   
   useEffect(() => {
     if (user) localStorage.setItem('hc_current_user', JSON.stringify(user));
@@ -272,9 +297,58 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (TRANSLATIONS[language] && TRANSLATIONS[language][key as TranslationKeys]) || key;
   };
 
-  const showAlert = (message: string, type: AlertType) => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 3000);
+  const shouldUseUsername = (target?: User | null) => {
+      if (!target) return false;
+      if (!target.username) return false;
+      return (target.displayPreference || 'fullName') === 'username';
+  };
+
+  const resolveIdentity = (target?: User | null) => {
+      if (!target) return { displayAs: 'fullName' as const, displayName: target?.name || '' };
+      if (shouldUseUsername(target)) {
+          return { displayAs: 'username' as const, displayName: target.username! };
+      }
+      return { displayAs: 'fullName' as const, displayName: target.name };
+  };
+
+  const formatDisplayName = (
+      target?: User | null,
+      options?: { fallback?: 'firstName' | 'fullName'; withAt?: boolean }
+  ) => {
+      if (!target) return '';
+      if (shouldUseUsername(target)) {
+          const handle = target.username!;
+          return options?.withAt === false ? handle : `@${handle}`;
+      }
+      if (options?.fallback === 'firstName') {
+          const name = target.name || '';
+          const [first] = name.split(' ');
+          return first || name;
+      }
+      return target.name || '';
+  };
+
+  const getSafetyFeedback = (aiReason?: string) => {
+    if (language === 'tr') {
+        return t('safety_warning_detail');
+    }
+    return aiReason || t('safety_warning_desc');
+  };
+
+  const showAlert = (
+      message: string,
+      type: AlertType,
+      options?: { actionLabel?: string; actionTo?: string; duration?: number }
+  ) => {
+    setAlert({ message, type, actionLabel: options?.actionLabel, actionTo: options?.actionTo });
+    setTimeout(() => setAlert(null), options?.duration ?? 3000);
+  };
+  const getShopRoute = () => {
+      if (user?.role === UserRole.TEACHER) return '/teacher/shop';
+      return '/student/shop';
+  };
+  const promptPointsTopUp = () => {
+      showAlert(t('not_enough_points'), 'error', { actionLabel: t('go_to_shop_cta'), actionTo: getShopRoute() });
   };
 
   const addNotification = (userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error', link?: string) => {
@@ -465,7 +539,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return false;
       }
       if (user.points < exam.price) {
-          showAlert(t('not_enough_points'), 'error');
+          promptPointsTopUp();
           return false;
       }
       const updatedUser = {
@@ -516,7 +590,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showAlert(t('purchase_success'), 'success');
       return true;
     }
-    showAlert(t('not_enough_points'), 'error');
+    promptPointsTopUp();
     return false;
   };
 
@@ -802,7 +876,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     })();
   };
 
-  const addPost = async (content: string, tags?: string[], schoolId?: string, imageUrl?: string): Promise<{success: boolean, reason?: string}> => {
+  const addPost = async (
+      content: string, 
+      tags?: string[], 
+      schoolId?: string, 
+      imageUrl?: string,
+      displayMode?: 'username' | 'fullName'
+  ): Promise<{success: boolean, reason?: string}> => {
     if (!user) return { success: false, reason: 'Auth error' };
     if (content.length > 280) {
         showAlert('Post too long', 'error');
@@ -811,14 +891,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     const safetyResult = await checkContentSafety(content);
     if (!safetyResult.safe) {
-        addNotification(user.id, t('content_unsafe'), `${t('content_unsafe')}: ${safetyResult.reason}`, 'error');
-        return { success: false, reason: safetyResult.reason || 'Unsafe content' };
+        const localizedReason = getSafetyFeedback(safetyResult.reason);
+        addNotification(user.id, t('content_unsafe'), localizedReason, 'error');
+        return { success: false, reason: localizedReason };
     }
 
+    const baseIdentity = resolveIdentity(user);
+    const requestedDisplay = displayMode === 'username' && !user.username ? 'fullName' : displayMode;
+    const finalDisplayAs = requestedDisplay ? (requestedDisplay === 'username' && user.username ? 'username' : 'fullName') : baseIdentity.displayAs;
+    const useUsername = finalDisplayAs === 'username' && !!user.username;
+    const finalDisplayName = useUsername ? (user.username || baseIdentity.displayName) : user.name;
     const newPost: Post = {
       id: `post-${Date.now()}`,
       authorId: user.id,
       authorName: user.name,
+      authorUsername: user.username,
+      authorDisplayName: finalDisplayName,
+      displayAs: finalDisplayAs,
       authorAvatar: user.avatar,
       content,
       imageUrl, 
@@ -856,14 +945,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const safetyResult = await checkContentSafety(text);
       if (!safetyResult.safe) {
-          showAlert(`Comment blocked: ${safetyResult.reason}`, 'error');
+          showAlert(getSafetyFeedback(safetyResult.reason), 'error');
           return;
       }
 
+      const identity = resolveIdentity(user);
       const newComment: Comment = {
           id: `c-${Date.now()}`,
           authorId: user.id,
           authorName: user.name,
+          authorUsername: user.username,
+          authorDisplayName: identity.displayName,
+          displayAs: identity.displayAs,
           authorAvatar: user.avatar,
           text: text.trim(),
           timestamp: new Date().toISOString(),
@@ -979,6 +1072,77 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showAlert('School removed', 'info');
   };
 
+  const addSocialTopic = (name: string) => {
+      if (user?.role !== UserRole.ADMIN || !name.trim()) return;
+      setSocialTopics(prev => [...prev, { id: `soc-${Date.now()}`, name: name.trim() }]);
+  };
+
+  const removeSocialTopic = (id: string) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      setSocialTopics(prev => prev.filter(topic => topic.id !== id));
+  };
+
+  const isUsernameAvailable = (username: string, excludeUserId?: string) => {
+      const cleaned = username.trim().toLowerCase();
+      if (!cleaned || cleaned.length < 3) return false;
+      return !users.some(u => u.id !== excludeUserId && u.username?.toLowerCase() === cleaned);
+  };
+
+  const createUsername = (username: string) => {
+      if (!user) return false;
+      const cleaned = username.trim().toLowerCase();
+      const usernameRegex = /^[a-z0-9._]{3,20}$/;
+      if (!cleaned || !usernameRegex.test(cleaned)) {
+          showAlert(t('username_invalid') || 'Invalid username', 'error');
+          return false;
+      }
+      if (!isUsernameAvailable(cleaned, user.id)) {
+          showAlert(t('username_taken') || 'Username already taken', 'error');
+          return false;
+      }
+      const cost = systemSettings.usernameCost ?? 0;
+      if ((user.points || 0) < cost) {
+          promptPointsTopUp();
+          return false;
+      }
+      const alreadyHad = Boolean(user.username);
+      const updatedUser = { 
+          ...user, 
+          username: cleaned, 
+          displayPreference: alreadyHad ? user.displayPreference : 'username',
+          points: Math.max(0, (user.points || 0) - cost), 
+          updatedAt: new Date().toISOString()
+      };
+      updateUser(updatedUser);
+      showAlert(
+          t(alreadyHad ? 'username_updated' : 'username_created') || (alreadyHad ? 'Username updated' : 'Username created'),
+          'success'
+      );
+      return true;
+  };
+
+  const bulkImportSchools = (entries: Array<{ id?: string; name: string; city?: string }>) => {
+      setSchools(prev => {
+          const updated = [...prev];
+          entries.forEach(entry => {
+              if (!entry.name) return;
+              const target = entry.id ? updated.find(s => s.id === entry.id) : updated.find(s => s.name.toLowerCase() === entry.name.toLowerCase());
+              if (target) {
+                  target.name = entry.name || target.name;
+                  target.city = entry.city || target.city;
+              } else {
+                  updated.push({
+                      id: entry.id || `sch-${Date.now()}-${Math.random()}`,
+                      name: entry.name,
+                      city: entry.city || '',
+                      createdAt: new Date().toISOString()
+                  });
+              }
+          });
+          return updated;
+      });
+  };
+
   const markNotificationRead = (id: string) => {
       setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
   };
@@ -998,6 +1162,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (user?.role !== UserRole.ADMIN) return;
       setAvailableSubjects(availableSubjects.filter(s => s.id !== id));
       showAlert('Subject removed', 'info');
+  };
+
+  const bulkImportSubjects = (entries: Array<{ id?: string; name: string; grades?: number[] }>) => {
+      setAvailableSubjects(prev => {
+          const updated = [...prev];
+          entries.forEach(entry => {
+              if (!entry.name) return;
+              const target = entry.id ? updated.find(s => s.id === entry.id) : updated.find(s => s.name.toLowerCase() === entry.name.toLowerCase());
+              const grades = entry.grades && entry.grades.length ? entry.grades : target?.grades;
+              if (target) {
+                  target.name = entry.name || target.name;
+                  target.grades = grades || target.grades;
+              } else {
+                  updated.push({
+                      id: entry.id || `sub-${Date.now()}-${Math.random()}`,
+                      name: entry.name,
+                      grades: grades || []
+                  });
+              }
+          });
+          return updated;
+      });
   };
 
   const toggleFollow = (targetUserId: string) => {
@@ -1046,6 +1232,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (user?.role !== UserRole.ADMIN) return;
       setShopItems(shopItems.filter(i => i.id !== id));
       showAlert('Item deleted', 'info');
+  };
+
+  const addManualAd = (payload: Omit<ManualAd, 'id' | 'createdAt' | 'updatedAt'>) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      const newAd: ManualAd = {
+          ...payload,
+          id: `ad-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+      };
+      setManualAds(prev => [newAd, ...prev]);
+      showAlert(t('ad_created'), 'success');
+  };
+
+  const updateManualAd = (updated: ManualAd) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      setManualAds(prev => prev.map(ad => ad.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : ad));
+      showAlert(t('ad_updated'), 'success');
+  };
+
+  const deleteManualAd = (id: string) => {
+      if (user?.role !== UserRole.ADMIN) return;
+      setManualAds(prev => prev.filter(ad => ad.id !== id));
+      showAlert(t('ad_deleted'), 'info');
   };
 
   const sendBroadcast = (title: string, message: string, targetRole: UserRole | 'ALL') => {
@@ -1131,15 +1341,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setPrizeExams(prev => prev.map(pe => pe.id === prizeExamId ? { ...pe, ...data } : pe));
   };
 
+  const bulkImportTopics = (entries: Array<{ subjectId: string; name: string; grade?: number; level?: string }>) => {
+      setApprovedTopics(prev => {
+          const updated = { ...prev };
+          entries.forEach(entry => {
+              if (!entry.subjectId || !entry.name) return;
+              const list = updated[entry.subjectId] ? [...updated[entry.subjectId]] : [];
+              if (!list.some(topic => topic.name.toLowerCase() === entry.name.toLowerCase() && topic.grade === entry.grade && topic.level === entry.level)) {
+                  list.push({ name: entry.name, grade: entry.grade, level: entry.level });
+              }
+              updated[entry.subjectId] = list;
+          });
+          return updated;
+      });
+  };
+
   const drawPrizeWinner = (prizeExamId: string) => {
       if (user?.role !== UserRole.ADMIN) return;
       
       const prizeExam = prizeExams.find(pe => pe.id === prizeExamId);
       if (!prizeExam) return;
 
-      const candidates = results.filter(r => 
+      const candidates = results.filter((r): r is ExamResult => 
           r.examId === prizeExam.examId && 
-          prizeExam.participants?.includes(r.studentId)
+          !!prizeExam.participants?.includes(r.studentId)
       );
       
       if (candidates.length === 0) {
@@ -1181,18 +1406,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           showAlert(t('prize_winner_declared').replace('{name}', winnerUser.name), 'success');
       } else {
           const finalistsCount = Math.min(3, topScorers.length);
-          const selected = pickRandomSubset(topScorers, finalistsCount);
-          const finalists = selected.map(result => {
+          const selected = pickRandomSubset<ExamResult>(topScorers, finalistsCount);
+          const finalists: PrizeFinalist[] = selected.reduce<PrizeFinalist[]>((acc, result) => {
               const finalistUser = users.find(u => u.id === result.studentId);
-              if (!finalistUser) return null;
+              if (!finalistUser) return acc;
               const schoolName = finalistUser.schoolId ? schools.find(s => s.id === finalistUser.schoolId)?.name : undefined;
-              return {
+              acc.push({
                   userId: finalistUser.id,
                   name: finalistUser.name,
                   schoolName,
                   classLevel: finalistUser.classLevel
-              };
-          }).filter((f): f is PrizeFinalist => !!f);
+              });
+              return acc;
+          }, []);
 
           if (!finalists.length) {
               showAlert('Unable to determine finalists.', 'error');
@@ -1275,13 +1501,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StoreContext.Provider value={{
-      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, payoutRequests, prizeExams, transactions, examSessions, pointPurchases, aiUsageLogs,
+      user, users, exams, posts, results, messages, language, systemSettings, logs, approvedTopics, schools, notifications, availableSubjects, shopItems, payouts, payoutRequests, prizeExams, transactions, examSessions, pointPurchases, aiUsageLogs, manualAds,
       login, logout, register, updateUser, banUser, deleteUser, changeRole, resetPassword, sendPasswordResetEmail,
       addExam, updateExam, deleteExam, purchaseExam, purchaseItem, toggleEquip, startExamSession, saveResult, addPost, deletePost, toggleLike, toggleDislike, addComment, reportPost, dismissReport, sendMessage, markMessageRead, updateSystemSettings,
       addTopic, removeTopic, addSchool, removeSchool, markNotificationRead, addSubject, removeSubject, toggleFollow,
       addShopItem, deleteShopItem, sendBroadcast, adjustUserPoints, processPayout, deleteExamImage, watchAdForPoints, purchasePointPackage, purchaseAiCredits, logAiUsage, requestPayout, resolvePayoutRequest,
       addPrizeExam, drawPrizeWinner, payEntryFee,
-      updatePrizeExamMeta,
+      updatePrizeExamMeta, bulkImportSchools, bulkImportSubjects, bulkImportTopics, addManualAd, updateManualAd, deleteManualAd, socialTopics, addSocialTopic, removeSocialTopic,
+      createUsername,
+      formatDisplayName,
+      isUsernameAvailable,
       alert, showAlert, setLanguage, t
     }}>
       {children}

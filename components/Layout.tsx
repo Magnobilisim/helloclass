@@ -4,7 +4,7 @@ import { useStore } from '../context/StoreContext';
 import { UserRole } from '../types';
 import { 
   BookOpen, LayoutDashboard, ShoppingBag, 
-  Users, Settings, LogOut, MessageCircle, Star, Languages, AlertTriangle, FileText, ClipboardList, PieChart, Bookmark, LucideIcon, User as UserIcon, Bell, Globe, Gift
+  Users, Settings, LogOut, MessageCircle, Star, Languages, AlertTriangle, FileText, ClipboardList, PieChart, Bookmark, LucideIcon, User as UserIcon, Bell, Globe, Gift, Megaphone
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -81,6 +81,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         return [
           { to: '/teacher', icon: LayoutDashboard, label: t('dashboard') },
           { to: '/teacher/create', icon: BookOpen, label: t('create_exam') },
+          { to: '/teacher/exams', icon: ClipboardList, label: t('exams') },
           { to: '/teacher/shop', icon: ShoppingBag, label: t('shop') },
           { to: '/teacher/profile', icon: UserIcon, label: t('profile') },
           ...common
@@ -94,6 +95,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           { to: '/admin/financials', icon: PieChart, label: t('financials') },
           { to: '/admin/definitions', icon: Bookmark, label: t('definitions') },
           { to: '/admin/logs', icon: FileText, label: t('logs') },
+          { to: '/admin/ads', icon: Megaphone, label: t('ads') },
           { to: '/admin/settings', icon: Settings, label: t('settings') },
           ...common
         ];
@@ -109,29 +111,35 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   // LOGIC FIX: Create explicit mobile links list ensuring Shop is visible
   const getMobileLinks = (): NavItemProps[] => {
-      const links = getLinks();
-      
       if (user.role === UserRole.STUDENT) {
-          // Dashboard, Exams, Social, Shop (Prioritize Shop over Results as Results is in Profile)
-          const dashboard = links.find(l => l.to === '/student');
-          const prizeLink = links.find(l => l.to === '/student/prize-exams');
-          const social = links.find(l => l.to === '/student/social');
-          const shop = links.find(l => l.to === '/student/shop');
-
-          return [dashboard, prizeLink, social, shop].filter((l): l is NavItemProps => !!l);
+          return [
+              { to: '/student', icon: LayoutDashboard, label: t('dashboard') },
+              { to: '/student/exams', icon: BookOpen, label: t('exams') },
+              { to: '/student/social', icon: Globe, label: t('social') },
+              { to: '/student/prize-exams', icon: Gift, label: t('prize_exams') },
+              { to: '/student/profile', icon: UserIcon, label: t('profile') },
+          ];
       }
-
+      if (user.role === UserRole.TEACHER) {
+          return [
+              { to: '/teacher', icon: LayoutDashboard, label: t('dashboard') },
+              { to: '/teacher/exams', icon: BookOpen, label: t('exams') },
+              { to: '/teacher/social', icon: Globe, label: t('social') },
+              { to: '/chat', icon: MessageCircle, label: t('messages') },
+              { to: '/teacher/profile', icon: UserIcon, label: t('profile') },
+          ];
+      }
       if (user.role === UserRole.ADMIN) {
-          // Admin needs quick access to Dashboard, Users, Exams, and Settings on mobile
-          const dashboard = links.find(l => l.to === '/admin');
-          const usersLink = links.find(l => l.to === '/admin/users');
-          const exams = links.find(l => l.to === '/admin/exams');
-          const settings = links.find(l => l.to === '/admin/settings');
-
-          return [dashboard, usersLink, exams, settings].filter((l): l is NavItemProps => !!l);
+          return [
+              { to: '/admin', icon: LayoutDashboard, label: t('dashboard') },
+              { to: '/admin/reports', icon: AlertTriangle, label: t('reports') },
+              { to: '/admin/exams', icon: ClipboardList, label: t('exams') },
+              { to: '/admin/social', icon: Globe, label: t('social') },
+              { to: '/chat', icon: MessageCircle, label: t('messages') },
+              { to: '/admin/profile', icon: UserIcon, label: t('profile') },
+          ];
       }
-
-      return links.slice(0, 4);
+      return [];
   };
 
   return (
@@ -143,7 +151,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         }`}>
           {(alert.type === 'error' || alert.type === 'warning') && <AlertTriangle size={20} />}
           {alert.type === 'success' && <Star size={20} />}
-          {alert.message}
+          <span className="flex-1 text-sm">{alert.message}</span>
+          {alert.actionLabel && alert.actionTo && (
+            <Link
+              to={alert.actionTo}
+              className="bg-white/90 text-gray-900 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wide shadow-sm hover:bg-white"
+            >
+              {alert.actionLabel}
+            </Link>
+          )}
         </div>
       )}
 
@@ -208,7 +224,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                  <h1 className="font-extrabold text-gray-800 text-lg">HelloClass</h1>
               </div>
               <div className="flex items-center gap-3">
-                  <Link to="/chat" className="relative p-2 bg-gray-50 rounded-full text-gray-600">
+          <Link to={user.role === UserRole.STUDENT ? '/student/shop' : user.role === UserRole.TEACHER ? '/teacher/shop' : '/admin/shop'} className="relative p-2 bg-gray-50 rounded-full text-gray-600">
+             <ShoppingBag size={20} />
+          </Link>
+          <Link to="/chat" className="relative p-2 bg-gray-50 rounded-full text-gray-600">
                      <MessageCircle size={20} />
                   </Link>
                   {quickLinks.notifications && (
@@ -235,31 +254,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </div>
 
       {/* Bottom Nav (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-2 py-2 flex justify-around items-center z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-        {getMobileLinks().map((link) => {
-          const Icon = link.icon;
-          const isActive = location.pathname === link.to;
-          return (
-            <Link 
-              key={link.to} 
-              to={link.to} 
-              className={`flex flex-col items-center gap-1 p-2 min-w-[64px] rounded-2xl transition-all ${isActive ? 'text-brand-600 bg-brand-50' : 'text-gray-400 active:scale-95'}`}
-            >
-              <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-[10px] font-bold truncate max-w-[60px]">{link.label}</span>
-            </Link>
-          );
-        })}
-        {/* Mobile Profile Link for Students Only (Admins/Teachers use header or specific links) */}
-        {user.role === UserRole.STUDENT && (
-            <Link 
-                to="/student/profile" 
-                className={`flex flex-col items-center gap-1 p-2 min-w-[64px] rounded-2xl transition-all ${location.pathname === '/student/profile' ? 'text-brand-600 bg-brand-50' : 'text-gray-400 active:scale-95'}`}
-            >
-                <UserIcon size={22} strokeWidth={location.pathname === '/student/profile' ? 2.5 : 2} />
-                <span className="text-[10px] font-bold">{t('profile')}</span>
-            </Link>
-        )}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 z-40 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.08)]">
+        <div className="grid grid-cols-5 gap-1">
+          {getMobileLinks().map((link) => {
+            const Icon = link.icon;
+            const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+            const isSocial = link.icon === Globe;
+            return (
+              <Link 
+                key={link.to} 
+                to={link.to} 
+                className={`flex flex-col items-center gap-1 px-2 py-1 rounded-2xl text-[11px] font-semibold transition-all ${isActive ? 'text-brand-600' : 'text-gray-400'}`}
+              >
+                <Icon size={isSocial ? 30 : 22} strokeWidth={isActive ? 2.6 : 2} className="touch-manipulation" />
+                <span className="truncate max-w-[70px]">{link.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );
