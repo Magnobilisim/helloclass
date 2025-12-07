@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum ExamDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model User {
+  id          String         @id
+  email       String         @unique
+  displayName String
+  role        UserRole       @default(STUDENT)
+  avatarUrl   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  exams       Exam[]         @relation("ExamCreator")
+  attempts    ExamAttempt[]
+  notifications Notification[]
+  purchases   Purchase[]
+  prizeEntries PrizeParticipant[]
+  activityLogs ActivityLog[]
+}
+
+model Subject {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  academicYear  String
+  description   String?
+  topics        Topic[]
+  exams         Exam[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Topic {
+  id              String   @id @default(cuid())
+  subjectId       String
+  subject         Subject  @relation(fields: [subjectId], references: [id])
+  name            String
+  grade           Int?
+  level           String?
+  curriculumYear  String
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([subjectId, name, grade, level])
+}
+
+model Exam {
+  id             String          @id @default(cuid())
+  title          String
+  subjectId      String
+  subject        Subject         @relation(fields: [subjectId], references: [id])
+  topicId        String?
+  topic          Topic?          @relation(fields: [topicId], references: [id])
+  createdBy      String
+  creator        User            @relation("ExamCreator", fields: [createdBy], references: [id])
+  difficulty     ExamDifficulty  @default(EASY)
+  grade          Int?
+  price          Int             @default(0)
+  durationMinutes Int            @default(30)
+  isPublished    Boolean         @default(false)
+  aiGenerated    Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  questions      Question[]
+  attempts       ExamAttempt[]
+  prize          PrizeExam?
+}
+
+model Question {
+  id           String   @id @default(cuid())
+  examId       String
+  exam         Exam     @relation(fields: [examId], references: [id])
+  text         String
+  options      Json
+  correctIndex Int
+  explanation  String?
+  imageUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ExamAttempt {
+  id              String   @id @default(cuid())
+  examId          String
+  exam            Exam     @relation(fields: [examId], references: [id])
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id])
+  score           Int
+  totalQuestions  Int
+  durationSeconds Int
+  answers         Json
+  rewardsEarned   Int      @default(0)
+  learningReport  Json?
+  learningStatus  String   @default("pending")
+  createdAt       DateTime @default(now())
+
+  @@index([studentId, examId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+model ShopItem {
+  id          String     @id @default(cuid())
+  name        String
+  type        String
+  price       Int
+  description String?
+  metadata    Json?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  purchases   Purchase[]
+}
+
+model Purchase {
+  id               String    @id @default(cuid())
+  itemId           String?
+  item             ShopItem? @relation(fields: [itemId], references: [id])
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+  amount           Int
+  currency         String    @default("POINTS")
+  source           String    @default("PAYTR")
+  providerReference String?
+  createdAt        DateTime  @default(now())
+}
+
+model ManualAd {
+  id              String    @id @default(cuid())
+  title           String
+  description     String?
+  imageUrl        String?
+  placement       String
+  ctaText         String?
+  ctaUrl          String?
+  highlightLabel  String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  events          AdEvent[]
+}
+
+model AdEvent {
+  id           String   @id @default(cuid())
+  adId         String
+  ad           ManualAd @relation(fields: [adId], references: [id])
+  type         String
+  userId       String?
+  userRole     String?
+  locationHint String?
+  context      String?
+  createdAt    DateTime @default(now())
+
+  @@index([adId, type])
+}
+
+model PrizeExam {
+  id              String       @id @default(cuid())
+  examId          String
+  exam            Exam         @relation(fields: [examId], references: [id])
+  grade           Int
+  prizeTitle      String
+  prizeDescription String?
+  prizeImage      String?
+  entryFee        Int          @default(0)
+  isActive        Boolean      @default(true)
+  finalists       Json?
+  winnerId        String?
+  winnerName      String?
+  drawDate        DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  participants    PrizeParticipant[]
+}
+
+model PrizeParticipant {
+  id          String    @id @default(cuid())
+  prizeExamId String
+  prizeExam   PrizeExam @relation(fields: [prizeExamId], references: [id])
+  studentId   String
+  student     User      @relation(fields: [studentId], references: [id])
+  paid        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@unique([prizeExamId, studentId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id])
+  action    String
+  target    String
+  severity  String   @default("info")
+  createdAt DateTime @default(now())
+}
