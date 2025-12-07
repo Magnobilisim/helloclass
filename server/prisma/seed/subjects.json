@@ -1,0 +1,35 @@
+[
+  {
+    "code": "MATH",
+    "name": "Matematik",
+    "academicYear": "2024-2025",
+    "topics": [
+      { "name": "Doğal Sayılar", "grade": 5 },
+      { "name": "Kesirler", "grade": 6 },
+      { "name": "Cebirsel İfadeler", "grade": 7 },
+      { "name": "Olasılık ve Veri", "grade": 8 }
+    ]
+  },
+  {
+    "code": "SCI",
+    "name": "Fen Bilimleri",
+    "academicYear": "2024-2025",
+    "topics": [
+      { "name": "Canlılar Dünyası", "grade": 3 },
+      { "name": "Madde ve Değişim", "grade": 4 },
+      { "name": "Işık ve Ses", "grade": 5 },
+      { "name": "DNA ve Genetik Kod", "grade": 8 }
+    ]
+  },
+  {
+    "code": "TR",
+    "name": "Türkçe",
+    "academicYear": "2024-2025",
+    "topics": [
+      { "name": "Okuma Anlama", "grade": 1 },
+      { "name": "Yazım Kuralları", "grade": 3 },
+      { "name": "Paragraf Bilgisi", "grade": 4 },
+      { "name": "Sözcükte Anlam", "grade": 5 }
+    ]
+  }
+]

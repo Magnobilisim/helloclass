@@ -60,7 +60,7 @@ model Topic {
   updatedAt       DateTime @updatedAt
   exams           Exam[]
 
-  @@unique([subjectId, name, grade, level])
+  @@unique([subjectId, name])
 }
 
 model Exam {
