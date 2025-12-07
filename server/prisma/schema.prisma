@@ -58,6 +58,7 @@ model Topic {
   metadata        Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  exams           Exam[]
 
   @@unique([subjectId, name, grade, level])
 }
@@ -201,6 +202,8 @@ model PrizeExam {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   participants    PrizeParticipant[]
+
+  @@unique([examId])
 }
 
 model PrizeParticipant {
