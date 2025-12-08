@@ -2,10 +2,6 @@ name: Infrastructure Deploy
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'infra/**'
-      - '.github/workflows/infra-deploy.yml'
 
 jobs:
   terraform:
