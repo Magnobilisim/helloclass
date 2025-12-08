@@ -92,12 +92,50 @@ variable "api_task_memory" {
   default     = 1024
 }
 
-variable "db_secret_arn" {
-  description = "ARN of the Secrets Manager secret containing DATABASE_URL"
+variable "acm_certificate_arn" {
+  description = "ARN of an existing ACM certificate (optional if using module)"
   type        = string
+  default     = null
 }
 
-variable "acm_certificate_arn" {
-  description = "ARN of the ACM certificate used for HTTPS"
+variable "primary_domain" {
+  description = "Primary domain name for public endpoints"
   type        = string
+  default     = "example.com"
+}
+
+variable "alternate_domains" {
+  description = "Additional SANs for ACM certificate"
+  type        = list(string)
+  default     = []
+}
+
+variable "cognito_domain_prefix" {
+  description = "Cognito hosted UI domain prefix"
+  type        = string
+  default     = "helloclass-demo"
+}
+
+variable "cognito_callback_urls" {
+  description = "Allowed callback URLs for Cognito client"
+  type        = list(string)
+  default     = ["https://example.com/callback"]
+}
+
+variable "cognito_logout_urls" {
+  description = "Allowed logout URLs for Cognito client"
+  type        = list(string)
+  default     = ["https://example.com/logout"]
+}
+
+variable "github_actions_assume_role_policy" {
+  description = "JSON assume role policy for GitHub Actions IAM role"
+  type        = string
+  default     = "{}"
+}
+
+variable "database_url" {
+  description = "Database connection string stored in SSM"
+  type        = string
+  sensitive   = true
 }

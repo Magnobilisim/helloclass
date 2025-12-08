@@ -47,10 +47,10 @@ variable "task_memory" {
   default = 1024
 }
 
-variable "db_secret_arn" {
+variable "acm_certificate_arn" {
   type = string
 }
 
-variable "acm_certificate_arn" {
+variable "db_parameter_name" {
   type = string
 }

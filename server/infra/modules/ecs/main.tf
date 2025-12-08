@@ -87,7 +87,7 @@ resource "aws_ecs_task_definition" "api" {
       secrets = [
         {
           name      = "DATABASE_URL"
-          valueFrom = var.db_secret_arn
+          valueFrom = var.db_parameter_name
         }
       ]
     }
