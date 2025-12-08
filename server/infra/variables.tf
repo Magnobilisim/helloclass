@@ -50,6 +50,12 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "db_name" {
+  description = "Logical database name to create/use inside the Postgres instance"
+  type        = string
+  default     = "helloclass"
+}
+
 variable "db_instance_class" {
   description = "RDS instance class"
   type        = string
@@ -135,7 +141,8 @@ variable "github_actions_assume_role_policy" {
 }
 
 variable "database_url" {
-  description = "Database connection string stored in SSM"
+  description = "Optional override for DATABASE_URL secret (otherwise generated automatically)"
   type        = string
+  default     = null
   sensitive   = true
 }

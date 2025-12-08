@@ -1,5 +1,6 @@
 locals {
   certificate_arn = var.acm_certificate_arn != null ? var.acm_certificate_arn : module.acm.certificate_arn
+  database_url    = (var.database_url != null && var.database_url != "") ? var.database_url : format("postgresql://%s:%s@%s/%s", var.db_username, var.db_password, module.rds.db_endpoint, var.db_name)
 }
 
 module "network" {
@@ -22,6 +23,7 @@ module "rds" {
   private_subnet_ids = module.network.private_subnet_ids
   db_username        = var.db_username
   db_password        = var.db_password
+  db_name            = var.db_name
   db_instance_class  = var.db_instance_class
   allocated_storage  = var.db_allocated_storage
 }
@@ -90,7 +92,7 @@ module "ssm" {
 
   project_name  = var.project_name
   environment   = var.environment
-  database_url  = var.database_url
+  database_url  = local.database_url
 }
 
 output "vpc_id" {
