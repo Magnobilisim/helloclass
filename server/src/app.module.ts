@@ -5,6 +5,8 @@ import { HealthModule } from './modules/health/health.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './database/prisma.module';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
   imports: [
@@ -12,10 +14,11 @@ import { PrismaModule } from './database/prisma.module';
       isGlobal: true,
       load: [configuration],
     }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     HealthModule,
     PrismaModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtStrategy],
 })
 export class AppModule {}
