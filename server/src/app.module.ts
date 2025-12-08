@@ -8,6 +8,7 @@ import { PrismaModule } from './database/prisma.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { UsersModule } from './users/users.module';
+import { ExamsModule } from './exams/exams.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UsersModule } from './users/users.module';
     HealthModule,
     PrismaModule,
     UsersModule,
+    ExamsModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],
