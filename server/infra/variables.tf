@@ -61,3 +61,43 @@ variable "db_allocated_storage" {
   type        = number
   default     = 20
 }
+
+variable "api_container_image" {
+  description = "Container image for the API service"
+  type        = string
+  default     = "public.ecr.aws/nginx/nginx:latest"
+}
+
+variable "api_container_port" {
+  description = "Container port exposed by the API service"
+  type        = number
+  default     = 3000
+}
+
+variable "api_desired_count" {
+  description = "Number of desired ECS tasks"
+  type        = number
+  default     = 1
+}
+
+variable "api_task_cpu" {
+  description = "Fargate task CPU units"
+  type        = number
+  default     = 512
+}
+
+variable "api_task_memory" {
+  description = "Fargate task memory (MB)"
+  type        = number
+  default     = 1024
+}
+
+variable "db_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing DATABASE_URL"
+  type        = string
+}
+
+variable "acm_certificate_arn" {
+  description = "ARN of the ACM certificate used for HTTPS"
+  type        = string
+}
