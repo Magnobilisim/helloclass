@@ -30,11 +30,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION || 'eu-north-1' }}
 
       - name: Terraform Init
-        working-directory: ./infra
+        working-directory: ./server/infra
         run: terraform init
 
       - name: Terraform Plan
-        working-directory: ./infra
+        working-directory: ./server/infra
         run: |
           terraform plan \
             -var "project_name=${{ secrets.PROJECT_NAME }}" \
@@ -46,7 +46,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
-        working-directory: ./infra
+        working-directory: ./server/infra
         run: terraform apply -input=false tfplan
 
   migrate:
