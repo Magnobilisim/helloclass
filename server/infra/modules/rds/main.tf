@@ -43,6 +43,7 @@ resource "aws_db_instance" "this" {
   allocated_storage       = var.allocated_storage
   username                = var.db_username
   password                = var.db_password
+  db_name                 = var.db_name
   db_subnet_group_name    = aws_db_subnet_group.this.name
   vpc_security_group_ids  = [aws_security_group.rds.id]
   skip_final_snapshot     = true

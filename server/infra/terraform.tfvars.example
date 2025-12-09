@@ -1,0 +1,30 @@
+###############################################################################
+# Copy this file to `terraform.tfvars` (never commit real secrets) and replace
+# placeholder values with your environment-specific settings.
+###############################################################################
+
+project_name = "helloclass"
+environment  = "prod"
+aws_region   = "eu-central-1"
+
+db_username = "helloclass_admin"
+db_password = "REPLACE_WITH_STRONG_PASSWORD"
+db_name     = "helloclass"
+
+# database_url is generated automatically from the RDS endpoint unless you set
+# this override explicitly. Leave as null for most setups.
+database_url = null
+
+primary_domain    = "helloclass.app"
+alternate_domains = ["www.helloclass.app", "api.helloclass.app"]
+
+cognito_domain_prefix = "helloclass-app-prod"
+cognito_callback_urls = ["https://helloclass.app/auth/callback"]
+cognito_logout_urls   = ["https://helloclass.app/logout"]
+
+# Build and push your backend container to ECR, then reference it here.
+api_container_image = "<AWS_ACCOUNT_ID>.dkr.ecr.eu-central-1.amazonaws.com/helloclass-api:latest"
+
+# Provide an issued ACM certificate ARN (us-east-1 for CloudFront). Leave null
+# to let Terraform request one and complete DNS validation manually.
+acm_certificate_arn = null

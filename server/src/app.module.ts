@@ -9,6 +9,10 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { UsersModule } from './users/users.module';
 import { ExamsModule } from './exams/exams.module';
+import { SubjectsModule } from './subjects/subjects.module';
+import { TopicsModule } from './topics/topics.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ShopModule } from './shop/shop.module';
 
 @Module({
   imports: [
@@ -21,6 +25,10 @@ import { ExamsModule } from './exams/exams.module';
     PrismaModule,
     UsersModule,
     ExamsModule,
+    SubjectsModule,
+    TopicsModule,
+    NotificationsModule,
+    ShopModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],
