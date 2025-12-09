@@ -209,20 +209,32 @@ export const SocialFeed = () => {
             </div>
        )}
 
-       <div className="flex items-center justify-between">
+       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <h2 className="text-2xl font-bold text-gray-800">{t('classroom_feed')}</h2>
-            <div className="flex gap-2">
-                 <select value={filterSchoolId === user?.schoolId ? 'MY_SCHOOL' : filterSchoolId} onChange={handleSchoolFilterChange} className="p-2 rounded-xl text-xs font-bold border border-gray-200 outline-none bg-white text-gray-700 max-w-[140px] truncate">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                 <select
+                    value={filterSchoolId === user?.schoolId ? 'MY_SCHOOL' : filterSchoolId}
+                    onChange={handleSchoolFilterChange}
+                    className="flex-1 min-w-[150px] p-2 rounded-xl text-xs font-bold border border-gray-200 outline-none bg-white text-gray-700"
+                 >
                      <option value="">{t('all_schools')}</option>
                      <option value="MY_SCHOOL">{t('my_school')}</option>
                      <option disabled>──────────</option>
                      {schools.filter(s => s.id !== user?.schoolId).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                  </select>
-                 <select value={filterSubjectId} onChange={(e) => setFilterSubjectId(e.target.value)} className="p-2 rounded-xl text-xs font-bold border border-gray-200 outline-none bg-white text-gray-700">
+                 <select
+                    value={filterSubjectId}
+                    onChange={(e) => setFilterSubjectId(e.target.value)}
+                    className="flex-1 min-w-[130px] p-2 rounded-xl text-xs font-bold border border-gray-200 outline-none bg-white text-gray-700"
+                 >
                      <option value="All">{t('all')}</option>
                      {availableSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                  </select>
-                 <select value={filterGeneralTopic} onChange={(e) => setFilterGeneralTopic(e.target.value as 'All' | string)} className="p-2 rounded-xl text-xs font-bold border border-gray-200 outline-none bg-white text-gray-700">
+                 <select
+                    value={filterGeneralTopic}
+                    onChange={(e) => setFilterGeneralTopic(e.target.value as 'All' | string)}
+                    className="flex-1 min-w-[150px] p-2 rounded-xl text-xs font-bold border border-gray-200 outline-none bg-white text-gray-700"
+                 >
                      <option value="All">{t('all')} {t('topic')}</option>
                      {socialTopics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
                  </select>
