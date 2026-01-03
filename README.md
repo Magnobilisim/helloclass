@@ -1,7 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="HelloClass Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # HelloClass
 
 Interactive learning platform with AI-powered exam creation, social features, and reward system for students, teachers, and administrators.
@@ -9,6 +5,7 @@ Interactive learning platform with AI-powered exam creation, social features, an
 ## Features
 
 ### For Students
+
 - Take exams with AI-generated questions
 - Track results and progress
 - Social feed with posts and interactions
@@ -18,12 +15,14 @@ Interactive learning platform with AI-powered exam creation, social features, an
 - Profile management
 
 ### For Teachers
+
 - Create custom exams with AI assistance
 - Manage exam questions and topics
 - Track student performance
 - Dashboard with analytics
 
 ### For Administrators
+
 - User and role management
 - System settings and configuration
 - Monitor platform activity
@@ -78,12 +77,14 @@ helloclass/
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone <repository-url>
    cd helloclass
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -98,6 +99,7 @@ helloclass/
 ### Development
 
 Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -107,6 +109,7 @@ The app will be available at `http://localhost:3000`
 ### Build
 
 Create a production build:
+
 ```bash
 npm run build
 ```
@@ -116,24 +119,25 @@ The optimized files will be in the `dist/` directory.
 ### Preview
 
 Preview the production build locally:
+
 ```bash
 npm run preview
 ```
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_OPENAI_API_KEY` | OpenAI API key for AI features | Required |
-| `VITE_OPENAI_TEXT_MODEL` | Model for text generation | `gpt-4o-mini` |
-| `VITE_OPENAI_IMAGE_MODEL` | Model for image generation | `dall-e-3` |
+| Variable                  | Description                    | Default       |
+| ------------------------- | ------------------------------ | ------------- |
+| `VITE_OPENAI_API_KEY`     | OpenAI API key for AI features | Required      |
+| `VITE_OPENAI_TEXT_MODEL`  | Model for text generation      | `gpt-4o-mini` |
+| `VITE_OPENAI_IMAGE_MODEL` | Model for image generation     | `dall-e-3`    |
 
 ## Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
+| Command           | Description              |
+| ----------------- | ------------------------ |
+| `npm run dev`     | Start development server |
+| `npm run build`   | Build for production     |
 | `npm run preview` | Preview production build |
 
 ## Path Aliases
@@ -142,10 +146,10 @@ The project uses `@/` alias to reference the `src/` directory:
 
 ```typescript
 // Instead of:
-import { UserRole } from '../types';
+import { UserRole } from "../types";
 
 // Use:
-import { UserRole } from '@/types';
+import { UserRole } from "@/types";
 ```
 
 ## Deployment
@@ -153,12 +157,14 @@ import { UserRole } from '@/types';
 ### GitHub Actions
 
 The project includes GitHub workflows for deployment:
+
 - `.github/workflows/infra-deploy.yml` - Infrastructure deployment
 - `.github/workflows/terraform.yml` - Terraform configuration
 
 ### Manual Deployment
 
 1. Build the project:
+
    ```bash
    npm run build
    ```
