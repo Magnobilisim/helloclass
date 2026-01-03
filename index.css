@@ -1,4 +1,30 @@
-/* Placeholder stylesheet to satisfy build reference */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App defaults */
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background-color: #fffbeb;
+}
+
+/* Custom scrollbar for cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #fbbf24;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
 }
